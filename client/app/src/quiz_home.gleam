@@ -103,6 +103,18 @@ pub fn fetch_question(
   })
 }
 
+fn categories_qty(
+  question: List(question.Model),
+  categories: List(Category),
+) -> List(#(String, String)) {
+  use c <- list.map(categories)
+  let qty =
+    list.filter(question, fn(q) { c.id == q.category.id })
+    |> list.length
+    |> int.to_string
+  #(c.name, qty)
+}
+
 /// 受信したメッセージに基づいてモデルを更新し、新しい状態と副作用（Effect）を返す。
 pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
@@ -155,25 +167,19 @@ fn view_error(error: Option(String)) -> Element(Msg) {
 
 /// カテゴリ選択のUIをレンダリングする
 fn view_category_selection(
-  categories: List(Category),
-  selected_categories: List(String),
+  category_with_counts: List(#(String, String)),
 ) -> Element(Msg) {
   html.div(
-    [],
-    list.map(categories, fn(category) {
-      let checked = list.contains(selected_categories, category.id)
-      html.label([], [
-        html.input([
-          event.on_check(fn(is_checked) {
-            SelectCategory(category.id, is_checked)
-          }),
-          attr.type_("checkbox"),
-          attr.name("category"),
-          attr.value(category.id),
-          attr.checked(checked),
-        ]),
-        html.text(category.name),
-      ])
+    [attr.styles([#("display", "flex")])],
+    list.map(category_with_counts, fn(c) {
+      let #(name, qty) = c
+      html.div(
+        [
+          //右にmarginを1remあける
+          attr.styles([#("margin-right", "1rem")]),
+        ],
+        [html.label([], [html.text(name <> " (" <> qty <> ")  ")])],
+      )
     }),
   )
 }
@@ -224,12 +230,12 @@ fn view_loading(loading: Bool) -> Element(Msg) {
 /// 現在のModelに基づいてHome画面のUIをレンダリングする
 pub fn view(model: Model) -> Element(Msg) {
   let is_start_quiz_enabled = list.length(model.selected_categories) > 0
-
+  let categories_info = categories_qty(model.questions, model.categories)
   html.div([], [
     html.h1([], [html.text("Quiz App")]),
     view_error(model.error),
-    html.h2([], [html.text("カテゴリ選択")]),
-    view_category_selection(model.categories, model.selected_categories),
+    html.h2([], [html.text("カテゴリ")]),
+    view_category_selection(categories_info),
     html.h2([], [html.text("出題数選択")]),
     view_count_selection(model.selected_count),
     view_actions(is_start_quiz_enabled),

@@ -1465,24 +1465,6 @@ function reverse(list4) {
 function is_empty2(list4) {
   return isEqual(list4, toList([]));
 }
-function contains(loop$list, loop$elem) {
-  while (true) {
-    let list4 = loop$list;
-    let elem = loop$elem;
-    if (list4 instanceof Empty) {
-      return false;
-    } else {
-      let first$1 = list4.head;
-      if (isEqual(first$1, elem)) {
-        return true;
-      } else {
-        let rest$1 = list4.tail;
-        loop$list = rest$1;
-        loop$elem = elem;
-      }
-    }
-  }
-}
 function filter_loop(loop$list, loop$fun, loop$acc) {
   while (true) {
     let list4 = loop$list;
@@ -6583,6 +6565,24 @@ function init4(storage) {
     none2()
   ];
 }
+function categories_qty(question, categories) {
+  return map(
+    categories,
+    (c) => {
+      let _block;
+      let _pipe = filter(
+        question,
+        (q) => {
+          return c.id === q.category.id;
+        }
+      );
+      let _pipe$1 = length(_pipe);
+      _block = to_string(_pipe$1);
+      let qty = _block;
+      return [c.name, qty];
+    }
+  );
+}
 function update5(model, msg) {
   if (msg instanceof SelectCategory) {
     let category_id = msg[0];
@@ -6643,30 +6643,21 @@ function update5(model, msg) {
     return [model, none2()];
   }
 }
-function view_category_selection(categories, selected_categories) {
+function view_category_selection(category_with_counts) {
   return div(
-    toList([]),
+    toList([styles(toList([["display", "flex"]]))]),
     map(
-      categories,
-      (category) => {
-        let checked2 = contains(selected_categories, category.id);
-        return label(
-          toList([]),
+      category_with_counts,
+      (c) => {
+        let name2 = c[0];
+        let qty = c[1];
+        return div(
+          toList([styles(toList([["margin-right", "1rem"]]))]),
           toList([
-            input(
-              toList([
-                on_check(
-                  (is_checked) => {
-                    return new SelectCategory(category.id, is_checked);
-                  }
-                ),
-                type_("checkbox"),
-                name("category"),
-                value(category.id),
-                checked(checked2)
-              ])
-            ),
-            text3(category.name)
+            label(
+              toList([]),
+              toList([text3(name2 + " (" + qty + ")  ")])
+            )
           ])
         );
       }
@@ -6740,13 +6731,14 @@ function view_error(error) {
 }
 function view4(model) {
   let is_start_quiz_enabled = length(model.selected_categories) > 0;
+  let categories_info = categories_qty(model.questions, model.categories);
   return div(
     toList([]),
     toList([
       h1(toList([]), toList([text3("Quiz App")])),
       view_error(model.error),
-      h2(toList([]), toList([text3("\u30AB\u30C6\u30B4\u30EA\u9078\u629E")])),
-      view_category_selection(model.categories, model.selected_categories),
+      h2(toList([]), toList([text3("\u30AB\u30C6\u30B4\u30EA")])),
+      view_category_selection(categories_info),
       h2(toList([]), toList([text3("\u51FA\u984C\u6570\u9078\u629E")])),
       view_count_selection(model.selected_count),
       view_actions(is_start_quiz_enabled),
