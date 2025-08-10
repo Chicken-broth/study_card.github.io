@@ -1,0 +1,2 @@
+-- This file is no longer relevant as the database has been changed to Firebase (Firestore/Realtime Database).
+-- The schema is now defined by the document structure within Firebase.

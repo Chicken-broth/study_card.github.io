@@ -1,0 +1,141 @@
+import answer.{type Answer, NotAnswered}
+import association_question as as_question
+import category.{type Category}
+import gleam/dynamic/decode.{type Decoder}
+import gleam/json
+import lustre/element.{type Element}
+import multiple_choice_question as mc_question
+
+/// クイズの問題全体を表す型
+/// id、カテゴリ、問題文、そして問題のインタラクション部分（選択肢や組み合わせなど）を保持する
+pub type Model {
+  Model(
+    id: String,
+    category: Category,
+    question_text: String,
+    question_interaction: QuestionInteraction,
+  )
+}
+
+/// 問題のインタラクション部分を表す型
+/// - `MultipleChoice`: 四択問題
+/// - `Association`: 組み合わせ問題
+pub type QuestionInteraction {
+  MultipleChoice(mc_question.Model)
+  Association(as_question.Model)
+}
+
+pub type Msg {
+  MultipleChoiceMsg(mc_question.Msg)
+  AssociationMsg(as_question.Msg)
+}
+
+pub fn init(
+  id: String,
+  category: Category,
+  question_text: String,
+  question_interaction: QuestionInteraction,
+) -> Model {
+  Model(
+    id: id,
+    category: category,
+    question_text: question_text,
+    question_interaction: question_interaction,
+  )
+}
+
+/// 回答の正誤を判定する
+/// `quiz_screen`の`check_answer`ロジックをここに集約する。
+/// 組み合わせ問題は、完了していれば正解、そうでなければ（Nextが押された時点で）不正解とみなす。
+pub fn check_answer(model: Model) -> Answer {
+  case model.question_interaction {
+    MultipleChoice(mc_model) -> mc_model.answer
+    Association(as_model) -> as_model.answer
+  }
+}
+
+pub fn is_answered(model: Model) -> Bool {
+  case check_answer(model) {
+    NotAnswered -> False
+    _ -> True
+  }
+}
+
+pub fn update(model: Model, msg: Msg) -> Model {
+  case msg {
+    MultipleChoiceMsg(mc_msg) -> {
+      case model.question_interaction {
+        MultipleChoice(mc_model) -> {
+          let new_mc_model = mc_question.update(mc_model, mc_msg)
+          Model(..model, question_interaction: MultipleChoice(new_mc_model))
+        }
+        _ -> model
+      }
+    }
+    AssociationMsg(as_msg) -> {
+      case model.question_interaction {
+        Association(as_model) -> {
+          let new_as_model = as_question.update(as_model, as_msg)
+          Model(..model, question_interaction: Association(new_as_model))
+        }
+        _ -> model
+      }
+    }
+  }
+}
+
+pub fn view(model: Model) -> Element(Msg) {
+  case model.question_interaction {
+    MultipleChoice(mc_model) ->
+      element.map(mc_question.view(mc_model), fn(m) { MultipleChoiceMsg(m) })
+    Association(as_model) ->
+      element.map(as_question.view(as_model), fn(m) { AssociationMsg(m) })
+  }
+}
+
+/// `QuestionInteraction` 型を JSON に変換する
+fn interaction_to_json(interaction: QuestionInteraction) -> json.Json {
+  case interaction {
+    MultipleChoice(question_model) ->
+      json.object([#("MultipleChoice", mc_question.to_json(question_model))])
+    Association(question_model) ->
+      json.object([#("Association", as_question.to_json(question_model))])
+  }
+}
+
+/// JSON から `QuestionInteraction` 型にデコードする
+fn interaction_decoder() -> Decoder(QuestionInteraction) {
+  let decode_mc = fn() {
+    use mc_model <- decode.field("MultipleChoice", mc_question.decoder())
+    decode.success(MultipleChoice(mc_model))
+  }
+
+  let decode_as = fn() {
+    use as_model <- decode.field("Association", as_question.decoder())
+    decode.success(Association(as_model))
+  }
+
+  decode.one_of(decode_mc(), [decode_as()])
+}
+
+/// `Model` 型を JSON に変換する
+pub fn to_json(model: Model) -> json.Json {
+  json.object([
+    #("id", json.string(model.id)),
+    #("category", category.to_json(model.category)),
+    #("question_text", json.string(model.question_text)),
+    #("question_interaction", interaction_to_json(model.question_interaction)),
+  ])
+}
+
+/// JSON から `Model` 型にデコードする
+pub fn decoder() -> Decoder(Model) {
+  use id <- decode.field("id", decode.string)
+  use category <- decode.field("category", category.decoder())
+  use question_text <- decode.field("question_text", decode.string)
+  use question_interaction <- decode.field(
+    "question_interaction",
+    interaction_decoder(),
+  )
+  decode.success(Model(id:, category:, question_text:, question_interaction:))
+}
