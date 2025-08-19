@@ -160,7 +160,7 @@
 - **UI/UX要件**:
   - [ ] 結果の分かりやすい表示
   - [ ] ボタンの配置と挙動
-- **テスト要件**:
+- **テスト要M件**:
   - [ ] コンポーネントテスト
   - [ ] E2Eテスト: 結果表示と遷移
 
@@ -224,28 +224,116 @@
 - **完了条件**:
   - [ ] アプリケーションが本番環境相当の環境で動作する
 
+### フェーズ5: Firestore移行
+
+#### TASK-401: Firestoreデータベースセットアップ
+- [ ] **タスク完了**
+- **タスクタイプ**: DIRECT
+- **依存タスク**: TASK-001
+- **実装詳細**:
+  - Firestoreデータベースの作成
+  - サンプルデータ（カテゴリ、問題）の投入
+- **完了条件**:
+  - Firestoreにデータが投入され、コンソールから確認できる
+
+#### TASK-402: Firestoreセキュリティルール設定
+- [ ] **タスク完了**
+- **タスクタイプ**: DIRECT
+- **依存タスク**: TASK-401
+- **実装詳細**:
+  - 認証されていないユーザーからの読み取りを許可（今回は認証なしのため）
+  - 書き込みは制限（Functionsからのみ許可するなど）
+- **完了条件**:
+  - セキュリティルールがデプロイされ、意図通りにアクセス制御が行われる
+
+#### TASK-403: GET /api/categories の実装 (Firestore)
+- [ ] **タスク完了**
+- **タスクタイプ**: TDD
+- **依存タスク**: TASK-401
+- **実装詳細**:
+  - Firestoreからカテゴリ一覧を取得するFirebase Functionsの実装
+- **テスト要件**:
+  - 単体テスト: Firestoreデータ取得ロジック
+  - 統合テスト: APIエンドポイントの動作確認
+- **完了条件**:
+  - APIを叩くとFirestoreから取得したカテゴリ一覧が返却される
+
+#### TASK-404: GET /api/questions の実装 (Firestore)
+- [ ] **タスク完了**
+- **タスクタイプ**: TDD
+- **依存タスク**: TASK-401
+- **実装詳細**:
+  - Firestoreから指定された条件で問題を取得するFirebase Functionsの実装
+- **テスト要件**:
+  - 単体テスト: 問題取得ロジック
+  - 統合テスト: APIエンドポイントの動作確認
+- **完了条件**:
+  - APIを叩くとFirestoreから取得した問題データが返却される
+
+#### TASK-405: POST /api/results の実装 (Firestore)
+- [ ] **タスク完了**
+- **タスクタイプ**: TDD
+- **依存タスク**: TASK-401
+- **実装詳細**:
+  - クイズ結果をFirestoreに保存するFirebase Functionsの実装
+- **テスト要件**:
+  - 単体テスト: 結果保存ロジック
+  - 統合テスト: APIエンドポイントの動作確認
+- **完了条件**:
+  - APIを叩くと結果がFirestoreに保存される
+
+#### TASK-406: GET /api/results の実装 (Firestore)
+- [ ] **タスク完了**
+- **タスクタイプ**: TDD
+- **依存タスク**: TASK-401
+- **実装詳細**:
+  - 過去の結果一覧をFirestoreから取得するFirebase Functionsの実装
+- **テスト要件**:
+  - 単体テスト: 結果取得ロジック
+  - 統合テスト: APIエンドポイントの動作確認
+- **完了条件**:
+  - APIを叩くと過去の結果一覧がFirestoreから返却される
+
+#### TASK-407: フロントエンドのAPI連携修正
+- [ ] **タスク完了**
+- **タスクタイプ**: TDD
+- **依存タスク**: TASK-201, TASK-202, TASK-203, TASK-204, TASK-403, TASK-404, TASK-405, TASK-406
+- **実装詳細**:
+  - フロントエンドのHTTPクライアントを、Firebase Functionsの各エンドポイントを呼び出すように修正
+  - Local Storage関連のコードを削除
+- **テスト要件**:
+  - E2Eテスト: 実際のAPIと連携したユーザーフローのテスト
+- **完了条件**:
+  - フロントエンドがLocal Storageではなく、FirebaseのAPIと通信して動作する
+
 ## 実行順序
 
 ```mermaid
 gantt
-    title quiz-app タスク実行スケジュール
+    title quiz-app タスク実行スケジュール (Firestore移行)
     dateFormat  YYYY-MM-DD
+    axisFormat %m-%d
+
     section 基盤構築
-    TASK-001           :a1, 2025-08-05, 2d
-    TASK-002           :a2, after a1, 2d
-    TASK-003           :a3, 2025-08-05, 2d
-    section バックエンドAPI実装
-    TASK-101           :b1, after a2, 2d
-    TASK-102           :b2, after b1, 3d
-    TASK-103           :b3, after a2, 2d
-    TASK-104           :b4, after b3, 3d
+    TASK-001: Firebase Setup           :done, task001, 2025-08-11, 1d
+    TASK-003: Frontend Setup           :done, task003, 2025-08-11, 1d
+
+    section Firestore移行 (バックエンド)
+    TASK-401: Firestore Setup          :crit, task401, after task001, 2d
+    TASK-402: Security Rules         :crit, task402, after task401, 1d
+    TASK-403: API: categories (FS)   :crit, task403, after task402, 2d
+    TASK-404: API: questions (FS)    :crit, task404, after task403, 3d
+    TASK-405: API: post results (FS) :crit, task405, after task402, 2d
+    TASK-406: API: get results (FS)  :crit, task406, after task405, 2d
+
     section フロントエンドUI実装
-    TASK-201           :c1, after a3, 3d
-    TASK-202           :c2, after c1, 4d
-    TASK-203           :c3, after c2, 3d
-    TASK-204           :c4, after c1, 3d
+    TASK-201: Home画面                 :task201, after task403, 3d
+    TASK-202: クイズ画面               :crit, task202, after task201, after task404, 4d
+    TASK-203: リザルト画面             :crit, task203, after task202, after task405, 3d
+    TASK-204: 集計画面                 :task204, after task201, after task406, 3d
+
     section 統合・最適化
-    TASK-301           :d1, after b2, 4d
-    TASK-302           :d2, after c3, 2d
-    TASK-303           :d3, after d1, 2d
+    TASK-301: 統合テスト               :crit, task301, after task203, after task204, 4d
+    TASK-302: エラーハンドリング       :task302, after task301, 2d
+    TASK-303: デプロイメント設定       :task303, after task302, 2d
 ```

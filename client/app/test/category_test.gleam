@@ -1,4 +1,4 @@
-import category.{Category}
+import core/category.{Category}
 import gleam/json
 import gleeunit
 import gleeunit/should

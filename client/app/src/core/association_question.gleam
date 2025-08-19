@@ -1,4 +1,4 @@
-import answer.{type Answer, Correct, Incorrect, NotAnswered}
+import core/answer.{type Answer, Correct, Incorrect, NotAnswered}
 import gleam/dynamic/decode.{type Decoder}
 import gleam/int
 import gleam/json

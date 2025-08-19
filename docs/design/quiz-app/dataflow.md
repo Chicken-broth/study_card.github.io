@@ -39,18 +39,18 @@ sequenceDiagram
     participant U as ユーザー
     participant F as フロントエンド (Gleam/Lustre)
     participant B as バックエンド (Firebase Functions)
-    participant DB as データベース (Firebase)
+    participant DB as データベース (Firestore)
 
     U->>F: アプリケーションにアクセス
     F->>B: GET /api/categories (カテゴリ一覧の取得)
-    B->>DB: SELECT * FROM categories
+    B->>DB: Get documents from 'categories' collection
     DB-->>B: カテゴリデータを返却
     B-->>F: カテゴリ一覧をレスポンス
     F-->>U: Home画面を表示 (カテゴリ選択肢)
 
     U->>F: カテゴリと出題数を選択し、クイズ開始をクリック
     F->>B: GET /api/questions?categories=cat1,cat2&count=10 (問題の取得)
-    B->>DB: カテゴリと数に基づいてクエリ実行
+    B->>DB: Query 'questions' collection based on categories and count
     DB-->>B: 問題データを返却
     B-->>F: 問題をレスポンス
     F-->>U: クイズ画面を表示

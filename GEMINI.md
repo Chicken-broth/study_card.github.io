@@ -44,3 +44,6 @@
 -   **API仕様**: APIエンドポイントは `docs/design/quiz-app/api-endpoints.md` に定義されています。
 -   **タスク管理**: 開発タスクは `docs/tasks/quiz-app-tasks.md` で追跡されています。
 -   **中間定義**: `docs/design/quiz-app/interfaces.ts` は、Gleamの型を生成するための中間定義として使用されます。
+
+## Gleam コーディングガイドライン
+GLEAM_CODING_GUIDLINE.mdを読み込んでください。

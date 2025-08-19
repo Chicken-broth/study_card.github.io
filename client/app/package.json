@@ -1,0 +1,16 @@
+{
+  "name": "study_app",
+  "version": "1.0.0",
+  "description": "[![Package Version](https://img.shields.io/hexpm/v/quiz_app)](https://hex.pm/packages/quiz_app) [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/quiz_app/)",
+  "main": "index.js",
+  "directories": {
+    "doc": "doc",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

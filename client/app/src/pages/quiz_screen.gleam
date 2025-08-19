@@ -1,14 +1,14 @@
-import answer.{type Answer, Correct, NotAnswered}
+import core/answer.{type Answer, Correct, NotAnswered}
+import core/question
 import gleam/dict.{type Dict}
 import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
-import list_ex
 import lustre/attribute as attr
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
-import question
+import utils/list_ex
 
 // --- 型定義とメッセージ ---------------------------------------------------
 

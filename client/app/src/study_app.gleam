@@ -1,4 +1,5 @@
-import category.{type Category}
+import core/category.{type Category}
+import core/question
 import gleam/json
 import gleam/list
 import gleam/result
@@ -6,11 +7,10 @@ import lustre
 import lustre/effect.{type Effect, none}
 import lustre/element.{type Element}
 import lustre/element/html
+import pages/quiz_home
+import pages/quiz_screen
+import pages/result_screen
 import plinth/javascript/storage
-import question
-import quiz_home
-import quiz_screen
-import result_screen
 import sample_data
 
 /// アプリケーション全体のモデル

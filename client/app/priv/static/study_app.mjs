@@ -5607,7 +5607,7 @@ function null_or(val) {
   }
 }
 
-// build/dev/javascript/study_app/category.mjs
+// build/dev/javascript/study_app/core/category.mjs
 var Category = class extends CustomType {
   constructor(id, name2) {
     super();
@@ -5638,7 +5638,7 @@ function decoder() {
   );
 }
 
-// build/dev/javascript/study_app/answer.mjs
+// build/dev/javascript/study_app/core/answer.mjs
 var Correct = class extends CustomType {
 };
 var Incorrect = class extends CustomType {
@@ -5696,7 +5696,7 @@ function on_check(msg) {
   );
 }
 
-// build/dev/javascript/study_app/association_question.mjs
+// build/dev/javascript/study_app/core/association_question.mjs
 var SelectLeft = class extends CustomType {
   constructor($0) {
     super();
@@ -6096,7 +6096,7 @@ function decoder2() {
   );
 }
 
-// build/dev/javascript/study_app/multiple_choice_question.mjs
+// build/dev/javascript/study_app/core/multiple_choice_question.mjs
 var Select = class extends CustomType {
   constructor($0) {
     super();
@@ -6302,7 +6302,7 @@ function decoder3() {
   );
 }
 
-// build/dev/javascript/study_app/question.mjs
+// build/dev/javascript/study_app/core/question.mjs
 var Model3 = class extends CustomType {
   constructor(id, category, question_text, question_interaction) {
     super();
@@ -6486,7 +6486,7 @@ function decoder4() {
   );
 }
 
-// build/dev/javascript/study_app/quiz_home.mjs
+// build/dev/javascript/study_app/pages/quiz_home.mjs
 var Model4 = class extends CustomType {
   constructor(categories, questions, selected_categories, selected_count, loading, error) {
     super();
@@ -6524,7 +6524,7 @@ function fetch_categories(storage) {
       return map_error(
         _pipe,
         (err) => {
-          echo(err, "src/quiz_home.gleam", 88);
+          echo(err, "src/pages/quiz_home.gleam", 88);
           return void 0;
         }
       );
@@ -6540,7 +6540,7 @@ function fetch_question(storage) {
       return map_error(
         _pipe,
         (err) => {
-          echo(err, "src/quiz_home.gleam", 101);
+          echo(err, "src/pages/quiz_home.gleam", 101);
           return void 0;
         }
       );
@@ -6548,18 +6548,18 @@ function fetch_question(storage) {
   );
 }
 function init4(storage) {
-  echo("categories", "src/quiz_home.gleam", 54);
+  echo("categories", "src/pages/quiz_home.gleam", 54);
   let _block;
   let _pipe = fetch_categories(storage);
   _block = unwrap(_pipe, toList([]));
   let categories = _block;
-  echo(categories, "src/quiz_home.gleam", 56);
-  echo("questions", "src/quiz_home.gleam", 57);
+  echo(categories, "src/pages/quiz_home.gleam", 56);
+  echo("questions", "src/pages/quiz_home.gleam", 57);
   let _block$1;
   let _pipe$1 = fetch_question(storage);
   _block$1 = unwrap(_pipe$1, toList([]));
   let questions = _block$1;
-  echo(length(questions), "src/quiz_home.gleam", 59);
+  echo(length(questions), "src/pages/quiz_home.gleam", 59);
   return [
     new Model4(categories, questions, toList([]), 10, false, new None()),
     none2()
@@ -6665,7 +6665,7 @@ function view_category_selection(category_with_counts) {
   );
 }
 function view_count_selection(selected_count) {
-  let counts = toList([10, 20, 50]);
+  let counts = toList([10]);
   return div(
     toList([]),
     map(
@@ -6883,7 +6883,7 @@ function echo$isDict(value2) {
   }
 }
 
-// build/dev/javascript/study_app/list_ex.mjs
+// build/dev/javascript/study_app/utils/list_ex.mjs
 function get_at(list4, at) {
   let _pipe = drop(list4, at);
   return ((xs) => {
@@ -6909,7 +6909,7 @@ function update_at(list4, at, fun) {
   );
 }
 
-// build/dev/javascript/study_app/quiz_screen.mjs
+// build/dev/javascript/study_app/pages/quiz_screen.mjs
 var Model5 = class extends CustomType {
   constructor(questions, current_question_index, user_answers, quiz_finished) {
     super();
@@ -6932,7 +6932,7 @@ var GoToResultScreen = class extends CustomType {
 function init5(questions) {
   let $ = is_empty2(questions);
   if ($) {
-    echo2("No questions provided.", "src/quiz_screen.gleam", 43);
+    echo2("No questions provided.", "src/pages/quiz_screen.gleam", 43);
     return new Error(void 0);
   } else {
     let _block;
@@ -7221,7 +7221,7 @@ function echo$isDict2(value2) {
   }
 }
 
-// build/dev/javascript/study_app/result_screen.mjs
+// build/dev/javascript/study_app/pages/result_screen.mjs
 var Model6 = class extends CustomType {
   constructor(score, total_questions, user_answers, questions) {
     super();
@@ -7583,10 +7583,10 @@ function main() {
       "Pattern match failed, no pattern matched the value.",
       {
         value: $,
-        start: 5166,
-        end: 5215,
-        pattern_start: 5177,
-        pattern_end: 5182
+        start: 5194,
+        end: 5243,
+        pattern_start: 5205,
+        pattern_end: 5210
       }
     );
   }

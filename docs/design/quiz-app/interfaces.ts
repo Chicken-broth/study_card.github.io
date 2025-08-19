@@ -7,11 +7,11 @@ export interface Category {
 }
 
 /**
- * 四択問題の選択肢
+ * 四択問題
  */
-export interface MultipleChoiceOption {
-  id: string;
-  text: string;
+export interface MultipleChoiceQuestion {
+  texts: string[];
+  correct_answer_index: number;
 }
 
 /**
@@ -19,19 +19,8 @@ export interface MultipleChoiceOption {
  */
 export interface AssociationPair {
   id: string;
-  item: string;
-  matching_item: string;
-}
-
-/**
- * 四択問題
- */
-export interface MultipleChoiceQuestion {
-  one: MultipleChoiceOption;
-  two: MultipleChoiceOption;
-  three: MultipleChoiceOption;
-  four: MultipleChoiceOption;
-  correct_option_id: string;
+  left: string;
+  right: string;
 }
 
 /**

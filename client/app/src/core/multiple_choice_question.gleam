@@ -1,4 +1,4 @@
-import answer.{type Answer, Correct, Incorrect, NotAnswered}
+import core/answer.{type Answer, Correct, Incorrect, NotAnswered}
 import gleam/dynamic/decode
 import gleam/json
 import gleam/list
@@ -53,7 +53,9 @@ pub fn update(model: Model, msg: Msg) -> Model {
           Model(..model, selected_index: None, answer: NotAnswered)
         // 新しい選択肢がクリックされた場合
         _ -> {
-          let new_answer_state = case index == model.question.correct_answer_index {
+          let new_answer_state = case
+            index == model.question.correct_answer_index
+          {
             True -> Correct
             False -> Incorrect
           }
@@ -85,9 +87,12 @@ fn view_answer_status(answer: Answer) -> Element(Msg) {
   }
 
   let text_color = case answer {
-    Correct -> "#28a745" // Green
-    Incorrect -> "#dc3545" // Red
-    NotAnswered -> "#6c757d" // Gray
+    Correct -> "#28a745"
+    // Green
+    Incorrect -> "#dc3545"
+    // Red
+    NotAnswered -> "#6c757d"
+    // Gray
   }
 
   html.div(
@@ -107,11 +112,7 @@ fn view_answer_status(answer: Answer) -> Element(Msg) {
 /// 個々の選択肢ボタンを描画します。
 fn view_option(text: String, index: Int, model: Model) -> Element(Msg) {
   html.button(
-    [
-      event.on_click(Select(index)),
-      base_style(),
-      dynamic_style(index, model),
-    ],
+    [event.on_click(Select(index)), base_style(), dynamic_style(index, model)],
     [element.text(text)],
   )
 }
@@ -144,7 +145,8 @@ fn dynamic_style(index: Int, model: Model) {
       case selected_index {
         Some(s_index) if s_index == index ->
           attribute.styles([
-            #("background-color", "#d4edda"), // green
+            #("background-color", "#d4edda"),
+            // green
             #("border-color", "#c3e6cb"),
           ])
         _ -> attribute.styles([#("background-color", "#f8f9fa")])
@@ -155,13 +157,15 @@ fn dynamic_style(index: Int, model: Model) {
         Some(s_index) if s_index == index ->
           // This is the selected, incorrect answer
           attribute.styles([
-            #("background-color", "#f8d7da"), // red
+            #("background-color", "#f8d7da"),
+            // red
             #("border-color", "#f5c6cb"),
           ])
         _ if index == correct_index ->
           // This is the correct answer, which was not selected
           attribute.styles([
-            #("background-color", "#d4edda"), // green
+            #("background-color", "#d4edda"),
+            // green
             #("border-color", "#c3e6cb"),
           ])
         _ -> attribute.styles([#("background-color", "#f8f9fa")])

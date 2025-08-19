@@ -1,4 +1,5 @@
-import category.{type Category}
+import core/category.{type Category}
+import core/question
 import gleam/bool
 import gleam/dynamic/decode
 import gleam/int
@@ -14,7 +15,6 @@ import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
 import plinth/javascript/storage
-import question
 
 /// Home画面のアプリケーションの状態を保持するモデル。
 pub type Model {
@@ -186,7 +186,7 @@ fn view_category_selection(
 
 /// 問題数選択のUIをレンダリングする
 fn view_count_selection(selected_count: Int) -> Element(Msg) {
-  let counts = [10, 20, 50]
+  let counts = [10]
   html.div(
     [],
     list.map(counts, fn(count) {

@@ -54,9 +54,36 @@
 ### 4. 主要なライブラリとフレームワーク
 
 -   **UIフレームワーク**: `lustre` を使用します。UIの描画は `lustre/element/html` を、イベントは `lustre/event` を、属性は `lustre/attribute` を使います。
--   **JSONの扱い**:
-    -   JSONへの **変換（エンコード）** には `gleam/json` を使用します。関数名は `to_json` という命名規則に従います。
-    -   JSON文字列の **解析（デコード）** には `gleam/json` の `json.parse` 関数を使用します。デコーダ自体の定義には `gleam/dynamic/decode` を使用します。
+-   **JSONの扱い**: JSONのエンコードとデコードは、アプリケーションのデータフローの要です。以下の規約に従ってください。
+    -   **ライブラリ**:
+        -   エンコード: `gleam/json`
+        -   デコード: `gleam/dynamic` と `gleam/dynamic/decode`
+    -   **デコーダーの構築**:
+        -   デコーダーは `use` 構文を使って構築することを強く推奨します。これにより、ネストが深くなるのを防ぎ、手続き的で読みやすいコードになります。
+        -   **例:**
+            ```gleam
+            import gleam/dynamic.{type Decoder}
+            import gleam/dynamic/decode
+
+            pub type User { User(name: String, age: Int) }
+
+            pub fn user_decoder() -> Decoder(User) {
+              use name <- decode.field("name", decode.string)
+              use age <- decode.field("age", decode.int)
+              decode.success(User(name, age))
+            }
+            ```
+    -   **タグ付きユニオンの形式**:
+        -   カスタム型（タグ付きユニオン）をJSONで表現する場合、以下の形式を標準とします。これは、バックエンドとの通信や状態のシリアライズで一貫性を保つためです。
+            ```json
+            // データがない場合
+            { "type": "TypeName" }
+
+            // データがある場合
+            { "type": "TypeName", "data": { ... } }
+            ```
+    -   **ヘルパー関数の利用**:
+        -   上記のタグ付きユニオン形式を扱うためのエンコーダー・デコーダーヘルパーを `src/utils/json_ex.gleam` に実装・集約します。デコード処理を簡潔に記述するために、これらのヘルパーを積極的に利用してください。
 
 ### 5. ツールとワークフロー
 

@@ -18,7 +18,7 @@
 - **言語/フレームワーク**: Gleam / Lustre
 - **状態管理**: TEA (Model, Update, View)
 - **型定義ソース**: `interfaces.ts` を中間表現として利用し、Gleamの型を生成する。
-- **DB**:Local Storage 
+- **DB**:Firestore 
 
 ### バックエンド
 
@@ -28,7 +28,7 @@
 
 ### データストア
 
-- **DBMS**: Local Storage (初期), Firebase Realtime Database (最終)
+- **DBMS**: Local Storage (初期), Firestore (最終)
 - **理由**: 
     - 開発初期段階ではLocal Storageを利用することで、バックエンドの準備を待たずにフロントエンド開発を迅速に進める。
-    - その後、Firebase Realtime Databaseに移行することで、リアルタイム性のあるデータ同期とスケーラブルなバックエンドを実現する。
+    - その後、Firestoreに移行することで、スケーラブルで柔軟なデータモデルを持つバックエンドを実現する。

@@ -1,7 +1,7 @@
-import association_question as as_question
-import category.{type Category}
-import multiple_choice_question as mc_question
-import question
+import core/association_question as as_question
+import core/category.{type Category}
+import core/multiple_choice_question as mc_question
+import core/question
 
 /// サンプルのカテゴリデータを返す。
 pub const sample_categories: List(Category) = [

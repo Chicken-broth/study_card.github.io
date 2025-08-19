@@ -1,4 +1,5 @@
-import answer.{type Answer, Correct, Incorrect, NotAnswered}
+import core/answer.{type Answer, Correct, Incorrect, NotAnswered}
+import core/question
 import gleam/dict.{type Dict}
 import gleam/int
 import gleam/io
@@ -7,7 +8,6 @@ import lustre/effect.{type Effect, none}
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
-import question
 
 /// 結果画面のアプリケーションの状態
 pub type Model {
