@@ -1,8 +1,5 @@
-import core/category.{type Category}
-import core/question
-import gleam/json
-import gleam/list
-import gleam/result
+import core/answer
+import interface/indexed_db.{type DB, setup}
 import lustre
 import lustre/effect.{type Effect, none}
 import lustre/element.{type Element}
@@ -10,13 +7,17 @@ import lustre/element/html
 import pages/quiz_home
 import pages/quiz_screen
 import pages/result_screen
-import plinth/javascript/storage
-import sample_data
+import utils/promise_ex
+
+const db_name = "db"
+
+const db_version = 1
 
 /// アプリケーション全体のモデル
 pub type Model {
+  Loading
   Home(quiz_home.Model)
-  Quiz(quiz_screen.Model)
+  QuizScreen(quiz_screen.Model)
   QuizResult(result_screen.Model)
   ErrScreen
 }
@@ -27,85 +28,73 @@ pub type Msg {
   QuizMsg(quiz_screen.Msg)
   QuizResultMsg(result_screen.Msg)
   StartQuiz
-}
-
-fn ini_load_storage() -> Result(#(Model, Effect(Msg)), Nil) {
-  use storage <- result.try(storage.local())
-  use _ <- result.try(save_categories(storage, sample_data.sample_categories))
-  use _ <- result.map(save_questions(storage, sample_data.sample_questions()))
-  let #(home_model, home_effect) = quiz_home.init(storage)
-  #(Home(home_model), effect.map(home_effect, HomeMsg))
+  DataInitialized(DB)
 }
 
 /// アプリケーション全体の初期化
 pub fn init(_) -> #(Model, Effect(Msg)) {
-  ini_load_storage()
-  |> result.unwrap(#(ErrScreen, none()))
-}
-
-/// ローカルストレージにカテゴリのリストを保存する。
-/// この関数を動作させるには、`category`モジュールに`encoder`関数が必要です。
-fn save_categories(
-  storage: storage.Storage,
-  categories: List(Category),
-) -> Result(Nil, Nil) {
-  let json_string = categories |> json.array(category.to_json) |> json.to_string
-  storage.set_item(storage, "categories", json_string)
-  |> result.map_error(fn(_) { Nil })
-}
-
-/// ローカルストレージに問題のリストを保存する。
-/// この関数を動作させるには、`question`モジュールに`encoder`関数が必要です。
-fn save_questions(
-  storage: storage.Storage,
-  questions: List(question.Model),
-) -> Result(Nil, Nil) {
-  let json_string = questions |> json.array(question.to_json) |> json.to_string
-  storage.set_item(storage, "question", json_string)
-  |> result.map_error(fn(_) { Nil })
-  |> echo
-}
-
-fn wrap_result_err(a: Result(a, err)) -> Result(a, Nil) {
-  result.map_error(a, fn(err) {
-    echo err
-    Nil
-  })
+  #(
+    Loading,
+    promise_ex.to_effect_no_decode(setup(db_name, db_version), DataInitialized),
+  )
 }
 
 /// アプリケーション全体の更新ロジック
 pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case model {
+    Loading -> {
+      case msg {
+        DataInitialized(db) -> {
+          // Pass categories and questions to quiz_home.init
+          let history = answer.init([])
+          let #(home_model, home_effect) = quiz_home.init(db, history)
+          #(Home(home_model), effect.map(home_effect, HomeMsg))
+        }
+
+        _ -> #(model, none())
+        // Ignore other messages while loading
+      }
+    }
     Home(home_model) -> {
       case msg {
         HomeMsg(home_msg) -> {
           let #(new_home_model, home_effect) =
             quiz_home.update(home_model, home_msg)
+          // echo home_msg
           case home_msg {
-            quiz_home.StartQuiz ->
-              {
-                let screen_ini = quiz_screen.init(new_home_model.questions)
-                use quiz_model <- result.map(screen_ini)
-                #(Quiz(quiz_model), effect.none())
+            quiz_home.OutCome(questions) -> {
+              echo "Home -> QuizScreen"
+              let screen_ini =
+                quiz_screen.init(
+                  new_home_model.db,
+                  questions,
+                  new_home_model.history,
+                )
+              case screen_ini {
+                Ok(quiz_model) -> #(QuizScreen(quiz_model), effect.none())
+                Error(_) -> #(ErrScreen, effect.none())
               }
-              |> result.unwrap(#(ErrScreen, effect.none()))
+            }
             _ -> #(Home(new_home_model), effect.map(home_effect, HomeMsg))
           }
         }
         _ -> #(model, none())
       }
     }
-    Quiz(quiz_model) -> {
+    QuizScreen(quiz_model) -> {
       case msg {
         QuizMsg(quiz_msg) -> {
+          let #(new_quiz_model, quiz_eff) =
+            quiz_screen.update(quiz_model, quiz_msg)
           case quiz_msg {
-            quiz_screen.GoToResultScreen -> {
+            quiz_screen.OutCome -> {
               let #(result_model, result_effect) =
                 result_screen.init(
-                  quiz_screen.get_score(quiz_model.user_answers),
-                  list.length(quiz_model.questions),
-                  quiz_model.user_answers,
-                  quiz_model.questions,
+                  new_quiz_model.db,
+                  new_quiz_model.score,
+                  new_quiz_model.questions_count,
+                  new_quiz_model.answers,
+                  new_quiz_model.history,
                 )
               #(
                 QuizResult(result_model),
@@ -113,28 +102,22 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               )
             }
             _ -> {
-              let new_quiz_model = quiz_screen.update(quiz_model, quiz_msg)
-              #(Quiz(new_quiz_model), effect.none())
+              #(QuizScreen(new_quiz_model), effect.map(quiz_eff, QuizMsg))
             }
           }
         }
         _ -> #(model, none())
       }
     }
-    QuizResult(_) -> {
+    QuizResult(quiz_model) -> {
       case msg {
         QuizResultMsg(result_msg) -> {
-          // let #(new_result_model, result_effect) =
-          //   result_screen.update(result_model, result_msg)
           case result_msg {
-            result_screen.GoToHome ->
-              {
-                let result_storage = storage.local() |> wrap_result_err
-                use storage <- result.map(result_storage)
-                let #(home_model, home_effect) = quiz_home.init(storage)
-                #(Home(home_model), effect.map(home_effect, HomeMsg))
-              }
-              |> result.unwrap(#(ErrScreen, effect.none()))
+            result_screen.GoToHome -> {
+              let #(new_modek, new_eff) =
+                quiz_home.init(quiz_model.db, quiz_model.history)
+              #(Home(new_modek), effect.map(new_eff, HomeMsg))
+            }
           }
         }
         _ -> #(model, none())
@@ -151,10 +134,11 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 /// アプリケーション全体のビュー
 pub fn view(model: Model) -> Element(Msg) {
   case model {
+    Loading -> html.text("Loading...")
     Home(home_model) ->
       quiz_home.view(home_model)
       |> element.map(HomeMsg)
-    Quiz(quiz_model) ->
+    QuizScreen(quiz_model) ->
       quiz_screen.view(quiz_model)
       |> element.map(QuizMsg)
     QuizResult(result_model) ->

@@ -5,6 +5,10 @@
 -   **ペルソナ**: あなたは、GleamとTypeScriptを専門とする優秀なソフトウェア開発アシスタントです。
 -   **コアタスク**: このクイズアプリケーションの開発を支援するため、コードの記述、レビュー、リファクタリングを行ってください。
 -   **初期コンテキスト**: セッションを開始する際は、まずこのドキュメント (`GEMINI.md`) と `/docs` ディレクトリの内容を確認し、プロジェクトの現在の仕様と状態を理解することから始めてください。
+   **初期コンテキスト**: セッションを開始する際は以下のドキュメントを確認し、プロジェクトの現在の仕様と状態を理解することから始めてください。
+    - コーディング規約 :`GLEAM_CODING_GUIDLINE.md`
+    - テスト規約 : `TESTING_GUIDELINE.md`
+    - 仕様：`/docs`
 
 ## 2. プロジェクト概要
 
@@ -18,7 +22,7 @@
     -   **初期データストア**: Local Storage
 -   **バックエンド**:
     -   **プラットフォーム**: Firebase Functions (TypeScriptを使用)
-    -   **データベース**: Firebase Realtime Database (最終的なターゲット)
+    -   **データベース**: Cloud Firestore (最終的なターゲット)
 
 ## 4. アーキテクチャ
 
@@ -40,10 +44,8 @@
 
 ### 5.2. 重要なファイルと規約
 -   **Gleamのコードスタイルガイドライン**: GLEAM_CODING_GUIDLINE.mdに記述されてます。
+-   **Gleamのテストガイドライン**: TESTING_GUIDELINE.mdに記述されてます。
 -   **型定義**: Gleamフロントエンドの主要な型定義は `client/quiz_app/src/types.gleam` に集約されています。
 -   **API仕様**: APIエンドポイントは `docs/design/quiz-app/api-endpoints.md` に定義されています。
 -   **タスク管理**: 開発タスクは `docs/tasks/quiz-app-tasks.md` で追跡されています。
 -   **中間定義**: `docs/design/quiz-app/interfaces.ts` は、Gleamの型を生成するための中間定義として使用されます。
-
-## Gleam コーディングガイドライン
-GLEAM_CODING_GUIDLINE.mdを読み込んでください。

@@ -1,8 +1,6 @@
+# Gleam コーディングガイドライン
 
-
-## Gleam コーディングガイドライン
-
-### 1. 基本的な言語機能と構文
+## 1. 基本的な言語機能と構文
 
 -   **不変性 (Immutability)**: Gleamのデータ構造はすべて不変です。データを変更する場合は、必ず新しいレコードやリストを作成してください。
     -   レコードの更新は `Model(..model, field: new_value)` のようにスプレッド構文を使います。
@@ -25,7 +23,7 @@
 -   **型定義**: 型には`type`、外部に公開しない型には`opaque type`を使用します。型名は`PascalCase`で記述します。
 -   **関数ラベル**: 関数を呼び出す際は、引数にラベルを付けます。 `my_function(label: value)`
 
-### 2. プロジェクト固有の規約
+## 2. プロジェクト固有の規約
 
 -   **アーキテクチャ**: このプロジェクトは **Lustre** フレームワークを使用しており、TEA (The Elm Architecture) に従います。
     -   `Model`: コンポーネントの状態を定義します。
@@ -40,7 +38,7 @@
     -   型定義は `src/types.gleam` に集約します。
     -   テストは `test/` ディレクトリに、元ファイルに対応する形で作成します。
 
-### 3. ベストプラクティスとスタイル
+## 3. ベストプラクティスとスタイル
 
 -   **パイプ演算子 `|>`**: 複数の関数を連続して適用する場合は、パイプ演算子 `|>` を使って可読性を高めてください。
     ```gleam
@@ -51,63 +49,96 @@
 -   **パターンマッチ**: `case`式では、すべての可能性を網羅するようにしてください。Gleamコンパイラが網羅性をチェックしてくれます。
 -   **モジュール分割**: 1つのファイル（モジュール）は、1つの関心事に集中するようにしてください。
 
-### 4. 主要なライブラリとフレームワーク
+## 4. JavaScriptとの連携 (Promise)
+
+GleamからJavaScriptのPromiseを扱う場合は `gleam/javascript/promise` モジュールを利用します。
+
+-   **`promise.map(Promise(a), fn(a) -> b) -> Promise(b)`**:
+    Promiseが成功した場合に、その結果に対して同期的な関数を適用します。新しい非同期処理は生成しません。
+
+-   **`promise.map_try(Promise(Result(a, e)), fn(a) -> Result(b, e)) -> Promise(Result(b, e))`**:
+    Promiseが `Ok` の結果を返した場合にのみ、後続の関数を適用します。`Error` の場合は関数をスキップし、エラーをそのまま伝播させます。
+
+-   **`promise.await(Promise(a), fn(a) -> Promise(b)) -> Promise(b)`**:
+    依存関係のある非同期処理を連結するために使用します。最初のPromiseの完了を待ってから、次のPromiseを返す関数を実行します。
+
+-   **`promise.try_await(Promise(Result(a, e)), fn(a) -> Promise(Result(b, e))) -> Promise(Result(b, e))`**:
+    `Result`を返すPromiseを連結します。前の処理が `Ok` の場合にのみ次の非同期処理を実行するため、失敗する可能性のある非同期処理を安全に繋げることができます。
+
+-   **`promise.tap(Promise(a), fn(a) -> Nil) -> Promise(a)`**:
+    Promiseチェーンの途中で、結果に影響を与えずに副作用を実行します。主にデバッグ目的で、中間値をコンソールに出力する際などに便利です。
+
+-   **サンプルコード**:
+    `use` 構文と組み合わせることで簡潔に記述できます。
+
+    ```gleam
+    import gleam/javascript/promise.{type Promise}
+    import gleam/result
+    import gleam/js // js.logを使うために必要
+    type User = String
+    @external(javascript, "./user_api.mjs", "fetch_user")
+    fn fetch_user(id: Int) -> Promise(dynamic.Dynamic)
+
+    fn get_user_posts(id: Int, decoder: decode.Decoder(User)) {
+    use user <- promise.tap(fetch_user(id))
+    let decoded =
+        decode.run(user, decoder)
+        |> result.map_error(json.UnableToDecode)
+    echo decoded
+    Nil
+    }
+    ```
+
+    `gleeunit`での非同期テストの例です。`map`や`await`を使って値を取り出し、`should`でアサーションを行います。
+
+    ```gleam
+    // gleeunitでの非同期テストの例
+    @external(javascript, "./indexedDB_ffi.mjs", "setup")
+    pub fn setup(db_name: String) -> Promise(DB)
+    @external(javascript, "./indexedDB_ffi.mjs", "get")
+    fn get_users(db: DB) -> Promise(Dynamic)
+
+    pub fn get_question_by_id_test() {
+        use db <- promise.tap(setup("db_test"))
+        use dynamic <- promise.tap(get_users(db))
+        question.decode_question_list(dynamic)
+        should.be_ok
+        Nil
+    }
+    ```
+    
+    PromiseをEffectに変換する例:
+    ```gleam
+    pub type Msg {
+    PromiseSuccess(Nil)
+    PromiseFailure(String)
+    }
+
+    fn set_promise(promise: Promise(Result(Nil, String)), dispatch: fn(Msg) -> Nil) -> Nil {
+    promise
+    |> promise.map(fn(result) {
+        //resultをMsgに変換
+        case result {
+        Ok(Nil) -> PromiseSuccess(Nil)
+        Error(err) -> PromiseFailure(err)
+        }
+    })
+    |> promise.tap(dispatch)
+    Nil
+    }
+    /// Promise(Result(Nil, String))をEffect(Msg)に変換
+    fn promise_to_effect(promise: Promise(Result(Nil, String))) -> Effect(Msg) {
+    effect.from(set_promise(promise,_))
+    }
+    ```
+
+## 5. 主要なライブラリとフレームワーク
 
 -   **UIフレームワーク**: `lustre` を使用します。UIの描画は `lustre/element/html` を、イベントは `lustre/event` を、属性は `lustre/attribute` を使います。
--   **JSONの扱い**: JSONのエンコードとデコードは、アプリケーションのデータフローの要です。以下の規約に従ってください。
-    -   **ライブラリ**:
-        -   エンコード: `gleam/json`
-        -   デコード: `gleam/dynamic` と `gleam/dynamic/decode`
-    -   **デコーダーの構築**:
-        -   デコーダーは `use` 構文を使って構築することを強く推奨します。これにより、ネストが深くなるのを防ぎ、手続き的で読みやすいコードになります。
-        -   **例:**
-            ```gleam
-            import gleam/dynamic.{type Decoder}
-            import gleam/dynamic/decode
+-   **JSONの扱い**:
+    -   JSONへの **変換（エンコード）** には `gleam/json` を使用します。関数名は `to_json` という命名規則に従います。
+    -   JSON文字列の **解析（デコード）** には `gleam/json` の `json.parse` 関数を使用します。デコーダ自体の定義には `gleam/dynamic/decode` を使用します。
 
-            pub type User { User(name: String, age: Int) }
+## 6. テスト
 
-            pub fn user_decoder() -> Decoder(User) {
-              use name <- decode.field("name", decode.string)
-              use age <- decode.field("age", decode.int)
-              decode.success(User(name, age))
-            }
-            ```
-    -   **タグ付きユニオンの形式**:
-        -   カスタム型（タグ付きユニオン）をJSONで表現する場合、以下の形式を標準とします。これは、バックエンドとの通信や状態のシリアライズで一貫性を保つためです。
-            ```json
-            // データがない場合
-            { "type": "TypeName" }
-
-            // データがある場合
-            { "type": "TypeName", "data": { ... } }
-            ```
-    -   **ヘルパー関数の利用**:
-        -   上記のタグ付きユニオン形式を扱うためのエンコーダー・デコーダーヘルパーを `src/utils/json_ex.gleam` に実装・集約します。デコード処理を簡潔に記述するために、これらのヘルパーを積極的に利用してください。
-
-### 5. ツールとワークフロー
-
--   **フォーマット**: すべてのコードは `gleam format` コマンドでフォーマットします。フォーマットの細かいスタイルは気にせず、ロジックに集中してください。
--   **テスト**: このプロジェクトのテストは `gleeunit` フレームワークを使用して記述します。
-    -   **ファイル配置**: テストファイルはプロジェクトルートの `test/` ディレクトリに配置します。ソースファイル `src/my_module.gleam` に対応するテストは `test/my_module_test.gleam` という名前にします。
-    -   **テストの構造**:
-        -   各テストファイルには、テストランナーのエントリーポイントとして `pub fn main()` を定義します。
-        -   `main` 関数内では、`gleeunit.main()` を呼び出します。この際、実行したいテスト関数のリストを引数として渡します。
-        -   テストケースとなる関数は、関数名の末尾を `_test` にし、`pub` で公開します。これにより、テストランナーが自動的にテストを検出します。
-        -   **`@test` 属性は使用しません。**
-    -   **アサーション**: 値の検証には `gleeunit/should` モジュールを使用します。(`should.equal`, `should.be_ok`, `should.be_error` など)
-    -   **実行**: テストはプロジェクトルートで `gleam test` コマンドを実行することで実行できます。
-    -   **テストファイルの例:**
-        ```gleam
-        // test/my_module_test.gleam
-        import my_module
-        import gleeunit
-        import gleeunit/should
-
-        pub fn main() { gleeunit.main() }
-
-        pub fn add_test() {
-          my_module.add(2, 3)
-          |> should.equal(5)
-        }
-        ```
+テストに関する規約は `TESTING_GUIDELINE.md` を参照してください。

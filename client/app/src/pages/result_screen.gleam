@@ -1,9 +1,9 @@
-import core/answer.{type Answer, Correct, Incorrect, NotAnswered}
-import core/question
+import core/answer.{type History, Correct, Incorrect, NotAnswered}
 import gleam/dict.{type Dict}
 import gleam/int
 import gleam/io
 import gleam/list
+import interface/indexed_db.{type DB}
 import lustre/effect.{type Effect, none}
 import lustre/element.{type Element}
 import lustre/element/html
@@ -12,10 +12,11 @@ import lustre/event
 /// 結果画面のアプリケーションの状態
 pub type Model {
   Model(
+    db: DB,
     score: Int,
     total_questions: Int,
-    user_answers: Dict(String, Answer),
-    questions: List(question.Model),
+    answers: History,
+    history: History,
   )
 }
 
@@ -26,17 +27,19 @@ pub type Msg {
 
 /// ResultModelを初期化する関数
 pub fn init(
+  db: DB,
   score: Int,
   total_questions: Int,
-  user_answers: Dict(String, Answer),
-  questions: List(question.Model),
+  answers: History,
+  history: History,
 ) -> #(Model, Effect(Msg)) {
   #(
     Model(
+      db: db,
       score: score,
       total_questions: total_questions,
-      user_answers: user_answers,
-      questions: questions,
+      answers: answers,
+      history: history,
     ),
     none(),
   )
@@ -64,20 +67,20 @@ pub fn view(model: Model) -> Element(Msg) {
         <> int.to_string(model.total_questions),
       ),
     ]),
-    html.h3([], [html.text("Detailed Results")]),
-    view_answers(model.user_answers),
+    html.h3([], [html.text("Detailed Results:")]),
+    view_answers(model.answers),
     html.button([event.on_click(GoToHome)], [html.text("Go to Home")]),
   ])
 }
 
-fn view_answers(dic: Dict(String, Answer)) -> Element(Msg) {
+fn view_answers(dic: History) -> Element(Msg) {
   html.ul([], {
     use #(id, answer) <- list.map(dict.to_list(dic))
     let status_text = case answer {
-      Correct -> "Correct"
-      Incorrect -> "Incorrect"
-      NotAnswered -> "Not Answered"
+      Correct -> "○"
+      Incorrect -> "✖"
+      NotAnswered -> "-"
     }
-    html.li([], [html.text(id <> ": " <> status_text)])
+    html.li([], [html.text(int.to_string(id) <> ": " <> status_text)])
   })
 }

@@ -1,0 +1,272 @@
+[
+  {
+    "id": 1,
+    "category": {
+      "id": 1,
+      "name": "Gleam基礎"
+    },
+    "question_text": "Gleamの型で、不変なデータ構造を表現するものはどれ？",
+    "question_interaction": {
+      "type": "MultipleChoice",
+      "data": {
+        "texts": [
+          "List",
+          "Tuple",
+          "Map",
+          "All of the above"
+        ],
+        "correct_answer_index": 3
+      }
+    }
+  },
+  {
+    "id": 2,
+    "category": {
+      "id": 2,
+      "name": "Lustre基礎"
+    },
+    "question_text": "LustreのTEA（The Elm Architecture）の構成要素を対応付けなさい。",
+    "question_interaction": {
+      "type": "Association",
+      "data": {
+        "pairs": [
+          {
+            "id": 1,
+            "left": "Model",
+            "right": "状態"
+          },
+          {
+            "id": 2,
+            "left": "View",
+            "right": "UIの描画"
+          },
+          {
+            "id": 3,
+            "left": "Update",
+            "right": "状態の更新"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": 3,
+    "category": {
+      "id": 1,
+      "name": "Gleam基礎"
+    },
+    "question_text": "Gleamで条件分岐に使用される主要な構文はどれですか？",
+    "question_interaction": {
+      "type": "MultipleChoice",
+      "data": {
+        "texts": [
+          "if/else",
+          "switch",
+          "case",
+          "for"
+        ],
+        "correct_answer_index": 2
+      }
+    }
+  },
+  {
+    "id": 4,
+    "category": {
+      "id": 1,
+      "name": "Gleam基礎"
+    },
+    "question_text": "外部モジュールから関数を呼び出せるようにするために使用するキーワードはどれですか？",
+    "question_interaction": {
+      "type": "MultipleChoice",
+      "data": {
+        "texts": [
+          "public",
+          "pub",
+          "export",
+          "external"
+        ],
+        "correct_answer_index": 1
+      }
+    }
+  },
+  {
+    "id": 5,
+    "category": {
+      "id": 1,
+      "name": "Gleam基礎"
+    },
+    "question_text": "関数の結果を次の関数に渡すために使われる演算子はどれですか？",
+    "question_interaction": {
+      "type": "MultipleChoice",
+      "data": {
+        "texts": [
+          "|>",
+          "|>>",
+          "->",
+          "=>"
+        ],
+        "correct_answer_index": 0
+      }
+    }
+  },
+  {
+    "id": 6,
+    "category": {
+      "id": 1,
+      "name": "Gleam基礎"
+    },
+    "question_text": "Result型やOption型を扱う際にネストを避けるために推奨される構文はどれですか？",
+    "question_interaction": {
+      "type": "MultipleChoice",
+      "data": {
+        "texts": [
+          "try",
+          "let...in",
+          "use",
+          "with"
+        ],
+        "correct_answer_index": 2
+      }
+    }
+  },
+  {
+    "id": 7,
+    "category": {
+      "id": 1,
+      "name": "Gleam基礎"
+    },
+    "question_text": "Gleamの基本的なデータ型とその説明を対応付けなさい。",
+    "question_interaction": {
+      "type": "Association",
+      "data": {
+        "pairs": [
+          {
+            "id": 1,
+            "left": "Int",
+            "right": "整数"
+          },
+          {
+            "id": 2,
+            "left": "String",
+            "right": "文字列"
+          },
+          {
+            "id": 3,
+            "left": "Bool",
+            "right": "真偽値"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": 8,
+    "category": {
+      "id": 2,
+      "name": "Lustre基礎"
+    },
+    "question_text": "LustreでHTML要素を生成するために主に使われるモジュールはどれですか？",
+    "question_interaction": {
+      "type": "MultipleChoice",
+      "data": {
+        "texts": [
+          "lustre/element/html",
+          "lustre/ui",
+          "lustre/components",
+          "lustre/dom"
+        ],
+        "correct_answer_index": 0
+      }
+    }
+  },
+  {
+    "id": 9,
+    "category": {
+      "id": 2,
+      "name": "Lustre基礎"
+    },
+    "question_text": "クリックイベントを処理するために使用するモジュールはどれですか？",
+    "question_interaction": {
+      "type": "MultipleChoice",
+      "data": {
+        "texts": [
+          "lustre/attribute",
+          "lustre/event",
+          "lustre/handler",
+          "lustre/signal"
+        ],
+        "correct_answer_index": 1
+      }
+    }
+  },
+  {
+    "id": 10,
+    "category": {
+      "id": 2,
+      "name": "Lustre基礎"
+    },
+    "question_text": "HTML要素にCSSクラスを追加する際に使用する関数はどれですか？",
+    "question_interaction": {
+      "type": "MultipleChoice",
+      "data": {
+        "texts": [
+          "style()",
+          "class()",
+          "id()",
+          "selector()"
+        ],
+        "correct_answer_index": 1
+      }
+    }
+  },
+  {
+    "id": 11,
+    "category": {
+      "id": 2,
+      "name": "Lustre基礎"
+    },
+    "question_text": "Lustreアプリケーションの主要な構成要素とその役割を対応付けなさい。",
+    "question_interaction": {
+      "type": "Association",
+      "data": {
+        "pairs": [
+          {
+            "id": 1,
+            "left": "init",
+            "right": "モデルの初期化"
+          },
+          {
+            "id": 2,
+            "left": "update",
+            "right": "メッセージに基づくモデルの更新"
+          },
+          {
+            "id": 3,
+            "left": "view",
+            "right": "モデルをHTMLに変換"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": 12,
+    "category": {
+      "id": 2,
+      "name": "Lustre基礎"
+    },
+    "question_text": "Lustreアプリケーションのエントリーポイントとなる関数の名前は何ですか？",
+    "question_interaction": {
+      "type": "MultipleChoice",
+      "data": {
+        "texts": [
+          "start",
+          "main",
+          "run",
+          "app"
+        ],
+        "correct_answer_index": 1
+      }
+    }
+  }
+]

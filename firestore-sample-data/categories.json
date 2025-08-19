@@ -1,10 +1,10 @@
 [
   {
-    "id": "gleam_basic",
+    "id": 1,
     "name": "Gleam基礎"
   },
   {
-    "id": "lustre_basic",
+    "id": 2,
     "name": "Lustre基礎"
   }
 ]

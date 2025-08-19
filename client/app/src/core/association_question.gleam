@@ -12,10 +12,12 @@ import lustre/event
 //spec
 /// 組み合わせ問題の実装
 /// ユーザーは2列に並んだリストから、各列から1つづつPairを選び、正しい組み合わせを選ぶ
-/// 
+
+pub type ID = Int
+
 pub type Msg {
-  SelectLeft(String)
-  SelectRight(String)
+  SelectLeft(ID)
+  SelectRight(ID)
 }
 
 pub type FocusState {
@@ -30,12 +32,12 @@ pub type MatchState {
 }
 
 pub type Item {
-  Item(id: String, label: String, focus: FocusState, match: MatchState)
+  Item(id: ID, label: String, focus: FocusState, match: MatchState)
 }
 
 /// 組み合わせ問題のペア
 pub type Pair {
-  Pair(id: String, left: String, right: String)
+  Pair(id: ID, left: String, right: String)
 }
 
 pub type Model {
@@ -43,9 +45,9 @@ pub type Model {
     pairs: List(Pair),
     left: List(Item),
     right: List(Item),
-    selected_left_id: Option(String),
-    selected_right_id: Option(String),
-    matched_pair_ids: List(String),
+    selected_left_id: Option(ID),
+    selected_right_id: Option(ID),
+    matched_pair_ids: List(ID),
     answer: Answer,
   )
 }
@@ -72,7 +74,7 @@ fn reset_item_states(items: List(Item)) -> List(Item) {
 /// 特定のアイテムのフォーカス状態を更新する
 fn update_focus(
   items: List(Item),
-  target_id: String,
+  target_id: ID,
   focus_state: FocusState,
 ) -> List(Item) {
   list.map(items, fn(item) {
@@ -86,7 +88,7 @@ fn update_focus(
 /// 特定のアイテムのマッチ状態を更新する
 fn update_match(
   items: List(Item),
-  target_id: String,
+  target_id: ID,
   match_state: MatchState,
 ) -> List(Item) {
   list.map(items, fn(item) {
@@ -98,11 +100,7 @@ fn update_match(
 }
 
 /// 両方のアイテムが選択されたときの状態を更新する
-fn handle_pair_selection(
-  model: Model,
-  left_id: String,
-  right_id: String,
-) -> Model {
+fn handle_pair_selection(model: Model, left_id: ID, right_id: ID) -> Model {
   let is_correct = left_id == right_id
   let new_match_state = case is_correct {
     True -> CorrectlyMatched
@@ -209,7 +207,7 @@ fn item_styles(focus: FocusState, match: MatchState) -> List(#(String, String)) 
 fn view_column(
   title: String,
   items: List(Item),
-  on_select: fn(String) -> Msg,
+  on_select: fn(ID) -> Msg,
 ) -> Element(Msg) {
   // 各カラムがフレックスコンテナ内で均等に広がるようにスタイルを設定
   let column_style = [#("flex", "1"), #("padding", "0 1em")]
@@ -282,7 +280,7 @@ pub fn view(model: Model) -> Element(Msg) {
 pub fn to_json(model: Model) -> json.Json {
   json.array(model.pairs, fn(p) {
     json.object([
-      #("id", json.string(p.id)),
+      #("id", json.int(p.id)),
       #("left", json.string(p.left)),
       #("right", json.string(p.right)),
     ])
@@ -292,10 +290,10 @@ pub fn to_json(model: Model) -> json.Json {
 pub fn decoder() -> Decoder(Model) {
   let decode_pair =
     decode.list({
-      use id <- decode.field("id", decode.string)
+      use id <- decode.field("id", decode.int)
       use left <- decode.field("left", decode.string)
       use right <- decode.field("right", decode.string)
-      decode.success(Pair(id:, left:, right:))
+      decode.success(Pair(id, left, right))
     })
   use pairs <- decode.then(decode_pair)
   pair_to_model(pairs)

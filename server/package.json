@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "test": "vitest",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "seed": "bun --hot src/seed.ts"

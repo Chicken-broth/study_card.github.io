@@ -156,11 +156,11 @@ var BitArray = class {
    * @param {number} index
    * @returns {number | undefined}
    */
-  byteAt(index4) {
-    if (index4 < 0 || index4 >= this.byteSize) {
+  byteAt(index5) {
+    if (index5 < 0 || index5 >= this.byteSize) {
       return void 0;
     }
-    return bitArrayByteAt(this.rawBuffer, this.bitOffset, index4);
+    return bitArrayByteAt(this.rawBuffer, this.bitOffset, index5);
   }
   /** @internal */
   equals(other) {
@@ -248,12 +248,12 @@ var BitArray = class {
     return this.rawBuffer.length;
   }
 };
-function bitArrayByteAt(buffer, bitOffset, index4) {
+function bitArrayByteAt(buffer, bitOffset, index5) {
   if (bitOffset === 0) {
-    return buffer[index4] ?? 0;
+    return buffer[index5] ?? 0;
   } else {
-    const a = buffer[index4] << bitOffset & 255;
-    const b = buffer[index4 + 1] >> 8 - bitOffset;
+    const a = buffer[index5] << bitOffset & 255;
+    const b = buffer[index5 + 1] >> 8 - bitOffset;
     return a | b;
   }
 }
@@ -641,24 +641,6 @@ function makeError(variant, file, module, line, fn, message, extra) {
   return error;
 }
 
-// build/dev/javascript/gleam_stdlib/gleam/order.mjs
-var Lt = class extends CustomType {
-};
-var Eq = class extends CustomType {
-};
-var Gt = class extends CustomType {
-};
-
-// build/dev/javascript/gleam_stdlib/gleam/option.mjs
-var Some = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var None = class extends CustomType {
-};
-
 // build/dev/javascript/gleam_stdlib/dict.mjs
 var referenceMap = /* @__PURE__ */ new WeakMap();
 var tempDataView = /* @__PURE__ */ new DataView(
@@ -852,17 +834,17 @@ function createNode(shift, key1, val1, key2hash, key2, val2) {
     addedLeaf
   );
 }
-function assoc(root3, shift, hash, key2, val, addedLeaf) {
+function assoc(root3, shift, hash, key, val, addedLeaf) {
   switch (root3.type) {
     case ARRAY_NODE:
-      return assocArray(root3, shift, hash, key2, val, addedLeaf);
+      return assocArray(root3, shift, hash, key, val, addedLeaf);
     case INDEX_NODE:
-      return assocIndex(root3, shift, hash, key2, val, addedLeaf);
+      return assocIndex(root3, shift, hash, key, val, addedLeaf);
     case COLLISION_NODE:
-      return assocCollision(root3, shift, hash, key2, val, addedLeaf);
+      return assocCollision(root3, shift, hash, key, val, addedLeaf);
   }
 }
-function assocArray(root3, shift, hash, key2, val, addedLeaf) {
+function assocArray(root3, shift, hash, key, val, addedLeaf) {
   const idx = mask(hash, shift);
   const node = root3.array[idx];
   if (node === void 0) {
@@ -870,11 +852,11 @@ function assocArray(root3, shift, hash, key2, val, addedLeaf) {
     return {
       type: ARRAY_NODE,
       size: root3.size + 1,
-      array: cloneAndSet(root3.array, idx, { type: ENTRY, k: key2, v: val })
+      array: cloneAndSet(root3.array, idx, { type: ENTRY, k: key, v: val })
     };
   }
   if (node.type === ENTRY) {
-    if (isEqual(key2, node.k)) {
+    if (isEqual(key, node.k)) {
       if (val === node.v) {
         return root3;
       }
@@ -883,7 +865,7 @@ function assocArray(root3, shift, hash, key2, val, addedLeaf) {
         size: root3.size,
         array: cloneAndSet(root3.array, idx, {
           type: ENTRY,
-          k: key2,
+          k: key,
           v: val
         })
       };
@@ -895,11 +877,11 @@ function assocArray(root3, shift, hash, key2, val, addedLeaf) {
       array: cloneAndSet(
         root3.array,
         idx,
-        createNode(shift + SHIFT, node.k, node.v, hash, key2, val)
+        createNode(shift + SHIFT, node.k, node.v, hash, key, val)
       )
     };
   }
-  const n = assoc(node, shift + SHIFT, hash, key2, val, addedLeaf);
+  const n = assoc(node, shift + SHIFT, hash, key, val, addedLeaf);
   if (n === node) {
     return root3;
   }
@@ -909,13 +891,13 @@ function assocArray(root3, shift, hash, key2, val, addedLeaf) {
     array: cloneAndSet(root3.array, idx, n)
   };
 }
-function assocIndex(root3, shift, hash, key2, val, addedLeaf) {
+function assocIndex(root3, shift, hash, key, val, addedLeaf) {
   const bit = bitpos(hash, shift);
   const idx = index(root3.bitmap, bit);
   if ((root3.bitmap & bit) !== 0) {
     const node = root3.array[idx];
     if (node.type !== ENTRY) {
-      const n = assoc(node, shift + SHIFT, hash, key2, val, addedLeaf);
+      const n = assoc(node, shift + SHIFT, hash, key, val, addedLeaf);
       if (n === node) {
         return root3;
       }
@@ -926,7 +908,7 @@ function assocIndex(root3, shift, hash, key2, val, addedLeaf) {
       };
     }
     const nodeKey = node.k;
-    if (isEqual(key2, nodeKey)) {
+    if (isEqual(key, nodeKey)) {
       if (val === node.v) {
         return root3;
       }
@@ -935,7 +917,7 @@ function assocIndex(root3, shift, hash, key2, val, addedLeaf) {
         bitmap: root3.bitmap,
         array: cloneAndSet(root3.array, idx, {
           type: ENTRY,
-          k: key2,
+          k: key,
           v: val
         })
       };
@@ -947,7 +929,7 @@ function assocIndex(root3, shift, hash, key2, val, addedLeaf) {
       array: cloneAndSet(
         root3.array,
         idx,
-        createNode(shift + SHIFT, nodeKey, node.v, hash, key2, val)
+        createNode(shift + SHIFT, nodeKey, node.v, hash, key, val)
       )
     };
   } else {
@@ -955,7 +937,7 @@ function assocIndex(root3, shift, hash, key2, val, addedLeaf) {
     if (n >= MAX_INDEX_NODE) {
       const nodes = new Array(32);
       const jdx = mask(hash, shift);
-      nodes[jdx] = assocIndex(EMPTY, shift + SHIFT, hash, key2, val, addedLeaf);
+      nodes[jdx] = assocIndex(EMPTY, shift + SHIFT, hash, key, val, addedLeaf);
       let j = 0;
       let bitmap = root3.bitmap;
       for (let i = 0; i < 32; i++) {
@@ -973,7 +955,7 @@ function assocIndex(root3, shift, hash, key2, val, addedLeaf) {
     } else {
       const newArray = spliceIn(root3.array, idx, {
         type: ENTRY,
-        k: key2,
+        k: key,
         v: val
       });
       addedLeaf.val = true;
@@ -985,9 +967,9 @@ function assocIndex(root3, shift, hash, key2, val, addedLeaf) {
     }
   }
 }
-function assocCollision(root3, shift, hash, key2, val, addedLeaf) {
+function assocCollision(root3, shift, hash, key, val, addedLeaf) {
   if (hash === root3.hash) {
-    const idx = collisionIndexOf(root3, key2);
+    const idx = collisionIndexOf(root3, key);
     if (idx !== -1) {
       const entry = root3.array[idx];
       if (entry.v === val) {
@@ -996,7 +978,7 @@ function assocCollision(root3, shift, hash, key2, val, addedLeaf) {
       return {
         type: COLLISION_NODE,
         hash,
-        array: cloneAndSet(root3.array, idx, { type: ENTRY, k: key2, v: val })
+        array: cloneAndSet(root3.array, idx, { type: ENTRY, k: key, v: val })
       };
     }
     const size2 = root3.array.length;
@@ -1004,7 +986,7 @@ function assocCollision(root3, shift, hash, key2, val, addedLeaf) {
     return {
       type: COLLISION_NODE,
       hash,
-      array: cloneAndSet(root3.array, size2, { type: ENTRY, k: key2, v: val })
+      array: cloneAndSet(root3.array, size2, { type: ENTRY, k: key, v: val })
     };
   }
   return assoc(
@@ -1015,45 +997,45 @@ function assocCollision(root3, shift, hash, key2, val, addedLeaf) {
     },
     shift,
     hash,
-    key2,
+    key,
     val,
     addedLeaf
   );
 }
-function collisionIndexOf(root3, key2) {
+function collisionIndexOf(root3, key) {
   const size2 = root3.array.length;
   for (let i = 0; i < size2; i++) {
-    if (isEqual(key2, root3.array[i].k)) {
+    if (isEqual(key, root3.array[i].k)) {
       return i;
     }
   }
   return -1;
 }
-function find(root3, shift, hash, key2) {
+function find(root3, shift, hash, key) {
   switch (root3.type) {
     case ARRAY_NODE:
-      return findArray(root3, shift, hash, key2);
+      return findArray(root3, shift, hash, key);
     case INDEX_NODE:
-      return findIndex(root3, shift, hash, key2);
+      return findIndex(root3, shift, hash, key);
     case COLLISION_NODE:
-      return findCollision(root3, key2);
+      return findCollision(root3, key);
   }
 }
-function findArray(root3, shift, hash, key2) {
+function findArray(root3, shift, hash, key) {
   const idx = mask(hash, shift);
   const node = root3.array[idx];
   if (node === void 0) {
     return void 0;
   }
   if (node.type !== ENTRY) {
-    return find(node, shift + SHIFT, hash, key2);
+    return find(node, shift + SHIFT, hash, key);
   }
-  if (isEqual(key2, node.k)) {
+  if (isEqual(key, node.k)) {
     return node;
   }
   return void 0;
 }
-function findIndex(root3, shift, hash, key2) {
+function findIndex(root3, shift, hash, key) {
   const bit = bitpos(hash, shift);
   if ((root3.bitmap & bit) === 0) {
     return void 0;
@@ -1061,31 +1043,31 @@ function findIndex(root3, shift, hash, key2) {
   const idx = index(root3.bitmap, bit);
   const node = root3.array[idx];
   if (node.type !== ENTRY) {
-    return find(node, shift + SHIFT, hash, key2);
+    return find(node, shift + SHIFT, hash, key);
   }
-  if (isEqual(key2, node.k)) {
+  if (isEqual(key, node.k)) {
     return node;
   }
   return void 0;
 }
-function findCollision(root3, key2) {
-  const idx = collisionIndexOf(root3, key2);
+function findCollision(root3, key) {
+  const idx = collisionIndexOf(root3, key);
   if (idx < 0) {
     return void 0;
   }
   return root3.array[idx];
 }
-function without(root3, shift, hash, key2) {
+function without(root3, shift, hash, key) {
   switch (root3.type) {
     case ARRAY_NODE:
-      return withoutArray(root3, shift, hash, key2);
+      return withoutArray(root3, shift, hash, key);
     case INDEX_NODE:
-      return withoutIndex(root3, shift, hash, key2);
+      return withoutIndex(root3, shift, hash, key);
     case COLLISION_NODE:
-      return withoutCollision(root3, key2);
+      return withoutCollision(root3, key);
   }
 }
-function withoutArray(root3, shift, hash, key2) {
+function withoutArray(root3, shift, hash, key) {
   const idx = mask(hash, shift);
   const node = root3.array[idx];
   if (node === void 0) {
@@ -1093,11 +1075,11 @@ function withoutArray(root3, shift, hash, key2) {
   }
   let n = void 0;
   if (node.type === ENTRY) {
-    if (!isEqual(node.k, key2)) {
+    if (!isEqual(node.k, key)) {
       return root3;
     }
   } else {
-    n = without(node, shift + SHIFT, hash, key2);
+    n = without(node, shift + SHIFT, hash, key);
     if (n === node) {
       return root3;
     }
@@ -1146,7 +1128,7 @@ function withoutArray(root3, shift, hash, key2) {
     array: cloneAndSet(root3.array, idx, n)
   };
 }
-function withoutIndex(root3, shift, hash, key2) {
+function withoutIndex(root3, shift, hash, key) {
   const bit = bitpos(hash, shift);
   if ((root3.bitmap & bit) === 0) {
     return root3;
@@ -1154,7 +1136,7 @@ function withoutIndex(root3, shift, hash, key2) {
   const idx = index(root3.bitmap, bit);
   const node = root3.array[idx];
   if (node.type !== ENTRY) {
-    const n = without(node, shift + SHIFT, hash, key2);
+    const n = without(node, shift + SHIFT, hash, key);
     if (n === node) {
       return root3;
     }
@@ -1174,7 +1156,7 @@ function withoutIndex(root3, shift, hash, key2) {
       array: spliceOut(root3.array, idx)
     };
   }
-  if (isEqual(key2, node.k)) {
+  if (isEqual(key, node.k)) {
     if (root3.bitmap === bit) {
       return void 0;
     }
@@ -1186,8 +1168,8 @@ function withoutIndex(root3, shift, hash, key2) {
   }
   return root3;
 }
-function withoutCollision(root3, key2) {
-  const idx = collisionIndexOf(root3, key2);
+function withoutCollision(root3, key) {
+  const idx = collisionIndexOf(root3, key);
   if (idx < 0) {
     return root3;
   }
@@ -1262,11 +1244,11 @@ var Dict = class _Dict {
    * @param {NotFound} notFound
    * @returns {NotFound | V}
    */
-  get(key2, notFound) {
+  get(key, notFound) {
     if (this.root === void 0) {
       return notFound;
     }
-    const found = find(this.root, 0, getHash(key2), key2);
+    const found = find(this.root, 0, getHash(key), key);
     if (found === void 0) {
       return notFound;
     }
@@ -1277,10 +1259,10 @@ var Dict = class _Dict {
    * @param {V} val
    * @returns {Dict<K,V>}
    */
-  set(key2, val) {
+  set(key, val) {
     const addedLeaf = { val: false };
     const root3 = this.root === void 0 ? EMPTY : this.root;
-    const newRoot = assoc(root3, 0, getHash(key2), key2, val, addedLeaf);
+    const newRoot = assoc(root3, 0, getHash(key), key, val, addedLeaf);
     if (newRoot === this.root) {
       return this;
     }
@@ -1290,11 +1272,11 @@ var Dict = class _Dict {
    * @param {K} key
    * @returns {Dict<K,V>}
    */
-  delete(key2) {
+  delete(key) {
     if (this.root === void 0) {
       return this;
     }
-    const newRoot = without(this.root, 0, getHash(key2), key2);
+    const newRoot = without(this.root, 0, getHash(key), key);
     if (newRoot === this.root) {
       return this;
     }
@@ -1307,11 +1289,11 @@ var Dict = class _Dict {
    * @param {K} key
    * @returns {boolean}
    */
-  has(key2) {
+  has(key) {
     if (this.root === void 0) {
       return false;
     }
-    return find(this.root, 0, getHash(key2), key2) !== void 0;
+    return find(this.root, 0, getHash(key), key) !== void 0;
   }
   /**
    * @returns {[K,V][]}
@@ -1363,65 +1345,37 @@ var Dict = class _Dict {
 };
 var unequalDictSymbol = /* @__PURE__ */ Symbol();
 
-// build/dev/javascript/gleam_stdlib/gleam/dict.mjs
-function do_has_key(key2, dict3) {
-  return !isEqual(map_get(dict3, key2), new Error(void 0));
-}
-function has_key(dict3, key2) {
-  return do_has_key(key2, dict3);
-}
-function insert(dict3, key2, value2) {
-  return map_insert(key2, value2, dict3);
-}
-function from_list_loop(loop$list, loop$initial) {
-  while (true) {
-    let list4 = loop$list;
-    let initial = loop$initial;
-    if (list4 instanceof Empty) {
-      return initial;
+// build/dev/javascript/gleam_stdlib/gleam/option.mjs
+var Some = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var None = class extends CustomType {
+};
+
+// build/dev/javascript/gleam_stdlib/gleam/order.mjs
+var Lt = class extends CustomType {
+};
+var Eq = class extends CustomType {
+};
+var Gt = class extends CustomType {
+};
+
+// build/dev/javascript/gleam_stdlib/gleam/float.mjs
+function compare(a, b) {
+  let $ = a === b;
+  if ($) {
+    return new Eq();
+  } else {
+    let $1 = a < b;
+    if ($1) {
+      return new Lt();
     } else {
-      let rest = list4.tail;
-      let key2 = list4.head[0];
-      let value2 = list4.head[1];
-      loop$list = rest;
-      loop$initial = insert(initial, key2, value2);
+      return new Gt();
     }
   }
-}
-function from_list(list4) {
-  return from_list_loop(list4, new_map());
-}
-function reverse_and_concat(loop$remaining, loop$accumulator) {
-  while (true) {
-    let remaining = loop$remaining;
-    let accumulator = loop$accumulator;
-    if (remaining instanceof Empty) {
-      return accumulator;
-    } else {
-      let first = remaining.head;
-      let rest = remaining.tail;
-      loop$remaining = rest;
-      loop$accumulator = prepend(first, accumulator);
-    }
-  }
-}
-function do_values_loop(loop$list, loop$acc) {
-  while (true) {
-    let list4 = loop$list;
-    let acc = loop$acc;
-    if (list4 instanceof Empty) {
-      return reverse_and_concat(acc, toList([]));
-    } else {
-      let rest = list4.tail;
-      let value2 = list4.head[1];
-      loop$list = rest;
-      loop$acc = prepend(value2, acc);
-    }
-  }
-}
-function values(dict3) {
-  let list_of_pairs = map_to_list(dict3);
-  return do_values_loop(list_of_pairs, toList([]));
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/list.mjs
@@ -1515,17 +1469,17 @@ function index_map_loop(loop$list, loop$fun, loop$index, loop$acc) {
   while (true) {
     let list4 = loop$list;
     let fun = loop$fun;
-    let index4 = loop$index;
+    let index5 = loop$index;
     let acc = loop$acc;
     if (list4 instanceof Empty) {
       return reverse(acc);
     } else {
       let first$1 = list4.head;
       let rest$1 = list4.tail;
-      let acc$1 = prepend(fun(first$1, index4), acc);
+      let acc$1 = prepend(fun(first$1, index5), acc);
       loop$list = rest$1;
       loop$fun = fun;
-      loop$index = index4 + 1;
+      loop$index = index5 + 1;
       loop$acc = acc$1;
     }
   }
@@ -1551,6 +1505,30 @@ function drop(loop$list, loop$n) {
     }
   }
 }
+function take_loop(loop$list, loop$n, loop$acc) {
+  while (true) {
+    let list4 = loop$list;
+    let n = loop$n;
+    let acc = loop$acc;
+    let $ = n <= 0;
+    if ($) {
+      return reverse(acc);
+    } else {
+      if (list4 instanceof Empty) {
+        return reverse(acc);
+      } else {
+        let first$1 = list4.head;
+        let rest$1 = list4.tail;
+        loop$list = rest$1;
+        loop$n = n - 1;
+        loop$acc = prepend(first$1, acc);
+      }
+    }
+  }
+}
+function take(list4, n) {
+  return take_loop(list4, n, toList([]));
+}
 function append_loop(loop$first, loop$second) {
   while (true) {
     let first = loop$first;
@@ -1568,6 +1546,9 @@ function append_loop(loop$first, loop$second) {
 function append(first, second) {
   return append_loop(reverse(first), second);
 }
+function prepend2(list4, item) {
+  return prepend(item, list4);
+}
 function fold(loop$list, loop$initial, loop$fun) {
   while (true) {
     let list4 = loop$list;
@@ -1583,32 +1564,6 @@ function fold(loop$list, loop$initial, loop$fun) {
       loop$fun = fun;
     }
   }
-}
-function unique_loop(loop$list, loop$seen, loop$acc) {
-  while (true) {
-    let list4 = loop$list;
-    let seen = loop$seen;
-    let acc = loop$acc;
-    if (list4 instanceof Empty) {
-      return reverse(acc);
-    } else {
-      let first$1 = list4.head;
-      let rest$1 = list4.tail;
-      let $ = has_key(seen, first$1);
-      if ($) {
-        loop$list = rest$1;
-        loop$seen = seen;
-        loop$acc = acc;
-      } else {
-        loop$list = rest$1;
-        loop$seen = insert(seen, first$1, void 0);
-        loop$acc = prepend(first$1, acc);
-      }
-    }
-  }
-}
-function unique(list4) {
-  return unique_loop(list4, new_map(), toList([]));
 }
 function sequences(loop$list, loop$compare, loop$growing, loop$direction, loop$prev, loop$acc) {
   while (true) {
@@ -1944,6 +1899,59 @@ function sort(list4, compare4) {
     }
   }
 }
+function shuffle_pair_unwrap_loop(loop$list, loop$acc) {
+  while (true) {
+    let list4 = loop$list;
+    let acc = loop$acc;
+    if (list4 instanceof Empty) {
+      return acc;
+    } else {
+      let elem_pair = list4.head;
+      let enumerable = list4.tail;
+      loop$list = enumerable;
+      loop$acc = prepend(elem_pair[1], acc);
+    }
+  }
+}
+function do_shuffle_by_pair_indexes(list_of_pairs) {
+  return sort(
+    list_of_pairs,
+    (a_pair, b_pair) => {
+      return compare(a_pair[0], b_pair[0]);
+    }
+  );
+}
+function shuffle(list4) {
+  let _pipe = list4;
+  let _pipe$1 = fold(
+    _pipe,
+    toList([]),
+    (acc, a) => {
+      return prepend([random_uniform(), a], acc);
+    }
+  );
+  let _pipe$2 = do_shuffle_by_pair_indexes(_pipe$1);
+  return shuffle_pair_unwrap_loop(_pipe$2, toList([]));
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/string.mjs
+function concat_loop(loop$strings, loop$accumulator) {
+  while (true) {
+    let strings = loop$strings;
+    let accumulator = loop$accumulator;
+    if (strings instanceof Empty) {
+      return accumulator;
+    } else {
+      let string5 = strings.head;
+      let strings$1 = strings.tail;
+      loop$strings = strings$1;
+      loop$accumulator = accumulator + string5;
+    }
+  }
+}
+function concat2(strings) {
+  return concat_loop(strings, "");
+}
 
 // build/dev/javascript/gleam_stdlib/gleam/dynamic/decode.mjs
 var DecodeError = class extends CustomType {
@@ -2074,6 +2082,11 @@ function decode_bool(data) {
 function decode_int(data) {
   return run_dynamic_function(data, "Int", int);
 }
+function failure(zero, expected) {
+  return new Decoder((d) => {
+    return [zero, decode_error(expected, d)];
+  });
+}
 var bool = /* @__PURE__ */ new Decoder(decode_bool);
 var int2 = /* @__PURE__ */ new Decoder(decode_int);
 function decode_string(data) {
@@ -2107,8 +2120,8 @@ function push_path(layer, path) {
   );
   let path$1 = map(
     path,
-    (key2) => {
-      let key$1 = identity(key2);
+    (key) => {
+      let key$1 = identity(key);
       let $ = run(key$1, decoder5);
       if ($ instanceof Ok) {
         let key$2 = $[0];
@@ -2142,20 +2155,20 @@ function index3(loop$path, loop$position, loop$inner, loop$data, loop$handle_mis
       let _pipe = inner(data);
       return push_path(_pipe, reverse(position));
     } else {
-      let key2 = path.head;
+      let key = path.head;
       let path$1 = path.tail;
-      let $ = index2(data, key2);
+      let $ = index2(data, key);
       if ($ instanceof Ok) {
         let $1 = $[0];
         if ($1 instanceof Some) {
           let data$1 = $1[0];
           loop$path = path$1;
-          loop$position = prepend(key2, position);
+          loop$position = prepend(key, position);
           loop$inner = inner;
           loop$data = data$1;
           loop$handle_miss = handle_miss;
         } else {
-          return handle_miss(data, prepend(key2, position));
+          return handle_miss(data, prepend(key, position));
         }
       } else {
         let kind = $[0];
@@ -2202,8 +2215,6 @@ function field(field_name, field_decoder, next) {
 }
 
 // build/dev/javascript/gleam_stdlib/gleam_stdlib.mjs
-var Nil = void 0;
-var NOT_FOUND = {};
 function identity(x) {
   return x;
 }
@@ -2240,21 +2251,21 @@ var trim_end_regex = /* @__PURE__ */ new RegExp(`[${unicode_whitespaces}]*$`);
 function console_log(term) {
   console.log(term);
 }
+function random_uniform() {
+  const random_uniform_result = Math.random();
+  if (random_uniform_result === 1) {
+    return random_uniform();
+  }
+  return random_uniform_result;
+}
 function new_map() {
   return Dict.new();
 }
-function map_to_list(map6) {
-  return List.fromArray(map6.entries());
+function map_to_list(map7) {
+  return List.fromArray(map7.entries());
 }
-function map_get(map6, key2) {
-  const value2 = map6.get(key2, NOT_FOUND);
-  if (value2 === NOT_FOUND) {
-    return new Error(Nil);
-  }
-  return new Ok(value2);
-}
-function map_insert(key2, value2, map6) {
-  return map6.set(key2, value2);
+function map_insert(key, value2, map7) {
+  return map7.set(key, value2);
 }
 function classify_dynamic(data) {
   if (typeof data === "string") {
@@ -2284,29 +2295,29 @@ function classify_dynamic(data) {
     return type.charAt(0).toUpperCase() + type.slice(1);
   }
 }
-function index2(data, key2) {
+function index2(data, key) {
   if (data instanceof Dict || data instanceof WeakMap || data instanceof Map) {
     const token = {};
-    const entry = data.get(key2, token);
+    const entry = data.get(key, token);
     if (entry === token) return new Ok(new None());
     return new Ok(new Some(entry));
   }
-  const key_is_int = Number.isInteger(key2);
-  if (key_is_int && key2 >= 0 && key2 < 8 && data instanceof List) {
+  const key_is_int = Number.isInteger(key);
+  if (key_is_int && key >= 0 && key < 8 && data instanceof List) {
     let i = 0;
     for (const value2 of data) {
-      if (i === key2) return new Ok(new Some(value2));
+      if (i === key) return new Ok(new Some(value2));
       i++;
     }
     return new Error("Indexable");
   }
   if (key_is_int && Array.isArray(data) || data && typeof data === "object" || data && Object.getPrototypeOf(data) === Object.prototype) {
-    if (key2 in data) return new Ok(new Some(data[key2]));
+    if (key in data) return new Ok(new Some(data[key]));
     return new Ok(new None());
   }
   return new Error(key_is_int ? "Indexable" : "Dict");
 }
-function list(data, decode2, pushPath, index4, emptyList) {
+function list(data, decode2, pushPath, index5, emptyList) {
   if (!(data instanceof List || Array.isArray(data))) {
     const error = new DecodeError("List", classify_dynamic(data), emptyList);
     return [emptyList, List.fromArray([error])];
@@ -2316,11 +2327,11 @@ function list(data, decode2, pushPath, index4, emptyList) {
     const layer = decode2(element4);
     const [out, errors] = layer;
     if (errors instanceof NonEmpty) {
-      const [_, errors2] = pushPath(layer, index4.toString());
+      const [_, errors2] = pushPath(layer, index5.toString());
       return [emptyList, errors2];
     }
     decoded.push(out);
-    index4++;
+    index5++;
   }
   return [List.fromArray(decoded), emptyList];
 }
@@ -2333,60 +2344,62 @@ function string(data) {
   return new Error("");
 }
 
-// build/dev/javascript/gleam_stdlib/gleam/string.mjs
-function concat_loop(loop$strings, loop$accumulator) {
+// build/dev/javascript/gleam_stdlib/gleam/dict.mjs
+function insert(dict3, key, value2) {
+  return map_insert(key, value2, dict3);
+}
+function from_list_loop(loop$list, loop$initial) {
   while (true) {
-    let strings = loop$strings;
-    let accumulator = loop$accumulator;
-    if (strings instanceof Empty) {
-      return accumulator;
+    let list4 = loop$list;
+    let initial = loop$initial;
+    if (list4 instanceof Empty) {
+      return initial;
     } else {
-      let string5 = strings.head;
-      let strings$1 = strings.tail;
-      loop$strings = strings$1;
-      loop$accumulator = accumulator + string5;
+      let rest = list4.tail;
+      let key = list4.head[0];
+      let value2 = list4.head[1];
+      loop$list = rest;
+      loop$initial = insert(initial, key, value2);
     }
   }
 }
-function concat2(strings) {
-  return concat_loop(strings, "");
+function from_list(list4) {
+  return from_list_loop(list4, new_map());
 }
-function join_loop(loop$strings, loop$separator, loop$accumulator) {
+function reverse_and_concat(loop$remaining, loop$accumulator) {
   while (true) {
-    let strings = loop$strings;
-    let separator = loop$separator;
+    let remaining = loop$remaining;
     let accumulator = loop$accumulator;
-    if (strings instanceof Empty) {
+    if (remaining instanceof Empty) {
       return accumulator;
     } else {
-      let string5 = strings.head;
-      let strings$1 = strings.tail;
-      loop$strings = strings$1;
-      loop$separator = separator;
-      loop$accumulator = accumulator + separator + string5;
+      let first = remaining.head;
+      let rest = remaining.tail;
+      loop$remaining = rest;
+      loop$accumulator = prepend(first, accumulator);
     }
   }
 }
-function join(strings, separator) {
-  if (strings instanceof Empty) {
-    return "";
-  } else {
-    let first$1 = strings.head;
-    let rest = strings.tail;
-    return join_loop(rest, separator, first$1);
+function do_values_loop(loop$list, loop$acc) {
+  while (true) {
+    let list4 = loop$list;
+    let acc = loop$acc;
+    if (list4 instanceof Empty) {
+      return reverse_and_concat(acc, toList([]));
+    } else {
+      let rest = list4.tail;
+      let value2 = list4.head[1];
+      loop$list = rest;
+      loop$acc = prepend(value2, acc);
+    }
   }
+}
+function values(dict3) {
+  let list_of_pairs = map_to_list(dict3);
+  return do_values_loop(list_of_pairs, toList([]));
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/result.mjs
-function map3(result, fun) {
-  if (result instanceof Ok) {
-    let x = result[0];
-    return new Ok(fun(x));
-  } else {
-    let e = result[0];
-    return new Error(e);
-  }
-}
 function map_error(result, fun) {
   if (result instanceof Ok) {
     let x = result[0];
@@ -2395,171 +2408,6 @@ function map_error(result, fun) {
     let error = result[0];
     return new Error(fun(error));
   }
-}
-function try$(result, fun) {
-  if (result instanceof Ok) {
-    let x = result[0];
-    return fun(x);
-  } else {
-    let e = result[0];
-    return new Error(e);
-  }
-}
-function unwrap(result, default$) {
-  if (result instanceof Ok) {
-    let v = result[0];
-    return v;
-  } else {
-    return default$;
-  }
-}
-
-// build/dev/javascript/gleam_json/gleam_json_ffi.mjs
-function json_to_string(json2) {
-  return JSON.stringify(json2);
-}
-function object(entries) {
-  return Object.fromEntries(entries);
-}
-function identity2(x) {
-  return x;
-}
-function array(list4) {
-  return list4.toArray();
-}
-function decode(string5) {
-  try {
-    const result = JSON.parse(string5);
-    return new Ok(result);
-  } catch (err) {
-    return new Error(getJsonDecodeError(err, string5));
-  }
-}
-function getJsonDecodeError(stdErr, json2) {
-  if (isUnexpectedEndOfInput(stdErr)) return new UnexpectedEndOfInput();
-  return toUnexpectedByteError(stdErr, json2);
-}
-function isUnexpectedEndOfInput(err) {
-  const unexpectedEndOfInputRegex = /((unexpected (end|eof))|(end of data)|(unterminated string)|(json( parse error|\.parse)\: expected '(\:|\}|\])'))/i;
-  return unexpectedEndOfInputRegex.test(err.message);
-}
-function toUnexpectedByteError(err, json2) {
-  let converters = [
-    v8UnexpectedByteError,
-    oldV8UnexpectedByteError,
-    jsCoreUnexpectedByteError,
-    spidermonkeyUnexpectedByteError
-  ];
-  for (let converter of converters) {
-    let result = converter(err, json2);
-    if (result) return result;
-  }
-  return new UnexpectedByte("", 0);
-}
-function v8UnexpectedByteError(err) {
-  const regex = /unexpected token '(.)', ".+" is not valid JSON/i;
-  const match = regex.exec(err.message);
-  if (!match) return null;
-  const byte = toHex(match[1]);
-  return new UnexpectedByte(byte, -1);
-}
-function oldV8UnexpectedByteError(err) {
-  const regex = /unexpected token (.) in JSON at position (\d+)/i;
-  const match = regex.exec(err.message);
-  if (!match) return null;
-  const byte = toHex(match[1]);
-  const position = Number(match[2]);
-  return new UnexpectedByte(byte, position);
-}
-function spidermonkeyUnexpectedByteError(err, json2) {
-  const regex = /(unexpected character|expected .*) at line (\d+) column (\d+)/i;
-  const match = regex.exec(err.message);
-  if (!match) return null;
-  const line = Number(match[2]);
-  const column = Number(match[3]);
-  const position = getPositionFromMultiline(line, column, json2);
-  const byte = toHex(json2[position]);
-  return new UnexpectedByte(byte, position);
-}
-function jsCoreUnexpectedByteError(err) {
-  const regex = /unexpected (identifier|token) "(.)"/i;
-  const match = regex.exec(err.message);
-  if (!match) return null;
-  const byte = toHex(match[2]);
-  return new UnexpectedByte(byte, 0);
-}
-function toHex(char) {
-  return "0x" + char.charCodeAt(0).toString(16).toUpperCase();
-}
-function getPositionFromMultiline(line, column, string5) {
-  if (line === 1) return column - 1;
-  let currentLn = 1;
-  let position = 0;
-  string5.split("").find((char, idx) => {
-    if (char === "\n") currentLn += 1;
-    if (currentLn === line) {
-      position = idx + column;
-      return true;
-    }
-    return false;
-  });
-  return position;
-}
-
-// build/dev/javascript/gleam_json/gleam/json.mjs
-var UnexpectedEndOfInput = class extends CustomType {
-};
-var UnexpectedByte = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var UnableToDecode = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-function do_parse(json2, decoder5) {
-  return try$(
-    decode(json2),
-    (dynamic_value) => {
-      let _pipe = run(dynamic_value, decoder5);
-      return map_error(
-        _pipe,
-        (var0) => {
-          return new UnableToDecode(var0);
-        }
-      );
-    }
-  );
-}
-function parse(json2, decoder5) {
-  return do_parse(json2, decoder5);
-}
-function to_string2(json2) {
-  return json_to_string(json2);
-}
-function string3(input2) {
-  return identity2(input2);
-}
-function bool2(input2) {
-  return identity2(input2);
-}
-function int3(input2) {
-  return identity2(input2);
-}
-function object2(entries) {
-  return object(entries);
-}
-function preprocessed_array(from) {
-  return array(from);
-}
-function array2(entries, inner_type) {
-  let _pipe = entries;
-  let _pipe$1 = map(_pipe, inner_type);
-  return preprocessed_array(_pipe$1);
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/bool.mjs
@@ -2575,8 +2423,24 @@ function guard(requirement, consequence, alternative) {
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/function.mjs
+function identity2(x) {
+  return x;
+}
+
+// build/dev/javascript/gleam_json/gleam_json_ffi.mjs
 function identity3(x) {
   return x;
+}
+
+// build/dev/javascript/gleam_json/gleam/json.mjs
+var UnableToDecode = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+function bool2(input2) {
+  return identity3(input2);
 }
 
 // build/dev/javascript/lustre/lustre/internals/constants.ffi.mjs
@@ -2913,7 +2777,7 @@ function do_map(effects, f) {
     }
   );
 }
-function map4(effect, f) {
+function map3(effect, f) {
   return new Effect(
     do_map(effect.synchronous, f),
     do_map(effect.before_paint, f),
@@ -2928,46 +2792,67 @@ var empty = /* @__PURE__ */ new Effect(
 function none2() {
   return empty;
 }
+function from(effect) {
+  let task = (actions) => {
+    let dispatch = actions.dispatch;
+    return effect(dispatch);
+  };
+  let _record = empty;
+  return new Effect(toList([task]), _record.before_paint, _record.after_paint);
+}
+function batch(effects) {
+  return fold(
+    effects,
+    empty,
+    (acc, eff) => {
+      return new Effect(
+        fold(eff.synchronous, acc.synchronous, prepend2),
+        fold(eff.before_paint, acc.before_paint, prepend2),
+        fold(eff.after_paint, acc.after_paint, prepend2)
+      );
+    }
+  );
+}
 
 // build/dev/javascript/lustre/lustre/internals/mutable_map.ffi.mjs
 function empty2() {
   return null;
 }
-function get(map6, key2) {
-  const value2 = map6?.get(key2);
+function get(map7, key) {
+  const value2 = map7?.get(key);
   if (value2 != null) {
     return new Ok(value2);
   } else {
     return new Error(void 0);
   }
 }
-function has_key2(map6, key2) {
-  return map6 && map6.has(key2);
+function has_key2(map7, key) {
+  return map7 && map7.has(key);
 }
-function insert2(map6, key2, value2) {
-  map6 ??= /* @__PURE__ */ new Map();
-  map6.set(key2, value2);
-  return map6;
+function insert2(map7, key, value2) {
+  map7 ??= /* @__PURE__ */ new Map();
+  map7.set(key, value2);
+  return map7;
 }
-function remove(map6, key2) {
-  map6?.delete(key2);
-  return map6;
+function remove(map7, key) {
+  map7?.delete(key);
+  return map7;
 }
 
 // build/dev/javascript/lustre/lustre/vdom/path.mjs
 var Root = class extends CustomType {
 };
 var Key = class extends CustomType {
-  constructor(key2, parent) {
+  constructor(key, parent) {
     super();
-    this.key = key2;
+    this.key = key;
     this.parent = parent;
   }
 };
 var Index = class extends CustomType {
-  constructor(index4, parent) {
+  constructor(index5, parent) {
     super();
-    this.index = index4;
+    this.index = index5;
     this.parent = parent;
   }
 };
@@ -2990,11 +2875,11 @@ function do_matches(loop$path, loop$candidates) {
     }
   }
 }
-function add2(parent, index4, key2) {
-  if (key2 === "") {
-    return new Index(index4, parent);
+function add2(parent, index5, key) {
+  if (key === "") {
+    return new Index(index5, parent);
   } else {
-    return new Key(key2, parent);
+    return new Key(key, parent);
   }
 }
 var root2 = /* @__PURE__ */ new Root();
@@ -3011,29 +2896,29 @@ function do_to_string(loop$path, loop$acc) {
         return concat2(segments);
       }
     } else if (path instanceof Key) {
-      let key2 = path.key;
+      let key = path.key;
       let parent = path.parent;
       loop$path = parent;
-      loop$acc = prepend(separator_element, prepend(key2, acc));
+      loop$acc = prepend(separator_element, prepend(key, acc));
     } else {
-      let index4 = path.index;
+      let index5 = path.index;
       let parent = path.parent;
       loop$path = parent;
       loop$acc = prepend(
         separator_element,
-        prepend(to_string(index4), acc)
+        prepend(to_string(index5), acc)
       );
     }
   }
 }
-function to_string3(path) {
+function to_string2(path) {
   return do_to_string(path, toList([]));
 }
 function matches(path, candidates) {
   if (candidates instanceof Empty) {
     return false;
   } else {
-    return do_matches(to_string3(path), candidates);
+    return do_matches(to_string2(path), candidates);
   }
 }
 var separator_event = "\n";
@@ -3043,20 +2928,20 @@ function event2(path, event4) {
 
 // build/dev/javascript/lustre/lustre/vdom/vnode.mjs
 var Fragment = class extends CustomType {
-  constructor(kind, key2, mapper, children, keyed_children) {
+  constructor(kind, key, mapper, children, keyed_children) {
     super();
     this.kind = kind;
-    this.key = key2;
+    this.key = key;
     this.mapper = mapper;
     this.children = children;
     this.keyed_children = keyed_children;
   }
 };
 var Element = class extends CustomType {
-  constructor(kind, key2, mapper, namespace, tag, attributes, children, keyed_children, self_closing, void$) {
+  constructor(kind, key, mapper, namespace, tag, attributes, children, keyed_children, self_closing, void$) {
     super();
     this.kind = kind;
-    this.key = key2;
+    this.key = key;
     this.mapper = mapper;
     this.namespace = namespace;
     this.tag = tag;
@@ -3068,19 +2953,19 @@ var Element = class extends CustomType {
   }
 };
 var Text = class extends CustomType {
-  constructor(kind, key2, mapper, content) {
+  constructor(kind, key, mapper, content) {
     super();
     this.kind = kind;
-    this.key = key2;
+    this.key = key;
     this.mapper = mapper;
     this.content = content;
   }
 };
 var UnsafeInnerHtml = class extends CustomType {
-  constructor(kind, key2, mapper, namespace, tag, attributes, inner_html) {
+  constructor(kind, key, mapper, namespace, tag, attributes, inner_html) {
     super();
     this.kind = kind;
-    this.key = key2;
+    this.key = key;
     this.mapper = mapper;
     this.namespace = namespace;
     this.tag = tag;
@@ -3125,12 +3010,12 @@ function is_void_element(tag, namespace) {
     return false;
   }
 }
-function to_keyed(key2, node) {
+function to_keyed(key, node) {
   if (node instanceof Fragment) {
     let _record = node;
     return new Fragment(
       _record.kind,
-      key2,
+      key,
       _record.mapper,
       _record.children,
       _record.keyed_children
@@ -3139,7 +3024,7 @@ function to_keyed(key2, node) {
     let _record = node;
     return new Element(
       _record.kind,
-      key2,
+      key,
       _record.mapper,
       _record.namespace,
       _record.tag,
@@ -3151,12 +3036,12 @@ function to_keyed(key2, node) {
     );
   } else if (node instanceof Text) {
     let _record = node;
-    return new Text(_record.kind, key2, _record.mapper, _record.content);
+    return new Text(_record.kind, key, _record.mapper, _record.content);
   } else {
     let _record = node;
     return new UnsafeInnerHtml(
       _record.kind,
-      key2,
+      key,
       _record.mapper,
       _record.namespace,
       _record.tag,
@@ -3166,14 +3051,14 @@ function to_keyed(key2, node) {
   }
 }
 var fragment_kind = 0;
-function fragment(key2, mapper, children, keyed_children) {
-  return new Fragment(fragment_kind, key2, mapper, children, keyed_children);
+function fragment(key, mapper, children, keyed_children) {
+  return new Fragment(fragment_kind, key, mapper, children, keyed_children);
 }
 var element_kind = 1;
-function element(key2, mapper, namespace, tag, attributes, children, keyed_children, self_closing, void$) {
+function element(key, mapper, namespace, tag, attributes, children, keyed_children, self_closing, void$) {
   return new Element(
     element_kind,
-    key2,
+    key,
     mapper,
     namespace,
     tag,
@@ -3185,8 +3070,8 @@ function element(key2, mapper, namespace, tag, attributes, children, keyed_child
   );
 }
 var text_kind = 2;
-function text(key2, mapper, content) {
-  return new Text(text_kind, key2, mapper, content);
+function text(key, mapper, content) {
+  return new Text(text_kind, key, mapper, content);
 }
 var unsafe_inner_html_kind = 3;
 
@@ -3216,12 +3101,12 @@ var isEqual2 = (a, b) => {
   return areObjectsEqual(a, b);
 };
 var areArraysEqual = (a, b) => {
-  let index4 = a.length;
-  if (index4 !== b.length) {
+  let index5 = a.length;
+  if (index5 !== b.length) {
     return false;
   }
-  while (index4--) {
-    if (!isEqual2(a[index4], b[index4])) {
+  while (index5--) {
+    if (!isEqual2(a[index5], b[index5])) {
       return false;
     }
   }
@@ -3229,12 +3114,12 @@ var areArraysEqual = (a, b) => {
 };
 var areObjectsEqual = (a, b) => {
   const properties = Object.keys(a);
-  let index4 = properties.length;
-  if (Object.keys(b).length !== index4) {
+  let index5 = properties.length;
+  if (Object.keys(b).length !== index5) {
     return false;
   }
-  while (index4--) {
-    const property3 = properties[index4];
+  while (index5--) {
+    const property3 = properties[index5];
     if (!Object.hasOwn(b, property3)) {
       return false;
     }
@@ -3329,7 +3214,7 @@ function do_add_event(handlers, mapper, path, name2, handler) {
         return new Handler(
           _record.prevent_default,
           _record.stop_propagation,
-          identity3(mapper)(handler2.message)
+          identity2(mapper)(handler2.message)
         );
       }
     )
@@ -3360,8 +3245,8 @@ function add_attributes(handlers, mapper, path, attributes) {
   );
 }
 function compose_mapper(mapper, child_mapper) {
-  let $ = isReferenceEqual(mapper, identity3);
-  let $1 = isReferenceEqual(child_mapper, identity3);
+  let $ = isReferenceEqual(mapper, identity2);
+  let $1 = isReferenceEqual(child_mapper, identity2);
   if ($1) {
     return mapper;
   } else if ($) {
@@ -3466,8 +3351,8 @@ function do_add_child(handlers, mapper, parent, child_index, child) {
     return add_attributes(handlers, composed_mapper, path, attributes);
   }
 }
-function add_child(events, mapper, parent, index4, child) {
-  let handlers = do_add_child(events.handlers, mapper, parent, index4, child);
+function add_child(events, mapper, parent, index5, child) {
+  let handlers = do_add_child(events.handlers, mapper, parent, index5, child);
   let _record = events;
   return new Events(
     handlers,
@@ -3495,7 +3380,7 @@ function add_children(events, mapper, path, child_index, children) {
 function element2(tag, attributes, children) {
   return element(
     "",
-    identity3,
+    identity2,
     "",
     tag,
     attributes,
@@ -3506,13 +3391,13 @@ function element2(tag, attributes, children) {
   );
 }
 function text2(content) {
-  return text("", identity3, content);
+  return text("", identity2, content);
 }
 function none3() {
-  return text("", identity3, "");
+  return text("", identity2, "");
 }
-function map5(element4, f) {
-  let mapper = identity3(compose_mapper(identity3(f), element4.mapper));
+function map4(element4, f) {
+  let mapper = identity2(compose_mapper(identity2(f), element4.mapper));
   if (element4 instanceof Fragment) {
     let children = element4.children;
     let keyed_children = element4.keyed_children;
@@ -3521,8 +3406,8 @@ function map5(element4, f) {
       _record.kind,
       _record.key,
       mapper,
-      identity3(children),
-      identity3(keyed_children)
+      identity2(children),
+      identity2(keyed_children)
     );
   } else if (element4 instanceof Element) {
     let attributes = element4.attributes;
@@ -3535,14 +3420,14 @@ function map5(element4, f) {
       mapper,
       _record.namespace,
       _record.tag,
-      identity3(attributes),
-      identity3(children),
-      identity3(keyed_children),
+      identity2(attributes),
+      identity2(children),
+      identity2(keyed_children),
       _record.self_closing,
       _record.void
     );
   } else if (element4 instanceof Text) {
-    return identity3(element4);
+    return identity2(element4);
   } else {
     let attributes = element4.attributes;
     let _record = element4;
@@ -3552,7 +3437,7 @@ function map5(element4, f) {
       mapper,
       _record.namespace,
       _record.tag,
-      identity3(attributes),
+      identity2(attributes),
       _record.inner_html
     );
   }
@@ -3583,6 +3468,24 @@ function p(attrs, children) {
 function ul(attrs, children) {
   return element2("ul", attrs, children);
 }
+function table(attrs, children) {
+  return element2("table", attrs, children);
+}
+function tbody(attrs, children) {
+  return element2("tbody", attrs, children);
+}
+function td(attrs, children) {
+  return element2("td", attrs, children);
+}
+function th(attrs, children) {
+  return element2("th", attrs, children);
+}
+function thead(attrs, children) {
+  return element2("thead", attrs, children);
+}
+function tr(attrs, children) {
+  return element2("tr", attrs, children);
+}
 function button(attrs, children) {
   return element2("button", attrs, children);
 }
@@ -3595,9 +3498,9 @@ function label(attrs, children) {
 
 // build/dev/javascript/lustre/lustre/vdom/patch.mjs
 var Patch = class extends CustomType {
-  constructor(index4, removed, changes, children) {
+  constructor(index5, removed, changes, children) {
     super();
-    this.index = index4;
+    this.index = index5;
     this.removed = removed;
     this.changes = changes;
     this.children = children;
@@ -3626,26 +3529,26 @@ var Update = class extends CustomType {
   }
 };
 var Move = class extends CustomType {
-  constructor(kind, key2, before) {
+  constructor(kind, key, before) {
     super();
     this.kind = kind;
-    this.key = key2;
+    this.key = key;
     this.before = before;
   }
 };
 var Replace = class extends CustomType {
-  constructor(kind, index4, with$) {
+  constructor(kind, index5, with$) {
     super();
     this.kind = kind;
-    this.index = index4;
+    this.index = index5;
     this.with = with$;
   }
 };
 var Remove = class extends CustomType {
-  constructor(kind, index4) {
+  constructor(kind, index5) {
     super();
     this.kind = kind;
-    this.index = index4;
+    this.index = index5;
   }
 };
 var Insert = class extends CustomType {
@@ -3656,8 +3559,8 @@ var Insert = class extends CustomType {
     this.before = before;
   }
 };
-function new$5(index4, removed, changes, children) {
-  return new Patch(index4, removed, changes, children);
+function new$5(index5, removed, changes, children) {
+  return new Patch(index5, removed, changes, children);
 }
 var replace_text_kind = 0;
 function replace_text(content) {
@@ -3672,16 +3575,16 @@ function update(added, removed) {
   return new Update(update_kind, added, removed);
 }
 var move_kind = 3;
-function move(key2, before) {
-  return new Move(move_kind, key2, before);
+function move(key, before) {
+  return new Move(move_kind, key, before);
 }
 var remove_kind = 4;
-function remove2(index4) {
-  return new Remove(remove_kind, index4);
+function remove2(index5) {
+  return new Remove(remove_kind, index5);
 }
 var replace_kind = 5;
-function replace2(index4, with$) {
-  return new Replace(replace_kind, index4, with$);
+function replace2(index5, with$) {
+  return new Replace(replace_kind, index5, with$);
 }
 var insert_kind = 6;
 function insert3(children, before) {
@@ -4128,8 +4031,8 @@ function do_diff(loop$old, loop$old_keyed, loop$new, loop$new_keyed, loop$moved,
               loop$events = events;
             }
           } else {
-            let index4 = node_index - moved_offset;
-            let changes$1 = prepend(remove2(index4), changes);
+            let index5 = node_index - moved_offset;
+            let changes$1 = prepend(remove2(index5), changes);
             let events$1 = remove_child(events, path, node_index, prev);
             let moved_offset$1 = moved_offset - 1;
             loop$old = old_remaining;
@@ -4645,7 +4548,7 @@ function diff(events, old, new$8) {
     root2,
     empty_list,
     empty_list,
-    identity3,
+    identity2,
     tick(events)
   );
 }
@@ -4668,9 +4571,9 @@ var setInnerHtml = (node, innerHtml) => node.innerHTML = innerHtml;
 var setData = (node, data) => node.data = data;
 var meta = Symbol("lustre");
 var MetadataNode = class {
-  constructor(kind, parent, node, key2) {
+  constructor(kind, parent, node, key) {
     this.kind = kind;
-    this.key = key2;
+    this.key = key;
     this.parent = parent;
     this.children = [];
     this.node = node;
@@ -4682,10 +4585,10 @@ var MetadataNode = class {
     return this.kind === fragment_kind ? this.node.parentNode : this.node;
   }
 };
-var insertMetadataChild = (kind, parent, node, index4, key2) => {
-  const child = new MetadataNode(kind, parent, node, key2);
+var insertMetadataChild = (kind, parent, node, index5, key) => {
+  const child = new MetadataNode(kind, parent, node, key);
   node[meta] = child;
-  parent?.children.splice(index4, 0, child);
+  parent?.children.splice(index5, 0, child);
   return child;
 };
 var getPath = (node) => {
@@ -4694,8 +4597,8 @@ var getPath = (node) => {
     if (current.key) {
       path = `${separator_element}${current.key}${path}`;
     } else {
-      const index4 = current.parent.children.indexOf(current);
-      path = `${separator_element}${index4}${path}`;
+      const index5 = current.parent.children.indexOf(current);
+      path = `${separator_element}${index5}${path}`;
     }
   }
   return path.slice(1);
@@ -4770,17 +4673,17 @@ var Reconciler = class {
     this.#insertChildren(fragment3, null, parent, before | 0, children);
     insertBefore(parent.parentNode, fragment3, beforeEl);
   }
-  #replace(parent, { index: index4, with: child }) {
-    this.#removeChildren(parent, index4 | 0, 1);
-    const beforeEl = this.#getReference(parent, index4);
-    this.#insertChild(parent.parentNode, beforeEl, parent, index4 | 0, child);
+  #replace(parent, { index: index5, with: child }) {
+    this.#removeChildren(parent, index5 | 0, 1);
+    const beforeEl = this.#getReference(parent, index5);
+    this.#insertChild(parent.parentNode, beforeEl, parent, index5 | 0, child);
   }
-  #getReference(node, index4) {
-    index4 = index4 | 0;
+  #getReference(node, index5) {
+    index5 = index5 | 0;
     const { children } = node;
     const childCount = children.length;
-    if (index4 < childCount) {
-      return children[index4].node;
+    if (index5 < childCount) {
+      return children[index5].node;
     }
     let lastChild = children[childCount - 1];
     if (!lastChild && node.kind !== fragment_kind) return null;
@@ -4790,7 +4693,7 @@ var Reconciler = class {
     }
     return lastChild.node.nextSibling;
   }
-  #move(parent, { key: key2, before }) {
+  #move(parent, { key, before }) {
     before = before | 0;
     const { children, parentNode } = parent;
     const beforeEl = children[before].node;
@@ -4799,7 +4702,7 @@ var Reconciler = class {
       const next = children[i];
       children[i] = prev;
       prev = next;
-      if (next.key === key2) {
+      if (next.key === key) {
         children[before] = next;
         break;
       }
@@ -4819,12 +4722,12 @@ var Reconciler = class {
       }
     }
   }
-  #remove(parent, { index: index4 }) {
-    this.#removeChildren(parent, index4, 1);
+  #remove(parent, { index: index5 }) {
+    this.#removeChildren(parent, index5, 1);
   }
-  #removeChildren(parent, index4, count) {
+  #removeChildren(parent, index5, count) {
     const { children, parentNode } = parent;
-    const deleted = children.splice(index4, count);
+    const deleted = children.splice(index5, count);
     for (let i = 0; i < deleted.length; ++i) {
       const { kind, node, children: nestedChildren } = deleted[i];
       removeChild(parentNode, node);
@@ -4864,27 +4767,27 @@ var Reconciler = class {
     setInnerHtml(node, inner_html ?? "");
   }
   // INSERT --------------------------------------------------------------------
-  #insertChildren(domParent, beforeEl, metaParent, index4, children) {
+  #insertChildren(domParent, beforeEl, metaParent, index5, children) {
     iterate(
       children,
-      (child) => this.#insertChild(domParent, beforeEl, metaParent, index4++, child)
+      (child) => this.#insertChild(domParent, beforeEl, metaParent, index5++, child)
     );
   }
-  #insertChild(domParent, beforeEl, metaParent, index4, vnode) {
+  #insertChild(domParent, beforeEl, metaParent, index5, vnode) {
     switch (vnode.kind) {
       case element_kind: {
-        const node = this.#createElement(metaParent, index4, vnode);
+        const node = this.#createElement(metaParent, index5, vnode);
         this.#insertChildren(node, null, node[meta], 0, vnode.children);
         insertBefore(domParent, node, beforeEl);
         break;
       }
       case text_kind: {
-        const node = this.#createTextNode(metaParent, index4, vnode);
+        const node = this.#createTextNode(metaParent, index5, vnode);
         insertBefore(domParent, node, beforeEl);
         break;
       }
       case fragment_kind: {
-        const head = this.#createTextNode(metaParent, index4, vnode);
+        const head = this.#createTextNode(metaParent, index5, vnode);
         insertBefore(domParent, head, beforeEl);
         this.#insertChildren(
           domParent,
@@ -4896,25 +4799,25 @@ var Reconciler = class {
         break;
       }
       case unsafe_inner_html_kind: {
-        const node = this.#createElement(metaParent, index4, vnode);
+        const node = this.#createElement(metaParent, index5, vnode);
         this.#replaceInnerHtml({ node }, vnode);
         insertBefore(domParent, node, beforeEl);
         break;
       }
     }
   }
-  #createElement(parent, index4, { kind, key: key2, tag, namespace, attributes }) {
+  #createElement(parent, index5, { kind, key, tag, namespace, attributes }) {
     const node = createElementNS(namespace || NAMESPACE_HTML, tag);
-    insertMetadataChild(kind, parent, node, index4, key2);
-    if (this.#exposeKeys && key2) {
-      setAttribute(node, "data-lustre-key", key2);
+    insertMetadataChild(kind, parent, node, index5, key);
+    if (this.#exposeKeys && key) {
+      setAttribute(node, "data-lustre-key", key);
     }
     iterate(attributes, (attribute3) => this.#createAttribute(node, attribute3));
     return node;
   }
-  #createTextNode(parent, index4, { kind, key: key2, content }) {
+  #createTextNode(parent, index5, { kind, key, content }) {
     const node = createTextNode(content ?? "");
-    insertMetadataChild(kind, parent, node, index4, key2);
+    insertMetadataChild(kind, parent, node, index5, key);
     return node;
   }
   #createAttribute(node, attribute3) {
@@ -4956,20 +4859,20 @@ var Reconciler = class {
       }
     }
   }
-  #updateDebounceThrottle(map6, name2, delay) {
-    const debounceOrThrottle = map6.get(name2);
+  #updateDebounceThrottle(map7, name2, delay) {
+    const debounceOrThrottle = map7.get(name2);
     if (delay > 0) {
       if (debounceOrThrottle) {
         debounceOrThrottle.delay = delay;
       } else {
-        map6.set(name2, { delay });
+        map7.set(name2, { delay });
       }
     } else if (debounceOrThrottle) {
       const { timeout } = debounceOrThrottle;
       if (timeout) {
         clearTimeout(timeout);
       }
-      map6.delete(name2);
+      map7.delete(name2);
     }
   }
   #handleEvent(attribute3, event4) {
@@ -5098,14 +5001,14 @@ function do_extract_keyed_children(loop$key_children_pairs, loop$keyed_children,
       return [keyed_children, reverse(children)];
     } else {
       let rest = key_children_pairs.tail;
-      let key2 = key_children_pairs.head[0];
+      let key = key_children_pairs.head[0];
       let element$1 = key_children_pairs.head[1];
-      let keyed_element = to_keyed(key2, element$1);
+      let keyed_element = to_keyed(key, element$1);
       let _block;
-      if (key2 === "") {
+      if (key === "") {
         _block = keyed_children;
       } else {
-        _block = insert2(keyed_children, key2, keyed_element);
+        _block = insert2(keyed_children, key, keyed_element);
       }
       let keyed_children$1 = _block;
       let children$1 = prepend(keyed_element, children);
@@ -5128,7 +5031,7 @@ function element3(tag, attributes, children) {
   let children$1 = $[1];
   return element(
     "",
-    identity3,
+    identity2,
     "",
     tag,
     attributes,
@@ -5144,7 +5047,7 @@ function namespaced2(namespace, tag, attributes, children) {
   let children$1 = $[1];
   return element(
     "",
-    identity3,
+    identity2,
     namespace,
     tag,
     attributes,
@@ -5158,7 +5061,7 @@ function fragment2(children) {
   let $ = extract_keyed_children(children);
   let keyed_children = $[0];
   let children$1 = $[1];
-  return fragment("", identity3, children$1, keyed_children);
+  return fragment("", identity2, children$1, keyed_children);
 }
 
 // build/dev/javascript/lustre/lustre/vdom/virtualise.ffi.mjs
@@ -5194,13 +5097,13 @@ var canVirtualiseNode = (node) => {
       return false;
   }
 };
-var virtualiseNode = (meta2, node, key2, index4) => {
+var virtualiseNode = (meta2, node, key, index5) => {
   if (!canVirtualiseNode(node)) {
     return null;
   }
   switch (node.nodeType) {
     case ELEMENT_NODE: {
-      const childMeta = insertMetadataChild(element_kind, meta2, node, index4, key2);
+      const childMeta = insertMetadataChild(element_kind, meta2, node, index5, key);
       const tag = node.localName;
       const namespace = node.namespaceURI;
       const isHtmlElement = !namespace || namespace === NAMESPACE_HTML;
@@ -5213,7 +5116,7 @@ var virtualiseNode = (meta2, node, key2, index4) => {
       return vnode;
     }
     case TEXT_NODE:
-      insertMetadataChild(text_kind, meta2, node, index4, null);
+      insertMetadataChild(text_kind, meta2, node, index5, null);
       return text2(node.data);
     default:
       return null;
@@ -5240,22 +5143,22 @@ var virtualiseChildNodes = (meta2, node) => {
   let children = null;
   let child = node.firstChild;
   let ptr = null;
-  let index4 = 0;
+  let index5 = 0;
   while (child) {
-    const key2 = child.nodeType === ELEMENT_NODE ? child.getAttribute("data-lustre-key") : null;
-    if (key2 != null) {
+    const key = child.nodeType === ELEMENT_NODE ? child.getAttribute("data-lustre-key") : null;
+    if (key != null) {
       child.removeAttribute("data-lustre-key");
     }
-    const vnode = virtualiseNode(meta2, child, key2, index4);
+    const vnode = virtualiseNode(meta2, child, key, index5);
     const next = child.nextSibling;
     if (vnode) {
-      const list_node = new NonEmpty([key2 ?? "", vnode], null);
+      const list_node = new NonEmpty([key ?? "", vnode], null);
       if (ptr) {
         ptr = ptr.tail = list_node;
       } else {
         ptr = children = list_node;
       }
-      index4 += 1;
+      index5 += 1;
     } else {
       node.removeChild(child);
     }
@@ -5266,10 +5169,10 @@ var virtualiseChildNodes = (meta2, node) => {
   return children;
 };
 var virtualiseAttributes = (node) => {
-  let index4 = node.attributes.length;
+  let index5 = node.attributes.length;
   let attributes = empty_list;
-  while (index4-- > 0) {
-    const attr = node.attributes[index4];
+  while (index5-- > 0) {
+    const attr = node.attributes[index5];
     if (attr.name === "xmlns") {
       continue;
     }
@@ -5350,11 +5253,11 @@ var Runtime = class {
   // key. If the key already exists, any existing subscribers will be notified
   // of the change. Otherwise, we store the value and wait for any `context-request`
   // events to come in.
-  provide(key2, value2) {
-    if (!this.#contexts.has(key2)) {
-      this.#contexts.set(key2, { value: value2, subscribers: [] });
+  provide(key, value2) {
+    if (!this.#contexts.has(key)) {
+      this.#contexts.set(key, { value: value2, subscribers: [] });
     } else {
-      const context = this.#contexts.get(key2);
+      const context = this.#contexts.get(key);
       context.value = value2;
       for (let i = context.subscribers.length - 1; i >= 0; i--) {
         const [subscriberRef, unsubscribe] = context.subscribers[i];
@@ -5387,7 +5290,7 @@ var Runtime = class {
     select: () => {
     },
     root: () => this.root,
-    provide: (key2, value2) => this.provide(key2, value2)
+    provide: (key, value2) => this.provide(key, value2)
   };
   // A `#tick` is where we process effects and trigger any synchronous updates.
   // Once a tick has been processed a render will be scheduled if none is already.
@@ -5490,7 +5393,7 @@ var Config2 = class extends CustomType {
   }
 };
 function new$6(options) {
-  let init8 = new Config2(
+  let init6 = new Config2(
     true,
     true,
     false,
@@ -5504,7 +5407,7 @@ function new$6(options) {
   );
   return fold(
     options,
-    init8,
+    init6,
     (config, option) => {
       return option.apply(config);
     }
@@ -5514,8 +5417,8 @@ function new$6(options) {
 // build/dev/javascript/lustre/lustre/runtime/client/spa.ffi.mjs
 var Spa = class {
   #runtime;
-  constructor(root3, [init8, effects], update8, view8) {
-    this.#runtime = new Runtime(root3, [init8, effects], view8, update8);
+  constructor(root3, [init6, effects], update8, view8) {
+    this.#runtime = new Runtime(root3, [init6, effects], view8, update8);
   }
   send(message) {
     switch (message.constructor) {
@@ -5538,18 +5441,18 @@ var Spa = class {
     this.#runtime.emit(event4, data);
   }
 };
-var start = ({ init: init8, update: update8, view: view8 }, selector, flags) => {
+var start = ({ init: init6, update: update8, view: view8 }, selector, flags) => {
   if (!is_browser()) return new Error(new NotABrowser());
   const root3 = selector instanceof HTMLElement ? selector : document().querySelector(selector);
   if (!root3) return new Error(new ElementNotFound(selector));
-  return new Ok(new Spa(root3, init8(flags), update8, view8));
+  return new Ok(new Spa(root3, init6(flags), update8, view8));
 };
 
 // build/dev/javascript/lustre/lustre.mjs
 var App = class extends CustomType {
-  constructor(init8, update8, view8, config) {
+  constructor(init6, update8, view8, config) {
     super();
-    this.init = init8;
+    this.init = init6;
     this.update = update8;
     this.view = view8;
     this.config = config;
@@ -5563,8 +5466,8 @@ var ElementNotFound = class extends CustomType {
 };
 var NotABrowser = class extends CustomType {
 };
-function application(init8, update8, view8) {
-  return new App(init8, update8, view8, new$6(empty_list));
+function application(init6, update8, view8) {
+  return new App(init6, update8, view8, new$6(empty_list));
 }
 function start3(app, selector, start_args) {
   return guard(
@@ -5576,35 +5479,48 @@ function start3(app, selector, start_args) {
   );
 }
 
-// build/dev/javascript/plinth/storage_ffi.mjs
-function localStorage() {
-  try {
-    if (globalThis.Storage && globalThis.localStorage instanceof globalThis.Storage) {
-      return new Ok(globalThis.localStorage);
-    } else {
-      return new Error(null);
+// build/dev/javascript/study_app/core/answer.mjs
+var Correct = class extends CustomType {
+};
+var Incorrect = class extends CustomType {
+};
+var NotAnswered = class extends CustomType {
+};
+function init(xs) {
+  let _pipe = map(xs, (x) => {
+    return [x, new NotAnswered()];
+  });
+  return from_list(_pipe);
+}
+
+// build/dev/javascript/gleam_javascript/gleam_javascript_ffi.mjs
+var PromiseLayer = class _PromiseLayer {
+  constructor(promise) {
+    this.promise = promise;
+  }
+  static wrap(value2) {
+    return value2 instanceof Promise ? new _PromiseLayer(value2) : value2;
+  }
+  static unwrap(value2) {
+    return value2 instanceof _PromiseLayer ? value2.promise : value2;
+  }
+};
+function map_promise(promise, fn) {
+  return promise.then(
+    (value2) => PromiseLayer.wrap(fn(PromiseLayer.unwrap(value2)))
+  );
+}
+
+// build/dev/javascript/gleam_javascript/gleam/javascript/promise.mjs
+function tap(promise, callback) {
+  let _pipe = promise;
+  return map_promise(
+    _pipe,
+    (a) => {
+      callback(a);
+      return a;
     }
-  } catch {
-    return new Error(null);
-  }
-}
-function getItem(storage, keyName) {
-  return null_or(storage.getItem(keyName));
-}
-function setItem(storage, keyName, keyValue) {
-  try {
-    storage.setItem(keyName, keyValue);
-    return new Ok(null);
-  } catch {
-    return new Error(null);
-  }
-}
-function null_or(val) {
-  if (val !== null) {
-    return new Ok(val);
-  } else {
-    return new Error(null);
-  }
+  );
 }
 
 // build/dev/javascript/study_app/core/category.mjs
@@ -5615,17 +5531,10 @@ var Category = class extends CustomType {
     this.name = name2;
   }
 };
-function to_json4(category) {
-  let id = category.id;
-  let name2 = category.name;
-  return object2(
-    toList([["id", string3(id)], ["name", string3(name2)]])
-  );
-}
 function decoder() {
   return field(
     "id",
-    string2,
+    int2,
     (id) => {
       return field(
         "name",
@@ -5637,14 +5546,6 @@ function decoder() {
     }
   );
 }
-
-// build/dev/javascript/study_app/core/answer.mjs
-var Correct = class extends CustomType {
-};
-var Incorrect = class extends CustomType {
-};
-var NotAnswered = class extends CustomType {
-};
 
 // build/dev/javascript/lustre/lustre/event.mjs
 function is_immediate_event(name2) {
@@ -5748,29 +5649,6 @@ var Model = class extends CustomType {
     this.answer = answer;
   }
 };
-function init(pairs) {
-  let left = map(
-    pairs,
-    (p2) => {
-      return new Item(p2.id, p2.left, new NotFocused(), new NotYetMatched());
-    }
-  );
-  let right = map(
-    pairs,
-    (p2) => {
-      return new Item(p2.id, p2.right, new NotFocused(), new NotYetMatched());
-    }
-  );
-  return new Model(
-    pairs,
-    left,
-    right,
-    new None(),
-    new None(),
-    toList([]),
-    new NotAnswered()
-  );
-}
 function reset_item_states(items) {
   return map(
     items,
@@ -6028,20 +5906,6 @@ function view(model) {
     ])
   );
 }
-function to_json5(model) {
-  return array2(
-    model.pairs,
-    (p2) => {
-      return object2(
-        toList([
-          ["id", string3(p2.id)],
-          ["left", string3(p2.left)],
-          ["right", string3(p2.right)]
-        ])
-      );
-    }
-  );
-}
 function pair_to_model(pairs) {
   let left = map(
     pairs,
@@ -6069,7 +5933,7 @@ function decoder2() {
   let decode_pair = list2(
     field(
       "id",
-      string2,
+      int2,
       (id) => {
         return field(
           "left",
@@ -6118,21 +5982,17 @@ var Model2 = class extends CustomType {
     this.answer = answer;
   }
 };
-function init2(texts, answer_index) {
-  let question = new MultipleChoiceQuestion(texts, answer_index);
-  return new Model2(question, new None(), new NotAnswered());
-}
 function update3(model, msg) {
-  let index4 = msg[0];
+  let index5 = msg[0];
   let $ = model.selected_index;
   if ($ instanceof Some) {
     let selected = $[0];
-    if (selected === index4) {
+    if (selected === index5) {
       let _record = model;
       return new Model2(_record.question, new None(), new NotAnswered());
     } else {
       let _block;
-      let $1 = index4 === model.question.correct_answer_index;
+      let $1 = index5 === model.question.correct_answer_index;
       if ($1) {
         _block = new Correct();
       } else {
@@ -6140,11 +6000,11 @@ function update3(model, msg) {
       }
       let new_answer_state = _block;
       let _record = model;
-      return new Model2(_record.question, new Some(index4), new_answer_state);
+      return new Model2(_record.question, new Some(index5), new_answer_state);
     }
   } else {
     let _block;
-    let $1 = index4 === model.question.correct_answer_index;
+    let $1 = index5 === model.question.correct_answer_index;
     if ($1) {
       _block = new Correct();
     } else {
@@ -6152,7 +6012,7 @@ function update3(model, msg) {
     }
     let new_answer_state = _block;
     let _record = model;
-    return new Model2(_record.question, new Some(index4), new_answer_state);
+    return new Model2(_record.question, new Some(index5), new_answer_state);
   }
 }
 function view_answer_status(answer) {
@@ -6203,14 +6063,14 @@ function base_style() {
     ])
   );
 }
-function dynamic_style(index4, model) {
+function dynamic_style(index5, model) {
   let selected_index = model.selected_index;
   let answer = model.answer;
   let correct_index = model.question.correct_answer_index;
   if (answer instanceof Correct) {
     if (selected_index instanceof Some) {
       let s_index = selected_index[0];
-      if (s_index === index4) {
+      if (s_index === index5) {
         return styles(
           toList([["background-color", "#d4edda"], ["border-color", "#c3e6cb"]])
         );
@@ -6223,12 +6083,12 @@ function dynamic_style(index4, model) {
   } else if (answer instanceof Incorrect) {
     if (selected_index instanceof Some) {
       let s_index = selected_index[0];
-      if (s_index === index4) {
+      if (s_index === index5) {
         return styles(
           toList([["background-color", "#f8d7da"], ["border-color", "#f5c6cb"]])
         );
       } else {
-        if (index4 === correct_index) {
+        if (index5 === correct_index) {
           return styles(
             toList([
               ["background-color", "#d4edda"],
@@ -6239,7 +6099,7 @@ function dynamic_style(index4, model) {
           return styles(toList([["background-color", "#f8f9fa"]]));
         }
       }
-    } else if (index4 === correct_index) {
+    } else if (index5 === correct_index) {
       return styles(
         toList([["background-color", "#d4edda"], ["border-color", "#c3e6cb"]])
       );
@@ -6250,12 +6110,12 @@ function dynamic_style(index4, model) {
     return styles(toList([["background-color", "#f8f9fa"]]));
   }
 }
-function view_option(text4, index4, model) {
+function view_option(text4, index5, model) {
   return button(
     toList([
-      on_click(new Select(index4)),
+      on_click(new Select(index5)),
       base_style(),
-      dynamic_style(index4, model)
+      dynamic_style(index5, model)
     ]),
     toList([text2(text4)])
   );
@@ -6270,14 +6130,6 @@ function view2(model) {
   return div(
     toList([]),
     append(options, toList([view_answer_status(model.answer)]))
-  );
-}
-function to_json6(model) {
-  return object2(
-    toList([
-      ["texts", array2(model.question.texts, string3)],
-      ["correct_answer_index", int3(model.question.correct_answer_index)]
-    ])
   );
 }
 function decoder3() {
@@ -6296,6 +6148,28 @@ function decoder3() {
               new NotAnswered()
             )
           );
+        }
+      );
+    }
+  );
+}
+
+// build/dev/javascript/study_app/utils/json_ex.mjs
+function custom_type_docoder(tab_string, decoder5) {
+  return field(
+    "type",
+    string2,
+    (typ) => {
+      return field(
+        "data",
+        decoder5,
+        (a) => {
+          let $ = typ === tab_string;
+          if ($) {
+            return success(a);
+          } else {
+            return failure(a, "type miss match:::");
+          }
         }
       );
     }
@@ -6336,9 +6210,6 @@ var AssociationMsg = class extends CustomType {
     this[0] = $0;
   }
 };
-function init3(id, category, question_text, question_interaction) {
-  return new Model3(id, category, question_text, question_interaction);
-}
 function check_answer2(model) {
   let $ = model.question_interaction;
   if ($ instanceof MultipleChoice) {
@@ -6347,14 +6218,6 @@ function check_answer2(model) {
   } else {
     let as_model = $[0];
     return as_model.answer;
-  }
-}
-function is_answered(model) {
-  let $ = check_answer2(model);
-  if ($ instanceof NotAnswered) {
-    return false;
-  } else {
-    return true;
   }
 }
 function update4(model, msg) {
@@ -6396,7 +6259,7 @@ function view3(model) {
   let $ = model.question_interaction;
   if ($ instanceof MultipleChoice) {
     let mc_model = $[0];
-    return map5(
+    return map4(
       view2(mc_model),
       (m) => {
         return new MultipleChoiceMsg(m);
@@ -6404,7 +6267,7 @@ function view3(model) {
     );
   } else {
     let as_model = $[0];
-    return map5(
+    return map4(
       view(as_model),
       (m) => {
         return new AssociationMsg(m);
@@ -6412,54 +6275,31 @@ function view3(model) {
     );
   }
 }
-function interaction_to_json(interaction) {
-  if (interaction instanceof MultipleChoice) {
-    let question_model = interaction[0];
-    return object2(
-      toList([["MultipleChoice", to_json6(question_model)]])
-    );
-  } else {
-    let question_model = interaction[0];
-    return object2(
-      toList([["Association", to_json5(question_model)]])
-    );
-  }
-}
 function interaction_decoder() {
   let decode_mc = () => {
-    return field(
-      "MultipleChoice",
+    let decoder$1 = map2(
       decoder3(),
-      (mc_model) => {
-        return success(new MultipleChoice(mc_model));
+      (var0) => {
+        return new MultipleChoice(var0);
       }
     );
+    return custom_type_docoder("MultipleChoice", decoder$1);
   };
   let decode_as = () => {
-    return field(
-      "Association",
+    let decoder$1 = map2(
       decoder2(),
-      (as_model) => {
-        return success(new Association(as_model));
+      (var0) => {
+        return new Association(var0);
       }
     );
+    return custom_type_docoder("Association", decoder$1);
   };
-  return one_of(decode_mc(), toList([decode_as()]));
-}
-function to_json7(model) {
-  return object2(
-    toList([
-      ["id", string3(model.id)],
-      ["category", to_json4(model.category)],
-      ["question_text", string3(model.question_text)],
-      ["question_interaction", interaction_to_json(model.question_interaction)]
-    ])
-  );
+  return one_of(decode_as(), toList([decode_mc()]));
 }
 function decoder4() {
   return field(
     "id",
-    string2,
+    int2,
     (id) => {
       return field(
         "category",
@@ -6486,264 +6326,429 @@ function decoder4() {
   );
 }
 
-// build/dev/javascript/study_app/pages/quiz_home.mjs
-var Model4 = class extends CustomType {
-  constructor(categories, questions, selected_categories, selected_count, loading, error) {
-    super();
-    this.categories = categories;
-    this.questions = questions;
-    this.selected_categories = selected_categories;
-    this.selected_count = selected_count;
-    this.loading = loading;
-    this.error = error;
-  }
-};
-var SelectCategory = class extends CustomType {
-  constructor($0, $1) {
-    super();
-    this[0] = $0;
-    this[1] = $1;
-  }
-};
-var SelectCount = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var StartQuiz = class extends CustomType {
-};
-var ViewHistory = class extends CustomType {
-};
-function fetch_categories(storage) {
-  return try$(
-    getItem(storage, "categories"),
-    (categories_string) => {
-      let decoder5 = list2(decoder());
-      let _pipe = parse(categories_string, decoder5);
-      return map_error(
-        _pipe,
-        (err) => {
-          echo(err, "src/pages/quiz_home.gleam", 88);
-          return void 0;
+// build/dev/javascript/study_app/interface/data.mjs
+var data_default = {
+  categories: [
+    {
+      id: 1,
+      name: "Gleam\u57FA\u790E"
+    },
+    {
+      id: 2,
+      name: "Lustre\u57FA\u790E"
+    }
+  ],
+  questions: [
+    {
+      id: 1,
+      category: {
+        id: 1,
+        name: "Gleam\u57FA\u790E"
+      },
+      question_text: "Gleam\u306E\u578B\u3067\u3001\u4E0D\u5909\u306A\u30C7\u30FC\u30BF\u69CB\u9020\u3092\u8868\u73FE\u3059\u308B\u3082\u306E\u306F\u3069\u308C\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["List", "Tuple", "Map", "All of the above"],
+          correct_answer_index: 3
         }
-      );
+      }
+    },
+    {
+      id: 2,
+      category: {
+        id: 2,
+        name: "Lustre\u57FA\u790E"
+      },
+      question_text: "Lustre\u306ETEA\uFF08The Elm Architecture\uFF09\u306E\u69CB\u6210\u8981\u7D20\u3092\u5BFE\u5FDC\u4ED8\u3051\u306A\u3055\u3044\u3002",
+      question_interaction: {
+        type: "Association",
+        data: [
+          {
+            id: 1,
+            left: "Model",
+            right: "\u72B6\u614B"
+          },
+          {
+            id: 2,
+            left: "View",
+            right: "UI\u306E\u63CF\u753B"
+          },
+          {
+            id: 3,
+            left: "Update",
+            right: "\u72B6\u614B\u306E\u66F4\u65B0"
+          }
+        ]
+      }
+    },
+    {
+      id: 3,
+      category: {
+        id: 1,
+        name: "Gleam\u57FA\u790E"
+      },
+      question_text: "Gleam\u3067\u6761\u4EF6\u5206\u5C90\u306B\u4F7F\u7528\u3055\u308C\u308B\u4E3B\u8981\u306A\u69CB\u6587\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["if/else", "switch", "case", "for"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 4,
+      category: {
+        id: 1,
+        name: "Gleam\u57FA\u790E"
+      },
+      question_text: "\u5916\u90E8\u30E2\u30B8\u30E5\u30FC\u30EB\u304B\u3089\u95A2\u6570\u3092\u547C\u3073\u51FA\u305B\u308B\u3088\u3046\u306B\u3059\u308B\u305F\u3081\u306B\u4F7F\u7528\u3059\u308B\u30AD\u30FC\u30EF\u30FC\u30C9\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["public", "pub", "export", "external"],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 5,
+      category: {
+        id: 1,
+        name: "Gleam\u57FA\u790E"
+      },
+      question_text: "\u95A2\u6570\u306E\u7D50\u679C\u3092\u6B21\u306E\u95A2\u6570\u306B\u6E21\u3059\u305F\u3081\u306B\u4F7F\u308F\u308C\u308B\u6F14\u7B97\u5B50\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["|>", "|>>", "->", "=>"],
+          correct_answer_index: 0
+        }
+      }
+    },
+    {
+      id: 6,
+      category: {
+        id: 1,
+        name: "Gleam\u57FA\u790E"
+      },
+      question_text: "Result\u578B\u3084Option\u578B\u3092\u6271\u3046\u969B\u306B\u30CD\u30B9\u30C8\u3092\u907F\u3051\u308B\u305F\u3081\u306B\u63A8\u5968\u3055\u308C\u308B\u69CB\u6587\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["try", "let...in", "use", "with"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 7,
+      category: {
+        id: 1,
+        name: "Gleam\u57FA\u790E"
+      },
+      question_text: "Gleam\u306E\u57FA\u672C\u7684\u306A\u30C7\u30FC\u30BF\u578B\u3068\u305D\u306E\u8AAC\u660E\u3092\u5BFE\u5FDC\u4ED8\u3051\u306A\u3055\u3044\u3002",
+      question_interaction: {
+        type: "Association",
+        data: [
+          {
+            id: 1,
+            left: "Int",
+            right: "\u6574\u6570"
+          },
+          {
+            id: 2,
+            left: "String",
+            right: "\u6587\u5B57\u5217"
+          },
+          {
+            id: 3,
+            left: "Bool",
+            right: "\u771F\u507D\u5024"
+          }
+        ]
+      }
+    },
+    {
+      id: 8,
+      category: {
+        id: 2,
+        name: "Lustre\u57FA\u790E"
+      },
+      question_text: "Lustre\u3067HTML\u8981\u7D20\u3092\u751F\u6210\u3059\u308B\u305F\u3081\u306B\u4E3B\u306B\u4F7F\u308F\u308C\u308B\u30E2\u30B8\u30E5\u30FC\u30EB\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["lustre/element/html", "lustre/ui", "lustre/components", "lustre/dom"],
+          correct_answer_index: 0
+        }
+      }
+    },
+    {
+      id: 9,
+      category: {
+        id: 2,
+        name: "Lustre\u57FA\u790E"
+      },
+      question_text: "\u30AF\u30EA\u30C3\u30AF\u30A4\u30D9\u30F3\u30C8\u3092\u51E6\u7406\u3059\u308B\u305F\u3081\u306B\u4F7F\u7528\u3059\u308B\u30E2\u30B8\u30E5\u30FC\u30EB\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["lustre/attribute", "lustre/event", "lustre/handler", "lustre/signal"],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 10,
+      category: {
+        id: 2,
+        name: "Lustre\u57FA\u790E"
+      },
+      question_text: "HTML\u8981\u7D20\u306BCSS\u30AF\u30E9\u30B9\u3092\u8FFD\u52A0\u3059\u308B\u969B\u306B\u4F7F\u7528\u3059\u308B\u95A2\u6570\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["style()", "class()", "id()", "selector()"],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 11,
+      category: {
+        id: 2,
+        name: "Lustre\u57FA\u790E"
+      },
+      question_text: "Lustre\u30A2\u30D7\u30EA\u30B1\u30FC\u30B7\u30E7\u30F3\u306E\u4E3B\u8981\u306A\u69CB\u6210\u8981\u7D20\u3068\u305D\u306E\u5F79\u5272\u3092\u5BFE\u5FDC\u4ED8\u3051\u306A\u3055\u3044\u3002",
+      question_interaction: {
+        type: "Association",
+        data: [
+          {
+            id: 1,
+            left: "init",
+            right: "\u30E2\u30C7\u30EB\u306E\u521D\u671F\u5316"
+          },
+          {
+            id: 2,
+            left: "update",
+            right: "\u30E1\u30C3\u30BB\u30FC\u30B8\u306B\u57FA\u3065\u304F\u30E2\u30C7\u30EB\u306E\u66F4\u65B0"
+          },
+          {
+            id: 3,
+            left: "view",
+            right: "\u30E2\u30C7\u30EB\u3092HTML\u306B\u5909\u63DB"
+          }
+        ]
+      }
+    },
+    {
+      id: 12,
+      category: {
+        id: 2,
+        name: "Lustre\u57FA\u790E"
+      },
+      question_text: "Lustre\u30A2\u30D7\u30EA\u30B1\u30FC\u30B7\u30E7\u30F3\u306E\u30A8\u30F3\u30C8\u30EA\u30FC\u30DD\u30A4\u30F3\u30C8\u3068\u306A\u308B\u95A2\u6570\u306E\u540D\u524D\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["start", "main", "run", "app"],
+          correct_answer_index: 1
+        }
+      }
+    }
+  ]
+};
+
+// build/dev/javascript/study_app/interface/indexedDB_ffi.mjs
+var CATEGORY_STORE = "categories";
+var QUESTION_STORE = "questions";
+var STORE_CONFIGS = [
+  {
+    storeName: CATEGORY_STORE,
+    keyPath: { keyPath: "id" }
+  },
+  {
+    storeName: QUESTION_STORE,
+    keyPath: { keyPath: "id" }
+  }
+];
+function setup(dbName, version) {
+  return new Promise((resolve2, reject) => {
+    const request = indexedDB.open(dbName, version);
+    request.onerror = (event4) => {
+      console.error("Database error:", event4.target.error);
+      reject(event4.target.error);
+    };
+    request.onsuccess = (event4) => {
+      console.log("Database opened successfully");
+      resolve2(event4.target.result);
+    };
+    request.onupgradeneeded = (event4) => {
+      console.log("Database upgrade needed");
+      const db = event4.target.result;
+      STORE_CONFIGS.forEach((config) => {
+        if (!db.objectStoreNames.contains(config.storeName)) {
+          db.createObjectStore(config.storeName, config.keyPath);
+        }
+      });
+      const transaction = event4.target.transaction;
+      if (data_default.categories) {
+        const categoryStore = transaction.objectStore(CATEGORY_STORE);
+        data_default.categories.forEach((category) => {
+          console.log("category:", category);
+          categoryStore.add(category);
+        });
+      }
+      if (data_default.questions) {
+        const questionStore = transaction.objectStore(QUESTION_STORE);
+        data_default.questions.forEach((question) => {
+          questionStore.add(question);
+        });
+      }
+      console.log("Database setup and data seeding complete.");
+    };
+  });
+}
+function getCategories(db) {
+  return new Promise((resolve2, reject) => {
+    const transaction = db.transaction([CATEGORY_STORE], "readonly");
+    const store = transaction.objectStore(CATEGORY_STORE);
+    const request = store.getAll();
+    request.onerror = (event4) => {
+      reject(event4.target.error);
+    };
+    request.onsuccess = (event4) => {
+      resolve2(event4.target.result);
+    };
+  });
+}
+function getQuestionIdList(db) {
+  return new Promise((resolve2, reject) => {
+    const transaction = db.transaction([QUESTION_STORE], "readonly");
+    const store = transaction.objectStore(QUESTION_STORE);
+    const request = store.getAllKeys();
+    request.onerror = (event4) => {
+      reject(event4.target.error);
+    };
+    request.onsuccess = (event4) => {
+      resolve2(event4.target.result);
+    };
+  });
+}
+function getQuestionByIds(db, ids) {
+  return new Promise((resolve2, reject) => {
+    const transaction = db.transaction([QUESTION_STORE], "readonly");
+    const store = transaction.objectStore(QUESTION_STORE);
+    if (!Array.isArray(ids)) {
+      ids = [...ids];
+      console.log("ids:", ids);
+    }
+    const results = [];
+    let completedRequests = 0;
+    ids.forEach((id) => {
+      const request = store.get(id);
+      request.onerror = (event4) => {
+        reject(event4.target.error);
+      };
+      request.onsuccess = (event4) => {
+        results.push(event4.target.result);
+        completedRequests++;
+        if (completedRequests === ids.length) {
+          resolve2(results);
+        }
+      };
+    });
+  });
+}
+
+// build/dev/javascript/study_app/interface/indexed_db.mjs
+function get_categories_decode(dynamic2) {
+  let _pipe = run(dynamic2, list2(decoder()));
+  return map_error(
+    _pipe,
+    (var0) => {
+      return new UnableToDecode(var0);
     }
   );
 }
-function fetch_question(storage) {
-  return try$(
-    getItem(storage, "question"),
-    (question_string) => {
-      let decoder5 = list2(decoder4());
-      let _pipe = parse(question_string, decoder5);
-      return map_error(
-        _pipe,
-        (err) => {
-          echo(err, "src/pages/quiz_home.gleam", 101);
-          return void 0;
-        }
-      );
+function get_question_id_list_decode(dynamic2) {
+  let _pipe = run(dynamic2, list2(int2));
+  return map_error(
+    _pipe,
+    (var0) => {
+      return new UnableToDecode(var0);
     }
   );
 }
-function init4(storage) {
-  echo("categories", "src/pages/quiz_home.gleam", 54);
-  let _block;
-  let _pipe = fetch_categories(storage);
-  _block = unwrap(_pipe, toList([]));
-  let categories = _block;
-  echo(categories, "src/pages/quiz_home.gleam", 56);
-  echo("questions", "src/pages/quiz_home.gleam", 57);
-  let _block$1;
-  let _pipe$1 = fetch_question(storage);
-  _block$1 = unwrap(_pipe$1, toList([]));
-  let questions = _block$1;
-  echo(length(questions), "src/pages/quiz_home.gleam", 59);
-  return [
-    new Model4(categories, questions, toList([]), 10, false, new None()),
-    none2()
-  ];
-}
-function categories_qty(question, categories) {
-  return map(
-    categories,
-    (c) => {
-      let _block;
-      let _pipe = filter(
-        question,
-        (q) => {
-          return c.id === q.category.id;
-        }
-      );
-      let _pipe$1 = length(_pipe);
-      _block = to_string(_pipe$1);
-      let qty = _block;
-      return [c.name, qty];
+function get_question_by_ids_decode(dynamic2) {
+  let _pipe = run(dynamic2, list2(decoder4()));
+  return map_error(
+    _pipe,
+    (var0) => {
+      return new UnableToDecode(var0);
     }
   );
 }
-function update5(model, msg) {
-  if (msg instanceof SelectCategory) {
-    let category_id = msg[0];
-    let is_selected = msg[1];
-    let _block;
-    if (is_selected) {
-      let _pipe = append(model.selected_categories, toList([category_id]));
-      _block = unique(_pipe);
+
+// build/dev/javascript/study_app/utils/list_ex.mjs
+function get_at(list4, at) {
+  let _pipe = drop(list4, at);
+  return ((xs) => {
+    if (xs instanceof Empty) {
+      return new None();
     } else {
-      _block = filter(
-        model.selected_categories,
-        (id) => {
-          return id !== category_id;
+      let x = xs.head;
+      return new Some(x);
+    }
+  })(_pipe);
+}
+function update_at(list4, at, fun) {
+  return index_map(
+    list4,
+    (x, index5) => {
+      let $ = index5 === at;
+      if ($) {
+        return fun(x);
+      } else {
+        return x;
+      }
+    }
+  );
+}
+
+// build/dev/javascript/study_app/utils/promise_ex.mjs
+function to_effect(promise, decoder5, to_success_msg, to_err_msg) {
+  return from(
+    (dispatch) => {
+      let _pipe = promise;
+      let _pipe$1 = map_promise(
+        _pipe,
+        (dynamic2) => {
+          echo(dynamic2, "src/utils/promise_ex.gleam", 14);
+          let result = decoder5(dynamic2);
+          if (result instanceof Ok) {
+            let a = result[0];
+            return to_success_msg(a);
+          } else {
+            let err = result[0];
+            return to_err_msg(err);
+          }
         }
       );
+      tap(_pipe$1, dispatch);
+      return void 0;
     }
-    let new_selected_categories = _block;
-    return [
-      (() => {
-        let _record = model;
-        return new Model4(
-          _record.categories,
-          _record.questions,
-          new_selected_categories,
-          _record.selected_count,
-          _record.loading,
-          _record.error
-        );
-      })(),
-      none2()
-    ];
-  } else if (msg instanceof SelectCount) {
-    let count = msg[0];
-    return [
-      (() => {
-        let _record = model;
-        return new Model4(
-          _record.categories,
-          _record.questions,
-          _record.selected_categories,
-          count,
-          _record.loading,
-          _record.error
-        );
-      })(),
-      none2()
-    ];
-  } else if (msg instanceof StartQuiz) {
-    console_log(
-      "Start Quiz with categories: " + join(
-        model.selected_categories,
-        ", "
-      ) + " and count: " + to_string(model.selected_count)
-    );
-    return [model, none2()];
-  } else {
-    console_log("View History");
-    return [model, none2()];
-  }
-}
-function view_category_selection(category_with_counts) {
-  return div(
-    toList([styles(toList([["display", "flex"]]))]),
-    map(
-      category_with_counts,
-      (c) => {
-        let name2 = c[0];
-        let qty = c[1];
-        return div(
-          toList([styles(toList([["margin-right", "1rem"]]))]),
-          toList([
-            label(
-              toList([]),
-              toList([text3(name2 + " (" + qty + ")  ")])
-            )
-          ])
-        );
-      }
-    )
   );
 }
-function view_count_selection(selected_count) {
-  let counts = toList([10]);
-  return div(
-    toList([]),
-    map(
-      counts,
-      (count) => {
-        let is_selected = selected_count === count;
-        return label(
-          toList([]),
-          toList([
-            input(
-              toList([
-                on_check((_) => {
-                  return new SelectCount(count);
-                }),
-                type_("radio"),
-                name("count"),
-                value(to_string(count)),
-                checked(is_selected)
-              ])
-            ),
-            text3(to_string(count) + "\u554F")
-          ])
-        );
-      }
-    )
-  );
-}
-function view_actions(is_start_quiz_enabled) {
-  return div(
-    toList([]),
-    toList([
-      button(
-        toList([
-          on_click(new StartQuiz()),
-          disabled(negate(is_start_quiz_enabled))
-        ]),
-        toList([text3("\u30AF\u30A4\u30BA\u958B\u59CB")])
-      ),
-      button(
-        toList([on_click(new ViewHistory())]),
-        toList([text3("\u5B66\u7FD2\u5C65\u6B74")])
-      )
-    ])
-  );
-}
-function view_loading(loading) {
-  if (loading) {
-    return p(toList([]), toList([text3("Loading...")]));
-  } else {
-    return text3("");
-  }
-}
-function error_style() {
-  return toList([class$("error")]);
-}
-function view_error(error) {
-  if (error instanceof Some) {
-    let e = error[0];
-    return p(error_style(), toList([text3("Error: " + e)]));
-  } else {
-    return text3("");
-  }
-}
-function view4(model) {
-  let is_start_quiz_enabled = length(model.selected_categories) > 0;
-  let categories_info = categories_qty(model.questions, model.categories);
-  return div(
-    toList([]),
-    toList([
-      h1(toList([]), toList([text3("Quiz App")])),
-      view_error(model.error),
-      h2(toList([]), toList([text3("\u30AB\u30C6\u30B4\u30EA")])),
-      view_category_selection(categories_info),
-      h2(toList([]), toList([text3("\u51FA\u984C\u6570\u9078\u629E")])),
-      view_count_selection(model.selected_count),
-      view_actions(is_start_quiz_enabled),
-      view_loading(model.loading)
-    ])
+function to_effect_no_decode(promise, to_msg) {
+  return from(
+    (dispatch) => {
+      let _pipe = map_promise(promise, to_msg);
+      tap(_pipe, dispatch);
+      return void 0;
+    }
   );
 }
 function echo(value2, file, line) {
@@ -6787,17 +6792,17 @@ function echo$inspectString(str) {
   new_str += '"';
   return new_str;
 }
-function echo$inspectDict(map6) {
+function echo$inspectDict(map7) {
   let body = "dict.from_list([";
   let first = true;
   let key_value_pairs = [];
-  map6.forEach((value2, key2) => {
-    key_value_pairs.push([key2, value2]);
+  map7.forEach((value2, key) => {
+    key_value_pairs.push([key, value2]);
   });
   key_value_pairs.sort();
-  key_value_pairs.forEach(([key2, value2]) => {
+  key_value_pairs.forEach(([key, value2]) => {
     if (!first) body = body + ", ";
-    body = body + "#(" + echo$inspect(key2) + ", " + echo$inspect(value2) + ")";
+    body = body + "#(" + echo$inspect(key) + ", " + echo$inspect(value2) + ")";
     first = false;
   });
   return body + "])";
@@ -6883,206 +6888,417 @@ function echo$isDict(value2) {
   }
 }
 
-// build/dev/javascript/study_app/utils/list_ex.mjs
-function get_at(list4, at) {
-  let _pipe = drop(list4, at);
-  return ((xs) => {
-    if (xs instanceof Empty) {
-      return new None();
-    } else {
-      let x = xs.head;
-      return new Some(x);
-    }
-  })(_pipe);
-}
-function update_at(list4, at, fun) {
-  return index_map(
-    list4,
-    (x, index4) => {
-      let $ = index4 === at;
-      if ($) {
-        return fun(x);
-      } else {
-        return x;
-      }
-    }
-  );
-}
-
-// build/dev/javascript/study_app/pages/quiz_screen.mjs
-var Model5 = class extends CustomType {
-  constructor(questions, current_question_index, user_answers, quiz_finished) {
+// build/dev/javascript/study_app/pages/quiz_home.mjs
+var Model4 = class extends CustomType {
+  constructor(db, categories, question_ids, outcome, selected_category, selected_count, loading, error, history, show_history) {
     super();
-    this.questions = questions;
-    this.current_question_index = current_question_index;
-    this.user_answers = user_answers;
-    this.quiz_finished = quiz_finished;
+    this.db = db;
+    this.categories = categories;
+    this.question_ids = question_ids;
+    this.outcome = outcome;
+    this.selected_category = selected_category;
+    this.selected_count = selected_count;
+    this.loading = loading;
+    this.error = error;
+    this.history = history;
+    this.show_history = show_history;
   }
 };
-var QuestionMsg = class extends CustomType {
+var SelectCategory = class extends CustomType {
+  constructor($0, $1) {
+    super();
+    this[0] = $0;
+    this[1] = $1;
+  }
+};
+var SelectCount = class extends CustomType {
   constructor($0) {
     super();
     this[0] = $0;
   }
 };
-var NextQuestion = class extends CustomType {
+var StartQuiz = class extends CustomType {
 };
-var GoToResultScreen = class extends CustomType {
+var ViewHistory = class extends CustomType {
 };
-function init5(questions) {
-  let $ = is_empty2(questions);
-  if ($) {
-    echo2("No questions provided.", "src/pages/quiz_screen.gleam", 43);
-    return new Error(void 0);
-  } else {
-    let _block;
-    let _pipe = questions;
-    let _pipe$1 = map(_pipe, (q) => {
-      return [q.id, new NotAnswered()];
-    });
-    _block = from_list(_pipe$1);
-    let user_answers = _block;
-    return new Ok(new Model5(questions, 0, user_answers, false));
+var GetCategories = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
   }
-}
-function handle_next_question(model) {
-  let question = get_at(model.questions, model.current_question_index);
-  let _block;
-  if (question instanceof Some) {
-    let q = question[0];
-    _block = insert(model.user_answers, q.id, check_answer2(q));
-  } else {
-    _block = model.user_answers;
+};
+var GetQuestionIds = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
   }
-  let new_answers = _block;
-  let next_index = model.current_question_index + 1;
-  let $ = next_index >= length(model.questions);
-  if ($) {
-    let _record = model;
-    return new Model5(
-      _record.questions,
-      _record.current_question_index,
-      new_answers,
-      true
-    );
-  } else {
-    let _record = model;
-    return new Model5(
-      _record.questions,
-      next_index,
-      new_answers,
-      _record.quiz_finished
-    );
+};
+var OutCome = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
   }
-}
-function update6(model, msg) {
-  if (msg instanceof QuestionMsg) {
-    let q_msg = msg[0];
-    let new_questions = update_at(
-      model.questions,
-      model.current_question_index,
-      (_capture) => {
-        return update4(_capture, q_msg);
-      }
-    );
-    let _record = model;
-    return new Model5(
-      new_questions,
-      _record.current_question_index,
-      _record.user_answers,
-      _record.quiz_finished
-    );
-  } else if (msg instanceof NextQuestion) {
-    return handle_next_question(model);
-  } else {
-    return model;
+};
+var ErrScreen = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
   }
-}
-function get_score(user_answers) {
-  let _pipe = user_answers;
-  let _pipe$1 = values(_pipe);
-  let _pipe$2 = filter(
-    _pipe$1,
-    (answer) => {
-      return isEqual(answer, new Correct());
+};
+function init2(db, history) {
+  let get_categories = to_effect(
+    getCategories(db),
+    get_categories_decode,
+    (var0) => {
+      return new GetCategories(var0);
+    },
+    (var0) => {
+      return new ErrScreen(var0);
     }
   );
-  return length(_pipe$2);
-}
-function view_question(model) {
-  let $ = get_at(model.questions, model.current_question_index);
-  if ($ instanceof Some) {
-    let current_question = $[0];
-    let progress = "Question " + to_string(
-      model.current_question_index + 1
-    ) + " of " + to_string(length(model.questions));
-    return div(
+  let get_question_id_list = to_effect(
+    getQuestionIdList(db),
+    get_question_id_list_decode,
+    (var0) => {
+      return new GetQuestionIds(var0);
+    },
+    (var0) => {
+      return new ErrScreen(var0);
+    }
+  );
+  let eff = batch(toList([get_categories, get_question_id_list]));
+  return [
+    new Model4(
+      db,
       toList([]),
-      toList([
-        h2(toList([]), toList([text3(progress)])),
-        p(
-          toList([]),
-          toList([text3(current_question.question_text)])
-        ),
-        div(
-          toList([]),
-          toList([
-            (() => {
-              let _pipe = current_question;
-              let _pipe$1 = view3(_pipe);
-              return map5(
-                _pipe$1,
-                (var0) => {
-                  return new QuestionMsg(var0);
-                }
-              );
-            })()
-          ])
-        ),
-        button(
-          toList([
-            on_click(new NextQuestion()),
-            disabled(!is_answered(current_question))
-          ]),
-          toList([text3("Next")])
-        )
-      ])
+      toList([]),
+      toList([]),
+      new None(),
+      1,
+      false,
+      new None(),
+      history,
+      false
+    ),
+    eff
+  ];
+}
+function update5(model, msg) {
+  if (msg instanceof SelectCategory) {
+    let ind = msg[0];
+    let is_selected = msg[1];
+    let _block;
+    if (is_selected) {
+      _block = get_at(model.categories, ind);
+    } else {
+      _block = new None();
+    }
+    let new_selected_category = _block;
+    return [
+      (() => {
+        let _record = model;
+        return new Model4(
+          _record.db,
+          _record.categories,
+          _record.question_ids,
+          _record.outcome,
+          new_selected_category,
+          _record.selected_count,
+          _record.loading,
+          _record.error,
+          _record.history,
+          _record.show_history
+        );
+      })(),
+      none2()
+    ];
+  } else if (msg instanceof SelectCount) {
+    let count = msg[0];
+    return [
+      (() => {
+        let _record = model;
+        return new Model4(
+          _record.db,
+          _record.categories,
+          _record.question_ids,
+          _record.outcome,
+          _record.selected_category,
+          count,
+          _record.loading,
+          _record.error,
+          _record.history,
+          _record.show_history
+        );
+      })(),
+      none2()
+    ];
+  } else if (msg instanceof StartQuiz) {
+    echo2("Start Quiz", "src/pages/quiz_home.gleam", 110);
+    let _block;
+    let _pipe = model.question_ids;
+    let _pipe$1 = shuffle(_pipe);
+    _block = take(_pipe$1, model.selected_count);
+    let selected_ids = _block;
+    let eff = to_effect(
+      getQuestionByIds(model.db, selected_ids),
+      get_question_by_ids_decode,
+      (var0) => {
+        return new OutCome(var0);
+      },
+      (var0) => {
+        return new ErrScreen(var0);
+      }
     );
+    return [model, eff];
+  } else if (msg instanceof ViewHistory) {
+    console_log("View History");
+    return [
+      (() => {
+        let _record = model;
+        return new Model4(
+          _record.db,
+          _record.categories,
+          _record.question_ids,
+          _record.outcome,
+          _record.selected_category,
+          _record.selected_count,
+          _record.loading,
+          _record.error,
+          _record.history,
+          negate(model.show_history)
+        );
+      })(),
+      none2()
+    ];
+  } else if (msg instanceof GetCategories) {
+    let categories = msg[0];
+    return [
+      (() => {
+        let _record = model;
+        return new Model4(
+          _record.db,
+          categories,
+          _record.question_ids,
+          _record.outcome,
+          _record.selected_category,
+          _record.selected_count,
+          _record.loading,
+          _record.error,
+          _record.history,
+          _record.show_history
+        );
+      })(),
+      none2()
+    ];
+  } else if (msg instanceof GetQuestionIds) {
+    let ids = msg[0];
+    return [
+      (() => {
+        let _record = model;
+        return new Model4(
+          _record.db,
+          _record.categories,
+          ids,
+          _record.outcome,
+          _record.selected_category,
+          _record.selected_count,
+          _record.loading,
+          _record.error,
+          init(ids),
+          _record.show_history
+        );
+      })(),
+      none2()
+    ];
+  } else if (msg instanceof OutCome) {
+    let questions = msg[0];
+    console_log(
+      "Fetched " + to_string(length(questions)) + " questions."
+    );
+    return [model, none2()];
   } else {
-    return text3("Error: Question not found.");
+    let json_err = msg[0];
+    echo2("err screen", "src/pages/quiz_home.gleam", 152);
+    return [
+      (() => {
+        let _record = model;
+        return new Model4(
+          _record.db,
+          _record.categories,
+          _record.question_ids,
+          _record.outcome,
+          _record.selected_category,
+          _record.selected_count,
+          _record.loading,
+          new Some(json_err),
+          _record.history,
+          _record.show_history
+        );
+      })(),
+      none2()
+    ];
   }
 }
-function view_quiz_finished(model) {
-  let score = get_score(model.user_answers);
-  let total_questions = length(model.questions);
+function view_error(error) {
+  if (error instanceof Some) {
+    return p(toList([class$("Loading error")]), toList([]));
+  } else {
+    return text3("");
+  }
+}
+function view_category_selection(categories, selected_category) {
+  return div(
+    toList([styles(toList([["display", "flex"]]))]),
+    index_map(
+      categories,
+      (category, ind) => {
+        let _block;
+        if (selected_category instanceof Some) {
+          let sc = selected_category[0];
+          _block = sc.id === category.id;
+        } else {
+          _block = false;
+        }
+        let is_selected = _block;
+        return div(
+          toList([styles(toList([["margin-right", "1rem"]]))]),
+          toList([
+            input(toList([type_("checkbox"), checked(true)])),
+            label(toList([]), toList([text3(category.name)]))
+          ])
+        );
+      }
+    )
+  );
+}
+function view_count_selection(selected_count) {
+  let counts = toList([1, 10, 20, 30]);
   return div(
     toList([]),
+    map(
+      counts,
+      (count) => {
+        let is_selected = selected_count === count;
+        return label(
+          toList([]),
+          toList([
+            input(
+              toList([
+                on_check((_) => {
+                  return new SelectCount(count);
+                }),
+                type_("radio"),
+                name("count"),
+                value(to_string(count)),
+                checked(is_selected)
+              ])
+            ),
+            text3(to_string(count) + "\u554F")
+          ])
+        );
+      }
+    )
+  );
+}
+function view_loading(loading) {
+  if (loading) {
+    return p(toList([]), toList([text3("Loading...")]));
+  } else {
+    return text3("");
+  }
+}
+function view_history(history) {
+  let history_list = map_to_list(history);
+  return table(
+    toList([class$("history-table")]),
     toList([
-      h2(toList([]), toList([text3("Quiz Finished!")])),
-      p(
+      thead(
         toList([]),
         toList([
-          text3(
-            "Your score: " + to_string(score) + "/" + to_string(
-              total_questions
-            )
+          tr(
+            toList([]),
+            toList([
+              th(toList([]), toList([text3("ID")])),
+              th(toList([]), toList([text3("Result")]))
+            ])
           )
         ])
       ),
-      button(
-        toList([on_click(new GoToResultScreen())]),
-        toList([text3("View Results")])
+      tbody(
+        toList([]),
+        map(
+          history_list,
+          (item) => {
+            let id = item[0];
+            let result = item[1];
+            return tr(
+              toList([]),
+              toList([
+                td(toList([]), toList([text3(to_string(id))])),
+                td(
+                  toList([]),
+                  toList([
+                    (() => {
+                      if (result instanceof Correct) {
+                        return text3("\u25CB");
+                      } else if (result instanceof Incorrect) {
+                        return text3("\u2716");
+                      } else {
+                        return text3("-");
+                      }
+                    })()
+                  ])
+                )
+              ])
+            );
+          }
+        )
       )
     ])
   );
 }
-function view5(model) {
-  let $ = model.quiz_finished;
-  if ($) {
-    return view_quiz_finished(model);
-  } else {
-    return view_question(model);
-  }
+function view_actions(is_start_quiz_enabled, show_history, history) {
+  return div(
+    toList([]),
+    toList([
+      button(
+        toList([
+          on_click(new StartQuiz()),
+          disabled(negate(is_start_quiz_enabled))
+        ]),
+        toList([text3("\u30AF\u30A4\u30BA\u958B\u59CB")])
+      ),
+      button(
+        toList([on_click(new ViewHistory())]),
+        toList([text3("\u5B66\u7FD2\u5C65\u6B74")])
+      ),
+      (() => {
+        if (show_history) {
+          return view_history(history);
+        } else {
+          return text3("");
+        }
+      })()
+    ])
+  );
+}
+function view4(model) {
+  let is_start_quiz_enabled = length(model.categories) > 0 && length(
+    model.question_ids
+  ) > 0;
+  return div(
+    toList([]),
+    toList([
+      h1(toList([]), toList([text3("Quiz App")])),
+      view_error(model.error),
+      h2(toList([]), toList([text3("\u30AB\u30C6\u30B4\u30EA")])),
+      view_category_selection(model.categories, model.selected_category),
+      h2(toList([]), toList([text3("\u51FA\u984C\u6570\u9078\u629E")])),
+      view_count_selection(model.selected_count),
+      view_actions(is_start_quiz_enabled, model.show_history, model.history),
+      view_loading(model.loading)
+    ])
+  );
 }
 function echo2(value2, file, line) {
   const grey = "\x1B[90m";
@@ -7125,17 +7341,17 @@ function echo$inspectString2(str) {
   new_str += '"';
   return new_str;
 }
-function echo$inspectDict2(map6) {
+function echo$inspectDict2(map7) {
   let body = "dict.from_list([";
   let first = true;
   let key_value_pairs = [];
-  map6.forEach((value2, key2) => {
-    key_value_pairs.push([key2, value2]);
+  map7.forEach((value2, key) => {
+    key_value_pairs.push([key, value2]);
   });
   key_value_pairs.sort();
-  key_value_pairs.forEach(([key2, value2]) => {
+  key_value_pairs.forEach(([key, value2]) => {
     if (!first) body = body + ", ";
-    body = body + "#(" + echo$inspect2(key2) + ", " + echo$inspect2(value2) + ")";
+    body = body + "#(" + echo$inspect2(key) + ", " + echo$inspect2(value2) + ")";
     first = false;
   });
   return body + "])";
@@ -7221,376 +7437,237 @@ function echo$isDict2(value2) {
   }
 }
 
-// build/dev/javascript/study_app/pages/result_screen.mjs
-var Model6 = class extends CustomType {
-  constructor(score, total_questions, user_answers, questions) {
-    super();
-    this.score = score;
-    this.total_questions = total_questions;
-    this.user_answers = user_answers;
-    this.questions = questions;
-  }
-};
-var GoToHome = class extends CustomType {
-};
-function init6(score, total_questions, user_answers, questions) {
-  return [new Model6(score, total_questions, user_answers, questions), none2()];
-}
-function view_answers(dic) {
-  return ul(
-    toList([]),
-    map(
-      map_to_list(dic),
-      (_use0) => {
-        let id = _use0[0];
-        let answer = _use0[1];
-        let _block;
-        if (answer instanceof Correct) {
-          _block = "Correct";
-        } else if (answer instanceof Incorrect) {
-          _block = "Incorrect";
-        } else {
-          _block = "Not Answered";
-        }
-        let status_text = _block;
-        return li(
-          toList([]),
-          toList([text3(id + ": " + status_text)])
-        );
-      }
-    )
-  );
-}
-function view6(model) {
-  return div(
-    toList([]),
-    toList([
-      h2(toList([]), toList([text3("Quiz Results")])),
-      p(
-        toList([]),
-        toList([
-          text3(
-            "Your score: " + to_string(model.score) + "/" + to_string(
-              model.total_questions
-            )
-          )
-        ])
-      ),
-      h3(toList([]), toList([text3("Detailed Results")])),
-      view_answers(model.user_answers),
-      button(
-        toList([on_click(new GoToHome())]),
-        toList([text3("Go to Home")])
-      )
-    ])
-  );
-}
-
-// build/dev/javascript/study_app/sample_data.mjs
-function sample_questions() {
-  return toList([
-    init3(
-      "q1",
-      new Category("gleam_basic", "Gleam\u57FA\u790E"),
-      "Gleam\u3067\u30A4\u30DF\u30E5\u30FC\u30BF\u30D6\u30EB\u306A\u5909\u6570\u3092\u5B9A\u7FA9\u3059\u308B\u30AD\u30FC\u30EF\u30FC\u30C9\u306F\uFF1F",
-      new MultipleChoice(
-        init2(
-          toList([
-            "\u65B0\u3057\u3044Model\u3068Effect",
-            "Element\u3068View",
-            "Model\u3068View",
-            "\u65B0\u3057\u3044Model\u3068Msg"
-          ]),
-          0
-        )
-      )
-    ),
-    init3(
-      "q2",
-      new Category("gleam_basic", "Gleam\u57FA\u790E"),
-      "Gleam\u306E\u30D1\u30C3\u30B1\u30FC\u30B8\u30DE\u30CD\u30FC\u30B8\u30E3\u30FC\u3068\u3057\u3066\u4F7F\u308F\u308C\u308B\u30C4\u30FC\u30EB\u306F\uFF1F",
-      new Association(
-        init(
-          toList([
-            new Pair("1", "\u65E5\u672C", "\u6771\u4EAC"),
-            new Pair("2", "\u30A2\u30E1\u30EA\u30AB", "\u30EF\u30B7\u30F3\u30C8\u30F3D.C."),
-            new Pair("3", "\u30A4\u30AE\u30EA\u30B9", "\u30ED\u30F3\u30C9\u30F3")
-          ])
-        )
-      )
-    ),
-    init3(
-      "q3",
-      new Category("lustre_basic", "Lustre\u57FA\u790E"),
-      "Lustre\u30A2\u30D7\u30EA\u30B1\u30FC\u30B7\u30E7\u30F3\u306E`update`\u95A2\u6570\u304C\u8FD4\u3059\u3082\u306E\u306F\uFF1F",
-      new MultipleChoice(
-        init2(toList(["let", "const", "var", "def"]), 0)
-      )
-    ),
-    init3(
-      "q4",
-      new Category("lustre_basic", "Lustre\u57FA\u790E"),
-      "Lustre\u3067HTML\u8981\u7D20\u3092\u751F\u6210\u3059\u308B\u305F\u3081\u306B\u4F7F\u308F\u308C\u308B\u30E2\u30B8\u30E5\u30FC\u30EB\u306F\uFF1F",
-      new Association(
-        init(
-          toList([
-            new Pair("1", "html", "html"),
-            new Pair("2", "element", "element"),
-            new Pair("3", "attribute", "attribute")
-          ])
-        )
-      )
-    )
-  ]);
-}
-var sample_categories = /* @__PURE__ */ toList([
-  /* @__PURE__ */ new Category("gleam_basic", "Gleam\u57FA\u790E"),
-  /* @__PURE__ */ new Category("lustre_basic", "Lustre\u57FA\u790E")
-]);
-
-// build/dev/javascript/study_app/study_app.mjs
-var FILEPATH = "src/study_app.gleam";
-var Home = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var Quiz = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var QuizResult = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var ErrScreen = class extends CustomType {
-};
-var HomeMsg = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var QuizMsg = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var QuizResultMsg = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-function save_categories(storage, categories) {
-  let _block;
-  let _pipe = categories;
-  let _pipe$1 = array2(_pipe, to_json4);
-  _block = to_string2(_pipe$1);
-  let json_string = _block;
-  let _pipe$2 = setItem(storage, "categories", json_string);
-  return map_error(_pipe$2, (_) => {
-    return void 0;
-  });
-}
-function save_questions(storage, questions) {
-  let _block;
-  let _pipe = questions;
-  let _pipe$1 = array2(_pipe, to_json7);
-  _block = to_string2(_pipe$1);
-  let json_string = _block;
-  let _pipe$2 = setItem(storage, "question", json_string);
-  let _pipe$3 = map_error(_pipe$2, (_) => {
-    return void 0;
-  });
-  return echo3(_pipe$3, "src/study_app.gleam", 66);
-}
-function ini_load_storage() {
-  return try$(
-    localStorage(),
-    (storage) => {
-      return try$(
-        save_categories(storage, sample_categories),
-        (_) => {
-          return map3(
-            save_questions(storage, sample_questions()),
-            (_2) => {
-              let $ = init4(storage);
-              let home_model = $[0];
-              let home_effect = $[1];
-              return [
-                new Home(home_model),
-                map4(
-                  home_effect,
-                  (var0) => {
-                    return new HomeMsg(var0);
-                  }
-                )
-              ];
-            }
-          );
-        }
-      );
-    }
-  );
-}
-function init7(_) {
-  let _pipe = ini_load_storage();
-  return unwrap(_pipe, [new ErrScreen(), none2()]);
-}
-function wrap_result_err(a) {
-  return map_error(
-    a,
-    (err) => {
-      echo3(err, "src/study_app.gleam", 71);
+// build/dev/javascript/study_app/utils/effect_.mjs
+function perform(msg) {
+  return from(
+    (dispatch) => {
+      dispatch(msg);
       return void 0;
     }
   );
 }
-function update7(model, msg) {
-  if (model instanceof Home) {
-    let home_model = model[0];
-    if (msg instanceof HomeMsg) {
-      let home_msg = msg[0];
-      let $ = update5(home_model, home_msg);
-      let new_home_model = $[0];
-      let home_effect = $[1];
-      if (home_msg instanceof StartQuiz) {
-        let _block;
-        {
-          let screen_ini = init5(new_home_model.questions);
-          _block = map3(
-            screen_ini,
-            (quiz_model) => {
-              return [new Quiz(quiz_model), none2()];
-            }
-          );
-        }
-        let _pipe = _block;
-        return unwrap(_pipe, [new ErrScreen(), none2()]);
-      } else {
-        return [
-          new Home(new_home_model),
-          map4(home_effect, (var0) => {
-            return new HomeMsg(var0);
-          })
-        ];
-      }
-    } else {
-      return [model, none2()];
-    }
-  } else if (model instanceof Quiz) {
-    let quiz_model = model[0];
-    if (msg instanceof QuizMsg) {
-      let quiz_msg = msg[0];
-      if (quiz_msg instanceof GoToResultScreen) {
-        let $ = init6(
-          get_score(quiz_model.user_answers),
-          length(quiz_model.questions),
-          quiz_model.user_answers,
-          quiz_model.questions
-        );
-        let result_model = $[0];
-        let result_effect = $[1];
-        return [
-          new QuizResult(result_model),
-          map4(
-            result_effect,
-            (var0) => {
-              return new QuizResultMsg(var0);
-            }
-          )
-        ];
-      } else {
-        let new_quiz_model = update6(quiz_model, quiz_msg);
-        return [new Quiz(new_quiz_model), none2()];
-      }
-    } else {
-      return [model, none2()];
-    }
-  } else if (model instanceof QuizResult) {
-    if (msg instanceof QuizResultMsg) {
-      let result_msg = msg[0];
-      let _block;
-      {
-        let _block$1;
-        let _pipe2 = localStorage();
-        _block$1 = wrap_result_err(_pipe2);
-        let result_storage = _block$1;
-        _block = map3(
-          result_storage,
-          (storage) => {
-            let $ = init4(storage);
-            let home_model = $[0];
-            let home_effect = $[1];
-            return [
-              new Home(home_model),
-              map4(home_effect, (var0) => {
-                return new HomeMsg(var0);
-              })
-            ];
-          }
-        );
-      }
-      let _pipe = _block;
-      return unwrap(_pipe, [new ErrScreen(), none2()]);
-    } else {
-      return [model, none2()];
-    }
-  } else {
-    return [model, none2()];
+
+// build/dev/javascript/study_app/pages/quiz_screen.mjs
+var Model5 = class extends CustomType {
+  constructor(db, questions, questions_count, current_question_index, answers, quiz_finished, score, history) {
+    super();
+    this.db = db;
+    this.questions = questions;
+    this.questions_count = questions_count;
+    this.current_question_index = current_question_index;
+    this.answers = answers;
+    this.quiz_finished = quiz_finished;
+    this.score = score;
+    this.history = history;
   }
-}
-function view7(model) {
-  if (model instanceof Home) {
-    let home_model = model[0];
-    let _pipe = view4(home_model);
-    return map5(_pipe, (var0) => {
-      return new HomeMsg(var0);
-    });
-  } else if (model instanceof Quiz) {
-    let quiz_model = model[0];
-    let _pipe = view5(quiz_model);
-    return map5(_pipe, (var0) => {
-      return new QuizMsg(var0);
-    });
-  } else if (model instanceof QuizResult) {
-    let result_model = model[0];
-    let _pipe = view6(result_model);
-    return map5(_pipe, (var0) => {
-      return new QuizResultMsg(var0);
-    });
-  } else {
-    return text3("\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F");
+};
+var QuestionMsg = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
   }
-}
-function main() {
-  let app = application(init7, update7, view7);
-  let $ = start3(app, "#app", void 0);
-  if (!($ instanceof Ok)) {
-    throw makeError(
-      "let_assert",
-      FILEPATH,
-      "study_app",
-      169,
-      "main",
-      "Pattern match failed, no pattern matched the value.",
-      {
-        value: $,
-        start: 5194,
-        end: 5243,
-        pattern_start: 5205,
-        pattern_end: 5210
-      }
+};
+var NextQuestion = class extends CustomType {
+};
+var OutCome2 = class extends CustomType {
+};
+var GoToResultScreen = class extends CustomType {
+};
+function init3(db, questions, history) {
+  let $ = is_empty2(questions);
+  if ($) {
+    return new Error(void 0);
+  } else {
+    let _block;
+    let _pipe = questions;
+    let _pipe$1 = map(_pipe, (q) => {
+      return [q.id, new NotAnswered()];
+    });
+    _block = from_list(_pipe$1);
+    let new_answers = _block;
+    return new Ok(
+      new Model5(
+        db,
+        questions,
+        length(questions),
+        0,
+        new_answers,
+        false,
+        0,
+        history
+      )
     );
   }
-  return void 0;
+}
+function update_answers(model) {
+  let _pipe = model.questions;
+  let _pipe$1 = get_at(_pipe, model.current_question_index);
+  return ((question) => {
+    if (question instanceof Some) {
+      let q = question[0];
+      return insert(model.answers, q.id, check_answer2(q));
+    } else {
+      return model.answers;
+    }
+  })(_pipe$1);
+}
+function get_score(answers) {
+  let _pipe = answers;
+  let _pipe$1 = values(_pipe);
+  let _pipe$2 = filter(
+    _pipe$1,
+    (answer) => {
+      return isEqual(answer, new Correct());
+    }
+  );
+  return length(_pipe$2);
+}
+function update6(model, msg) {
+  if (msg instanceof QuestionMsg) {
+    let q_msg = msg[0];
+    let new_questions = update_at(
+      model.questions,
+      model.current_question_index,
+      (_capture) => {
+        return update4(_capture, q_msg);
+      }
+    );
+    return [
+      (() => {
+        let _record = model;
+        return new Model5(
+          _record.db,
+          new_questions,
+          _record.questions_count,
+          _record.current_question_index,
+          _record.answers,
+          _record.quiz_finished,
+          _record.score,
+          _record.history
+        );
+      })(),
+      none2()
+    ];
+  } else if (msg instanceof NextQuestion) {
+    let new_answers = update_answers(model);
+    let new_score = get_score(new_answers);
+    let next_index = model.current_question_index + 1;
+    let is_finished = next_index >= (() => {
+      let _pipe = length(model.questions);
+      return echo3(_pipe, "src/pages/quiz_screen.gleam", 99);
+    })();
+    if (is_finished) {
+      return [
+        (() => {
+          let _record = model;
+          return new Model5(
+            _record.db,
+            _record.questions,
+            _record.questions_count,
+            _record.current_question_index,
+            new_answers,
+            true,
+            new_score,
+            _record.history
+          );
+        })(),
+        perform(new GoToResultScreen())
+      ];
+    } else {
+      return [
+        (() => {
+          let _record = model;
+          return new Model5(
+            _record.db,
+            _record.questions,
+            _record.questions_count,
+            next_index,
+            new_answers,
+            _record.quiz_finished,
+            new_score,
+            _record.history
+          );
+        })(),
+        none2()
+      ];
+    }
+  } else if (msg instanceof OutCome2) {
+    return [model, none2()];
+  } else {
+    return [model, perform(new OutCome2())];
+  }
+}
+function view_question(model) {
+  let $ = get_at(model.questions, model.current_question_index);
+  if ($ instanceof Some) {
+    let current_question = $[0];
+    let progress = "Question " + to_string(
+      model.current_question_index + 1
+    ) + " of " + to_string(length(model.questions));
+    return div(
+      toList([]),
+      toList([
+        h2(toList([]), toList([text3(progress)])),
+        p(
+          toList([]),
+          toList([text3(current_question.question_text)])
+        ),
+        div(
+          toList([]),
+          toList([
+            (() => {
+              let _pipe = current_question;
+              let _pipe$1 = view3(_pipe);
+              return map4(
+                _pipe$1,
+                (var0) => {
+                  return new QuestionMsg(var0);
+                }
+              );
+            })()
+          ])
+        ),
+        button(
+          toList([on_click(new NextQuestion())]),
+          toList([text3("Next")])
+        )
+      ])
+    );
+  } else {
+    return text3("Error: Question not found.");
+  }
+}
+function view_quiz_finished(model) {
+  let score = get_score(model.answers);
+  let total_questions = length(model.questions);
+  return div(
+    toList([]),
+    toList([
+      h2(toList([]), toList([text3("Quiz Finished!")])),
+      p(
+        toList([]),
+        toList([
+          text3(
+            "Your score: " + to_string(score) + "/" + to_string(
+              total_questions
+            )
+          )
+        ])
+      ),
+      button(
+        toList([on_click(new GoToResultScreen())]),
+        toList([text3("View Results")])
+      )
+    ])
+  );
+}
+function view5(model) {
+  let $ = model.quiz_finished;
+  if ($) {
+    return view_quiz_finished(model);
+  } else {
+    return view_question(model);
+  }
 }
 function echo3(value2, file, line) {
   const grey = "\x1B[90m";
@@ -7633,17 +7710,17 @@ function echo$inspectString3(str) {
   new_str += '"';
   return new_str;
 }
-function echo$inspectDict3(map6) {
+function echo$inspectDict3(map7) {
   let body = "dict.from_list([";
   let first = true;
   let key_value_pairs = [];
-  map6.forEach((value2, key2) => {
-    key_value_pairs.push([key2, value2]);
+  map7.forEach((value2, key) => {
+    key_value_pairs.push([key, value2]);
   });
   key_value_pairs.sort();
-  key_value_pairs.forEach(([key2, value2]) => {
+  key_value_pairs.forEach(([key, value2]) => {
     if (!first) body = body + ", ";
-    body = body + "#(" + echo$inspect3(key2) + ", " + echo$inspect3(value2) + ")";
+    body = body + "#(" + echo$inspect3(key) + ", " + echo$inspect3(value2) + ")";
     first = false;
   });
   return body + "])";
@@ -7722,6 +7799,423 @@ function echo$inspectBitArray3(bitArray) {
   }
 }
 function echo$isDict3(value2) {
+  try {
+    return value2 instanceof Dict;
+  } catch {
+    return false;
+  }
+}
+
+// build/dev/javascript/study_app/pages/result_screen.mjs
+var Model6 = class extends CustomType {
+  constructor(db, score, total_questions, answers, history) {
+    super();
+    this.db = db;
+    this.score = score;
+    this.total_questions = total_questions;
+    this.answers = answers;
+    this.history = history;
+  }
+};
+var GoToHome = class extends CustomType {
+};
+function init4(db, score, total_questions, answers, history) {
+  return [new Model6(db, score, total_questions, answers, history), none2()];
+}
+function view_answers(dic) {
+  return ul(
+    toList([]),
+    map(
+      map_to_list(dic),
+      (_use0) => {
+        let id = _use0[0];
+        let answer = _use0[1];
+        let _block;
+        if (answer instanceof Correct) {
+          _block = "\u25CB";
+        } else if (answer instanceof Incorrect) {
+          _block = "\u2716";
+        } else {
+          _block = "-";
+        }
+        let status_text = _block;
+        return li(
+          toList([]),
+          toList([text3(to_string(id) + ": " + status_text)])
+        );
+      }
+    )
+  );
+}
+function view6(model) {
+  return div(
+    toList([]),
+    toList([
+      h2(toList([]), toList([text3("Quiz Results")])),
+      p(
+        toList([]),
+        toList([
+          text3(
+            "Your score: " + to_string(model.score) + "/" + to_string(
+              model.total_questions
+            )
+          )
+        ])
+      ),
+      h3(toList([]), toList([text3("Detailed Results:")])),
+      view_answers(model.answers),
+      button(
+        toList([on_click(new GoToHome())]),
+        toList([text3("Go to Home")])
+      )
+    ])
+  );
+}
+
+// build/dev/javascript/study_app/study_app.mjs
+var FILEPATH = "src/study_app.gleam";
+var Loading = class extends CustomType {
+};
+var Home = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var QuizScreen = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var QuizResult = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var ErrScreen2 = class extends CustomType {
+};
+var HomeMsg = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var QuizMsg = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var QuizResultMsg = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var DataInitialized = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+function update7(model, msg) {
+  if (model instanceof Loading) {
+    if (msg instanceof DataInitialized) {
+      let db = msg[0];
+      let history = init(toList([]));
+      let $ = init2(db, history);
+      let home_model = $[0];
+      let home_effect = $[1];
+      return [
+        new Home(home_model),
+        map3(home_effect, (var0) => {
+          return new HomeMsg(var0);
+        })
+      ];
+    } else {
+      return [model, none2()];
+    }
+  } else if (model instanceof Home) {
+    let home_model = model[0];
+    if (msg instanceof HomeMsg) {
+      let home_msg = msg[0];
+      let $ = update5(home_model, home_msg);
+      let new_home_model = $[0];
+      let home_effect = $[1];
+      if (home_msg instanceof OutCome) {
+        let questions = home_msg[0];
+        echo4("Home -> QuizScreen", "src/study_app.gleam", 66);
+        let screen_ini = init3(
+          new_home_model.db,
+          questions,
+          new_home_model.history
+        );
+        if (screen_ini instanceof Ok) {
+          let quiz_model = screen_ini[0];
+          return [new QuizScreen(quiz_model), none2()];
+        } else {
+          return [new ErrScreen2(), none2()];
+        }
+      } else {
+        return [
+          new Home(new_home_model),
+          map3(home_effect, (var0) => {
+            return new HomeMsg(var0);
+          })
+        ];
+      }
+    } else {
+      return [model, none2()];
+    }
+  } else if (model instanceof QuizScreen) {
+    let quiz_model = model[0];
+    if (msg instanceof QuizMsg) {
+      let quiz_msg = msg[0];
+      let $ = update6(quiz_model, quiz_msg);
+      let new_quiz_model = $[0];
+      let quiz_eff = $[1];
+      if (quiz_msg instanceof OutCome2) {
+        let $1 = init4(
+          new_quiz_model.db,
+          new_quiz_model.score,
+          new_quiz_model.questions_count,
+          new_quiz_model.answers,
+          new_quiz_model.history
+        );
+        let result_model = $1[0];
+        let result_effect = $1[1];
+        return [
+          new QuizResult(result_model),
+          map3(
+            result_effect,
+            (var0) => {
+              return new QuizResultMsg(var0);
+            }
+          )
+        ];
+      } else {
+        return [
+          new QuizScreen(new_quiz_model),
+          map3(quiz_eff, (var0) => {
+            return new QuizMsg(var0);
+          })
+        ];
+      }
+    } else {
+      return [model, none2()];
+    }
+  } else if (model instanceof QuizResult) {
+    let quiz_model = model[0];
+    if (msg instanceof QuizResultMsg) {
+      let result_msg = msg[0];
+      let $ = init2(quiz_model.db, quiz_model.history);
+      let new_modek = $[0];
+      let new_eff = $[1];
+      return [
+        new Home(new_modek),
+        map3(new_eff, (var0) => {
+          return new HomeMsg(var0);
+        })
+      ];
+    } else {
+      return [model, none2()];
+    }
+  } else {
+    return [model, none2()];
+  }
+}
+function view7(model) {
+  if (model instanceof Loading) {
+    return text3("Loading...");
+  } else if (model instanceof Home) {
+    let home_model = model[0];
+    let _pipe = view4(home_model);
+    return map4(_pipe, (var0) => {
+      return new HomeMsg(var0);
+    });
+  } else if (model instanceof QuizScreen) {
+    let quiz_model = model[0];
+    let _pipe = view5(quiz_model);
+    return map4(_pipe, (var0) => {
+      return new QuizMsg(var0);
+    });
+  } else if (model instanceof QuizResult) {
+    let result_model = model[0];
+    let _pipe = view6(result_model);
+    return map4(_pipe, (var0) => {
+      return new QuizResultMsg(var0);
+    });
+  } else {
+    return text3("\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F");
+  }
+}
+var db_name = "db";
+var db_version = 1;
+function init5(_) {
+  return [
+    new Loading(),
+    to_effect_no_decode(
+      setup(db_name, db_version),
+      (var0) => {
+        return new DataInitialized(var0);
+      }
+    )
+  ];
+}
+function main() {
+  let app = application(init5, update7, view7);
+  let $ = start3(app, "#app", void 0);
+  if (!($ instanceof Ok)) {
+    throw makeError(
+      "let_assert",
+      FILEPATH,
+      "study_app",
+      153,
+      "main",
+      "Pattern match failed, no pattern matched the value.",
+      {
+        value: $,
+        start: 4212,
+        end: 4261,
+        pattern_start: 4223,
+        pattern_end: 4228
+      }
+    );
+  }
+  return void 0;
+}
+function echo4(value2, file, line) {
+  const grey = "\x1B[90m";
+  const reset_color = "\x1B[39m";
+  const file_line = `${file}:${line}`;
+  const string_value = echo$inspect4(value2);
+  if (globalThis.process?.stderr?.write) {
+    const string5 = `${grey}${file_line}${reset_color}
+${string_value}
+`;
+    process.stderr.write(string5);
+  } else if (globalThis.Deno) {
+    const string5 = `${grey}${file_line}${reset_color}
+${string_value}
+`;
+    globalThis.Deno.stderr.writeSync(new TextEncoder().encode(string5));
+  } else {
+    const string5 = `${file_line}
+${string_value}`;
+    globalThis.console.log(string5);
+  }
+  return value2;
+}
+function echo$inspectString4(str) {
+  let new_str = '"';
+  for (let i = 0; i < str.length; i++) {
+    let char = str[i];
+    if (char == "\n") new_str += "\\n";
+    else if (char == "\r") new_str += "\\r";
+    else if (char == "	") new_str += "\\t";
+    else if (char == "\f") new_str += "\\f";
+    else if (char == "\\") new_str += "\\\\";
+    else if (char == '"') new_str += '\\"';
+    else if (char < " " || char > "~" && char < "\xA0") {
+      new_str += "\\u{" + char.charCodeAt(0).toString(16).toUpperCase().padStart(4, "0") + "}";
+    } else {
+      new_str += char;
+    }
+  }
+  new_str += '"';
+  return new_str;
+}
+function echo$inspectDict4(map7) {
+  let body = "dict.from_list([";
+  let first = true;
+  let key_value_pairs = [];
+  map7.forEach((value2, key) => {
+    key_value_pairs.push([key, value2]);
+  });
+  key_value_pairs.sort();
+  key_value_pairs.forEach(([key, value2]) => {
+    if (!first) body = body + ", ";
+    body = body + "#(" + echo$inspect4(key) + ", " + echo$inspect4(value2) + ")";
+    first = false;
+  });
+  return body + "])";
+}
+function echo$inspectCustomType4(record) {
+  const props = globalThis.Object.keys(record).map((label2) => {
+    const value2 = echo$inspect4(record[label2]);
+    return isNaN(parseInt(label2)) ? `${label2}: ${value2}` : value2;
+  }).join(", ");
+  return props ? `${record.constructor.name}(${props})` : record.constructor.name;
+}
+function echo$inspectObject4(v) {
+  const name2 = Object.getPrototypeOf(v)?.constructor?.name || "Object";
+  const props = [];
+  for (const k of Object.keys(v)) {
+    props.push(`${echo$inspect4(k)}: ${echo$inspect4(v[k])}`);
+  }
+  const body = props.length ? " " + props.join(", ") + " " : "";
+  const head = name2 === "Object" ? "" : name2 + " ";
+  return `//js(${head}{${body}})`;
+}
+function echo$inspect4(v) {
+  const t = typeof v;
+  if (v === true) return "True";
+  if (v === false) return "False";
+  if (v === null) return "//js(null)";
+  if (v === void 0) return "Nil";
+  if (t === "string") return echo$inspectString4(v);
+  if (t === "bigint" || t === "number") return v.toString();
+  if (globalThis.Array.isArray(v))
+    return `#(${v.map(echo$inspect4).join(", ")})`;
+  if (v instanceof List)
+    return `[${v.toArray().map(echo$inspect4).join(", ")}]`;
+  if (v instanceof UtfCodepoint)
+    return `//utfcodepoint(${String.fromCodePoint(v.value)})`;
+  if (v instanceof BitArray) return echo$inspectBitArray4(v);
+  if (v instanceof CustomType) return echo$inspectCustomType4(v);
+  if (echo$isDict4(v)) return echo$inspectDict4(v);
+  if (v instanceof Set)
+    return `//js(Set(${[...v].map(echo$inspect4).join(", ")}))`;
+  if (v instanceof RegExp) return `//js(${v})`;
+  if (v instanceof Date) return `//js(Date("${v.toISOString()}"))`;
+  if (v instanceof Function) {
+    const args = [];
+    for (const i of Array(v.length).keys())
+      args.push(String.fromCharCode(i + 97));
+    return `//fn(${args.join(", ")}) { ... }`;
+  }
+  return echo$inspectObject4(v);
+}
+function echo$inspectBitArray4(bitArray) {
+  let endOfAlignedBytes = bitArray.bitOffset + 8 * Math.trunc(bitArray.bitSize / 8);
+  let alignedBytes = bitArraySlice(
+    bitArray,
+    bitArray.bitOffset,
+    endOfAlignedBytes
+  );
+  let remainingUnalignedBits = bitArray.bitSize % 8;
+  if (remainingUnalignedBits > 0) {
+    let remainingBits = bitArraySliceToInt(
+      bitArray,
+      endOfAlignedBytes,
+      bitArray.bitSize,
+      false,
+      false
+    );
+    let alignedBytesArray = Array.from(alignedBytes.rawBuffer);
+    let suffix = `${remainingBits}:size(${remainingUnalignedBits})`;
+    if (alignedBytesArray.length === 0) {
+      return `<<${suffix}>>`;
+    } else {
+      return `<<${Array.from(alignedBytes.rawBuffer).join(", ")}, ${suffix}>>`;
+    }
+  } else {
+    return `<<${Array.from(alignedBytes.rawBuffer).join(", ")}>>`;
+  }
+}
+function echo$isDict4(value2) {
   try {
     return value2 instanceof Dict;
   } catch {

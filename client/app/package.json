@@ -8,9 +8,17 @@
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "firebase": "^12.1.0",
+    "rollup": "^4.46.2"
+  },
+  "devDependencies": {
+    "fake-indexeddb": "^6.1.0",
+    "jsdom": "^26.1.0"
+  }
 }

@@ -2,7 +2,7 @@
  * クイズのカテゴリ
  */
 export interface Category {
-  id: string;
+  id: number;
   name: string;
 }
 
@@ -18,16 +18,9 @@ export interface MultipleChoiceQuestion {
  * 組み合わせ問題のペア
  */
 export interface AssociationPair {
-  id: string;
+  id: number;
   left: string;
   right: string;
-}
-
-/**
- * 組み合わせ問題
- */
-export interface AssociationQuestion {
-  pairs: AssociationPair[];
 }
 
 /**
@@ -35,13 +28,13 @@ export interface AssociationQuestion {
  */
 export type QuestionInteraction =
   | { type: 'MultipleChoice'; data: MultipleChoiceQuestion }
-  | { type: 'Association'; data: AssociationQuestion };
+  | { type: 'Association'; data: AssociationPair[] };
 
 /**
  * クイズの問題
  */
 export interface Question {
-  id: string;
+  id: number;
   category: Category;
   question_text: string;
   question_interaction: QuestionInteraction;

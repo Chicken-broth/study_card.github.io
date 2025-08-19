@@ -2,8 +2,10 @@ import core/answer.{type Answer, NotAnswered}
 import core/association_question as as_question
 import core/category.{type Category}
 import core/multiple_choice_question as mc_question
+import gleam/dynamic
 import gleam/dynamic/decode.{type Decoder}
 import gleam/json
+import gleam/result
 import lustre/element.{type Element}
 import utils/json_ex
 
@@ -11,7 +13,7 @@ import utils/json_ex
 /// id、カテゴリ、問題文、そして問題のインタラクション部分（選択肢や組み合わせなど）を保持する
 pub type Model {
   Model(
-    id: String,
+    id: Int,
     category: Category,
     question_text: String,
     question_interaction: QuestionInteraction,
@@ -32,7 +34,7 @@ pub type Msg {
 }
 
 pub fn init(
-  id: String,
+  id: Int,
   category: Category,
   question_text: String,
   question_interaction: QuestionInteraction,
@@ -121,13 +123,13 @@ fn interaction_decoder() -> Decoder(QuestionInteraction) {
     let decoder = decode.map(as_question.decoder(), Association)
     json_ex.custom_type_docoder("Association", decoder)
   }
-  decode.one_of(decode_mc(), [decode_as()])
+  decode.one_of(decode_as(), [decode_mc()])
 }
 
 /// `Model` 型を JSON に変換する
 pub fn to_json(model: Model) -> json.Json {
   json.object([
-    #("id", json.string(model.id)),
+    #("id", json.int(model.id)),
     #("category", category.to_json(model.category)),
     #("question_text", json.string(model.question_text)),
     #("question_interaction", interaction_to_json(model.question_interaction)),
@@ -136,7 +138,7 @@ pub fn to_json(model: Model) -> json.Json {
 
 /// JSON から `Model` 型にデコードする
 pub fn decoder() -> Decoder(Model) {
-  use id <- decode.field("id", decode.string)
+  use id <- decode.field("id", decode.int)
   use category <- decode.field("category", category.decoder())
   use question_text <- decode.field("question_text", decode.string)
   use question_interaction <- decode.field(
@@ -145,3 +147,9 @@ pub fn decoder() -> Decoder(Model) {
   )
   decode.success(Model(id:, category:, question_text:, question_interaction:))
 }
+// pub fn decode_question_list(
+//   dynamic: dynamic.Dynamic,
+// ) -> Result(List(Model), json.DecodeError) {
+//   decode.run(dynamic, decode.list(decoder()))
+//   |> result.map_error(json.UnableToDecode)
+// }
