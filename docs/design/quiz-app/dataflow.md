@@ -63,3 +63,52 @@ sequenceDiagram
     F->>F: 結果を集計
     F-->>U: リザルト画面を表示
 ```
+
+## クライアントサイドデータアクセス (IndexedDB)
+
+GleamからJavaScriptのIndexedDBを操作するため、`interface/indexedDB_ffi.mjs` にFFI（Foreign Function Interface）を定義しています。これにより、型安全性を保ちながらブラウザのデータベース機能を利用します。
+
+### `setup(dbName, version)`
+
+-   **説明**: IndexedDBデータベースを初期化し、接続を確立します。`onupgradeneeded`イベント内で、定義されたオブジェクトストア（`categories`, `questions`）を作成し、`./data.mjs`から初期データを投入します。
+-   **パラメータ**:
+    -   `dbName` (string): データベース名。
+    -   `version` (number): データベースのバージョン。
+-   **戻り値**: `Promise<IDBDatabase>` - 成功時にはデータベース接続オブジェクトを返します。
+
+### `getCategories(db)`
+
+-   **説明**: `categories`ストアからすべてのカテゴリを取得します。
+-   **パラメータ**:
+    -   `db` (IDBDatabase): データベース接続オブジェクト。
+-   **戻り値**: `Promise<Array<any>>` - カテゴリの配列を返します。
+
+### `getQuestionCount(db)`
+
+-   **説明**: `questions`ストアのレコード数を取得します。
+-   **パラメータ**:
+    -   `db` (IDBDatabase): データベース接続オブジェクト。
+-   **戻り値**: `Promise<number>` - レコード数を返します。
+
+### `getQuestionIdList(db)`
+
+-   **説明**: `questions`ストアからすべてのキー（ID）を取得します。
+-   **パラメータ**:
+    -   `db` (IDBDatabase): データベース接続オブジェクト。
+-   **戻り値**: `Promise<Array<number>>` - キーの配列を返します。
+
+### `getQuestionByIds(db, ids)`
+
+-   **説明**: `questions`ストアから、指定されたIDのリストに一致するすべての問題を取得します。
+-   **パラメータ**:
+    -   `db` (IDBDatabase): データベース接続オブジェクト。
+    -   `ids` (Array<number>): 取得したい問題のIDの配列。
+-   **戻り値**: `Promise<Array<any>>` - 問題オブジェクトの配列を返します。
+
+### `getQuestionById(db, id)`
+
+-   **説明**: `questions`ストアから、指定されたIDに一致する単一の問題を取得します。
+-   **パラメータ**:
+    -   `db` (IDBDatabase): データベース接続オブジェクト。
+    -   `id` (number): 取得したい問題のID。
+-   **戻り値**: `Promise<any>` - 問題オブジェクトを返します。見つからない場合は `undefined` を返します。

@@ -2,12 +2,10 @@ import core/answer.{type Answer, NotAnswered}
 import core/association_question as as_question
 import core/category.{type Category}
 import core/multiple_choice_question as mc_question
-import gleam/dynamic
+import extra/json_
 import gleam/dynamic/decode.{type Decoder}
 import gleam/json
-import gleam/result
 import lustre/element.{type Element}
-import utils/json_ex
 
 /// クイズの問題全体を表す型
 /// id、カテゴリ、問題文、そして問題のインタラクション部分（選択肢や組み合わせなど）を保持する
@@ -18,6 +16,10 @@ pub type Model {
     question_text: String,
     question_interaction: QuestionInteraction,
   )
+}
+
+pub type IdAndCategory {
+  IdAndCategory(id: Int, category: Category)
 }
 
 /// 問題のインタラクション部分を表す型
@@ -100,12 +102,12 @@ pub fn view(model: Model) -> Element(Msg) {
 fn interaction_to_json(interaction: QuestionInteraction) -> json.Json {
   case interaction {
     MultipleChoice(question_model) ->
-      json_ex.custom_type_to_json(
+      json_.custom_type_to_json(
         "MultipleChoice",
         mc_question.to_json(question_model),
       )
     Association(question_model) ->
-      json_ex.custom_type_to_json(
+      json_.custom_type_to_json(
         "Association",
         as_question.to_json(question_model),
       )
@@ -116,12 +118,12 @@ fn interaction_to_json(interaction: QuestionInteraction) -> json.Json {
 fn interaction_decoder() -> Decoder(QuestionInteraction) {
   let decode_mc = fn() {
     let decoder = decode.map(mc_question.decoder(), MultipleChoice)
-    json_ex.custom_type_docoder("MultipleChoice", decoder)
+    json_.custom_type_docoder("MultipleChoice", decoder)
   }
 
   let decode_as = fn() {
     let decoder = decode.map(as_question.decoder(), Association)
-    json_ex.custom_type_docoder("Association", decoder)
+    json_.custom_type_docoder("Association", decoder)
   }
   decode.one_of(decode_as(), [decode_mc()])
 }

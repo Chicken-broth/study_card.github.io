@@ -1,4 +1,4 @@
-import core/answer
+import extra/promise_
 import interface/indexed_db.{type DB, setup}
 import lustre
 import lustre/effect.{type Effect, none}
@@ -7,7 +7,6 @@ import lustre/element/html
 import pages/quiz_home
 import pages/quiz_screen
 import pages/result_screen
-import utils/promise_ex
 
 const db_name = "db"
 
@@ -35,7 +34,7 @@ pub type Msg {
 pub fn init(_) -> #(Model, Effect(Msg)) {
   #(
     Loading,
-    promise_ex.to_effect_no_decode(setup(db_name, db_version), DataInitialized),
+    promise_.to_effect_no_decode(setup(db_name, db_version), DataInitialized),
   )
 }
 
@@ -46,8 +45,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       case msg {
         DataInitialized(db) -> {
           // Pass categories and questions to quiz_home.init
-          let history = answer.init([])
-          let #(home_model, home_effect) = quiz_home.init(db, history)
+          let #(home_model, home_effect) = quiz_home.init(db)
           #(Home(home_model), effect.map(home_effect, HomeMsg))
         }
 
@@ -58,24 +56,18 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     Home(home_model) -> {
       case msg {
         HomeMsg(home_msg) -> {
-          let #(new_home_model, home_effect) =
-            quiz_home.update(home_model, home_msg)
+          let #(new_home, home_effect) = quiz_home.update(home_model, home_msg)
           // echo home_msg
           case home_msg {
             quiz_home.OutCome(questions) -> {
               echo "Home -> QuizScreen"
-              let screen_ini =
-                quiz_screen.init(
-                  new_home_model.db,
-                  questions,
-                  new_home_model.history,
-                )
+              let screen_ini = quiz_screen.init(new_home.db, questions)
               case screen_ini {
                 Ok(quiz_model) -> #(QuizScreen(quiz_model), effect.none())
                 Error(_) -> #(ErrScreen, effect.none())
               }
             }
-            _ -> #(Home(new_home_model), effect.map(home_effect, HomeMsg))
+            _ -> #(Home(new_home), effect.map(home_effect, HomeMsg))
           }
         }
         _ -> #(model, none())
@@ -93,8 +85,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
                   new_quiz_model.db,
                   new_quiz_model.score,
                   new_quiz_model.questions_count,
-                  new_quiz_model.answers,
-                  new_quiz_model.history,
+                  new_quiz_model.quiz_result,
                 )
               #(
                 QuizResult(result_model),
@@ -112,12 +103,13 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     QuizResult(quiz_model) -> {
       case msg {
         QuizResultMsg(result_msg) -> {
+          let #(new_model, eff) = result_screen.update(quiz_model, result_msg)
           case result_msg {
-            result_screen.GoToHome -> {
-              let #(new_modek, new_eff) =
-                quiz_home.init(quiz_model.db, quiz_model.history)
+            result_screen.OutCome -> {
+              let #(new_modek, new_eff) = quiz_home.init(quiz_model.db)
               #(Home(new_modek), effect.map(new_eff, HomeMsg))
             }
+            _ -> #(QuizResult(new_model), effect.map(eff, QuizResultMsg))
           }
         }
         _ -> #(model, none())

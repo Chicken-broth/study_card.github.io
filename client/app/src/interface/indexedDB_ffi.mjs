@@ -1,9 +1,10 @@
-// import "fake-indexeddb/auto";
+  // import "fake-indexeddb/auto";
 import data from './data.mjs'
-// import { Ok, Error,List } from "./gleam.mjs";
+import { Ok, Error } from "../gleam.mjs";
 
 const CATEGORY_STORE = "categories";
 const QUESTION_STORE = "questions";
+const HISTORY_STORE = "history";
 
 export function get_data(){
   return data;
@@ -18,6 +19,7 @@ export function get_data(){
  * データベースのストア設定。
  * @type {Array<StoreConfig>}
  */
+
 const STORE_CONFIGS = [
   {
     storeName: CATEGORY_STORE,
@@ -27,6 +29,10 @@ const STORE_CONFIGS = [
     storeName: QUESTION_STORE,
     keyPath: { keyPath: "id" },
   },
+  {
+    storeName: HISTORY_STORE,
+    keyPath: { keyPath: "id"},
+  }
 ];
 
 /**
@@ -76,6 +82,15 @@ export function setup(dbName, version) {
         data.questions.forEach(question => {
           questionStore.add(question);
         });
+
+        //questionsからhistoryを初期化
+        const historyStore = transaction.objectStore(HISTORY_STORE);
+        data.questions.forEach(q => {
+          historyStore.add({
+          id: q.id,
+          category: q.category,
+          answer: "NotAnswered"
+        })});
       }
 
       console.log("Database setup and data seeding complete.");
@@ -147,6 +162,32 @@ export function getQuestionIdList(db) {
 }
 
 /**
+ * 'questions'ストアからすべての問題のIDとカテゴリのリストを取得します。
+ * @param {IDBDatabase} db データベース接続オブジェクト。
+ * @returns {Promise<Array<{id: number, category: any}>>} IDとカテゴリのオブジェクトの配列で解決されるPromise。
+ */
+export function getQuestionIdAndCategoryList(db) {
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([QUESTION_STORE], 'readonly');
+    const store = transaction.objectStore(QUESTION_STORE);
+    const request = store.getAll(); // すべてのオブジェクトを取得
+
+    request.onerror = (event) => {
+      reject(event.target.error);
+    };
+
+    request.onsuccess = (event) => {
+      const questions = event.target.result;
+      const idAndCategoryList = questions.map(q => ({
+        id: q.id,
+        category: q.category // categoryオブジェクト全体を渡す
+      }));
+      resolve(idAndCategoryList);
+    };
+  });
+}
+
+/**
  * 'questions'ストアからIDで特定のquestionを取得します。
  * @param {IDBDatabase} db データベース接続オブジェクト。
  * @param {number} id 取得するquestionのID。
@@ -161,7 +202,7 @@ export function getQuestionByIds(db, ids) {
       ids = [...ids];
       // console.log("tran:", transaction);
       // console.log("store:", store);
-      console.log("ids:", ids);
+      // console.log("ids:", ids);
     }
 
     const results = [];
@@ -198,6 +239,66 @@ export function getQuestionById(db, id) {
 
     request.onsuccess = (event) => {
         resolve(event.target.result);
+    };
+  });
+}
+
+/**
+ * 'quiz_results'ストアにクイズ履歴を保存します。
+ * @param {IDBDatabase} db データベース接続オブジェクト。
+ * @param {any} result 保存するクイズ履歴オブジェクト。
+ * @returns {Promise<IDBValidKey>} 保存されたアイテムのキーで解決されるPromise。
+ */
+export function saveQuizHistory(db, results) {
+  // console.log("result:", results);
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([HISTORY_STORE], 'readwrite');
+    transaction.onerror = (event) => {
+      console.log("Error saving quiz history:", event.target.error);
+      reject(new Error(null));
+    };
+    transaction.oncomplete = (event) => {
+      console.log("Quiz history saved successfully");
+      resolve(new Ok(null));
+    }
+    const store = transaction.objectStore(HISTORY_STORE);
+    results.forEach(q => {
+      store.put({
+        id: q.id,
+        category: q.category,
+        answer: q.answer
+      })
+
+      // request.onerror = (event) => {
+      //   console.error("Error saving quiz history:", event.target.error);
+      //   reject(new Error(null));
+      // };
+  
+      // request.onsuccess = (event) => {
+      //   console.log("Quiz history saved successfully",event.target.result);
+      //   resolve(new Ok(null));
+      // };
+    });
+  });
+}
+
+/**
+ * 'quiz_results'ストアからすべてのクイズ履歴を取得します。
+ * @param {IDBDatabase} db データベース接続オブジェクト。
+ * @returns {Promise<Array<any>>} クイズ履歴の配列で解決されるPromise。
+ */
+export function getQuizHistory(db) {
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([HISTORY_STORE], 'readonly');
+    const store = transaction.objectStore(HISTORY_STORE);
+    const request = store.getAll();
+
+    request.onerror = (event) => {
+      reject(event.target.error);
+    };
+
+    request.onsuccess = (event) => {
+      resolve(event.target.result);
     };
   });
 }

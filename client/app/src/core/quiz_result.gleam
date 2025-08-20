@@ -1,32 +1,32 @@
+import core/answer.{type Answer}
+import core/category.{type Category}
+import core/question
+import gleam/dynamic/decode
+import gleam/list
+
 /// POST /api/quiz-results のリクエストボディで送信される個々の解答結果
-pub type QuizResult {
-  QuizResult(question_id: String, is_correct: Bool)
+pub type QuizResults =
+  List(Record)
+
+/// IndexedDBに保存される学習履歴のレコード
+pub type Record {
+  Record(id: ID, category: Category, answer: Answer)
 }
 
-/// POST /api/quiz-results のリクエストボディ
-pub type PostQuizResultsRequest {
-  PostQuizResultsRequest(results: List(QuizResult))
+pub type ID =
+  Int
+
+/// JSONからQuizResultRecordをデコードするためのデコーダー
+pub fn decoder() -> decode.Decoder(List(Record)) {
+  decode.list({
+    use id <- decode.field("id", decode.int)
+    use category <- decode.field("category", category.decoder())
+    decode.success(Record(id, category, answer.NotAnswered))
+  })
 }
 
-/// クイズ集計データの全体統計
-pub type OverallStats {
-  OverallStats(total_questions_answered: Int, average_correct_rate: Float)
-}
-
-/// クイズ集計データのカテゴリ別統計
-pub type CategoryStats {
-  CategoryStats(
-    category_id: String,
-    category_name: String,
-    total_questions_answered: Int,
-    correct_rate: Float,
-  )
-}
-
-/// GET /api/quiz-summary のレスポンス
-pub type GetQuizSummaryResponse {
-  GetQuizSummaryResponse(
-    overall_stats: OverallStats,
-    category_stats: List(CategoryStats),
-  )
+pub fn from_questions(questions: List(question.Model)) -> QuizResults {
+  list.map(questions, fn(q) {
+    Record(id: q.id, category: q.category, answer: answer.NotAnswered)
+  })
 }

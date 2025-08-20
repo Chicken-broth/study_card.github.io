@@ -1,12 +1,15 @@
 import core/category.{type Category}
-import core/question
+import core/history.{type History}
+import core/question.{type IdAndCategory}
 import gleam/dynamic.{type Dynamic}
 import gleam/dynamic/decode
 import gleam/javascript/promise.{type Promise}
 import gleam/json
-import gleam/result
 
 pub type DB
+
+pub type Err =
+  List(decode.DecodeError)
 
 /// IndexedDBデータベースを初期化します。
 /// `indexedDB_ffi.mjs`の`setup`に対応します。
@@ -18,12 +21,9 @@ pub fn setup(db_name: String, version: Int) -> Promise(DB)
 @external(javascript, "./indexedDB_ffi.mjs", "getCategories")
 pub fn get_categories(db: DB) -> Promise(Dynamic)
 
-pub fn get_categories_decode(
-  dynamic: Dynamic,
-) -> Result(List(Category), json.DecodeError) {
+pub fn get_categories_decode(dynamic: Dynamic) -> Result(List(Category), Err) {
   // echo dynamic
   decode.run(dynamic, decode.list(category.decoder()))
-  |> result.map_error(json.UnableToDecode)
 }
 
 /// データベースから問題の総数を取得します。
@@ -36,11 +36,8 @@ pub fn get_question_count(db: DB) -> Promise(Int)
 @external(javascript, "./indexedDB_ffi.mjs", "getQuestionIdList")
 pub fn get_question_id_list(db: DB) -> Promise(Dynamic)
 
-pub fn get_question_id_list_decode(
-  dynamic: Dynamic,
-) -> Result(List(Int), json.DecodeError) {
+pub fn get_question_id_list_decode(dynamic: Dynamic) -> Result(List(Int), Err) {
   decode.run(dynamic, decode.list(decode.int))
-  |> result.map_error(json.UnableToDecode)
 }
 
 /// IDを指定して特定の問題を取得します。
@@ -50,9 +47,8 @@ pub fn get_question_by_ids(db: DB, id: List(Int)) -> Promise(Dynamic)
 
 pub fn get_question_by_ids_decode(
   dynamic: Dynamic,
-) -> Result(List(question.Model), json.DecodeError) {
+) -> Result(List(question.Model), Err) {
   decode.run(dynamic, decode.list(question.decoder()))
-  |> result.map_error(json.UnableToDecode)
 }
 
 @external(javascript, "./indexedDB_ffi.mjs", "getQuestionById")
@@ -60,8 +56,42 @@ pub fn get_question_by_id(db: DB, id: Int) -> Promise(Dynamic)
 
 pub fn get_question_by_id_decode(
   dynamic: Dynamic,
-) -> Result(question.Model, json.DecodeError) {
+) -> Result(question.Model, Err) {
   decode.run(dynamic, question.decoder())
   |> echo
-  |> result.map_error(json.UnableToDecode)
+}
+
+/// データベースからすべての問題のIDとカテゴリのリストを取得します。
+/// `indexedDB_ffi.mjs`の`getQuestionIdAndCategoryList`に対応します。
+@external(javascript, "./indexedDB_ffi.mjs", "getQuestionIdAndCategoryList")
+pub fn get_question_id_and_category_list(db: DB) -> Promise(Dynamic)
+
+/// 問題IDとカテゴリのペアを表す型
+/// 取得した問題IDとカテゴリのリストをデコードします。
+pub fn decode_question_id_and_category_list(
+  dynamic: Dynamic,
+) -> Result(List(IdAndCategory), Err) {
+  let id_and_category_decoder = {
+    use id <- decode.field("id", decode.int)
+    use category <- decode.field("category", category.decoder())
+    decode.success(question.IdAndCategory(id, category))
+  }
+  decode.run(dynamic, decode.list(id_and_category_decoder))
+}
+
+/// データベースにクイズ結果を保存します。
+/// `indexedDB_ffi.mjs`の`saveQuizResult`に対応します。
+/// 保存するresultオブジェクトはidを含まないdynamic型である必要があります。
+@external(javascript, "./indexedDB_ffi.mjs", "saveQuizHistory")
+pub fn save_quiz_history(db: DB, json: json.Json) -> Promise(Result(Nil, Nil))
+
+/// データベースからすべてのクイズ結果を取得します。
+/// `indexedDB_ffi.mjs`の`getQuizResults`に対応します。
+/// decoder はhistory.decode_quiz_historys
+@external(javascript, "./indexedDB_ffi.mjs", "getQuizHistory")
+pub fn get_quiz_historys(db: DB) -> Promise(Dynamic)
+
+/// 取得したクイズ結果のリストをデコードします。
+pub fn decode_quiz_historys(dynamic: Dynamic) -> Result(History, Err) {
+  decode.run(dynamic, history.decoder())
 }

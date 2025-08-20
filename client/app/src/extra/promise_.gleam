@@ -11,7 +11,7 @@ pub fn to_effect(
   use dispatch <- effect.from
   promise
   |> promise.map(fn(dynamic) {
-    echo dynamic
+    // echo dynamic
     let result = decoder(dynamic)
     case result {
       Ok(a) -> to_success_msg(a)
@@ -29,5 +29,6 @@ pub fn to_effect_no_decode(
   use dispatch <- effect.from
   promise.map(promise, to_msg)
   |> promise.tap(dispatch)
+  |> echo
   Nil
 }

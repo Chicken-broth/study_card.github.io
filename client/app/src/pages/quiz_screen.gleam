@@ -1,6 +1,8 @@
-import core/answer.{type Answer, type History, Correct, NotAnswered}
+import core/answer.{Correct}
 import core/question
-import gleam/dict.{type Dict}
+import core/quiz_result.{type QuizResults, Record}
+import extra/effect_
+import extra/list_
 import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
@@ -9,8 +11,6 @@ import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
-import utils/effect_
-import utils/list_ex
 
 // --- 型定義とメッセージ ---------------------------------------------------
 
@@ -23,11 +23,10 @@ pub type Model {
     // 現在表示されている問題のインデックス。
     current_question_index: Int,
     // ユーザーの回答履歴 (問題ID -> 正誤結果)。
-    answers: History,
+    quiz_result: QuizResults,
     // クイズが終了したかどうかを示すフラグ。
     quiz_finished: Bool,
     score: Int,
-    history: History,
   )
 }
 
@@ -44,31 +43,21 @@ pub type Msg {
 // --- 初期化 ---------------------------------------------------------------
 
 /// クイズ画面のモデルを初期化します。
-pub fn init(
-  db: DB,
-  questions: List(question.Model),
-  history: History,
-) -> Result(Model, Nil) {
+pub fn init(db: DB, questions: List(question.Model)) -> Result(Model, Nil) {
   case list.is_empty(questions) {
     True -> {
       Error(Nil)
     }
     False -> {
-      // すべての問題を NotAnswered として answers Dict を初期化する
-      let new_answers =
-        questions
-        |> list.map(fn(q) { #(q.id, NotAnswered) })
-        |> dict.from_list
-
+      // すべての問題を NotAnswered として quiz_result を初期化する
       Ok(Model(
         db: db,
         questions: questions,
         questions_count: list.length(questions),
         current_question_index: 0,
-        answers: new_answers,
+        quiz_result: quiz_result.from_questions(questions),
         quiz_finished: False,
         score: 0,
-        history: history,
       ))
     }
   }
@@ -81,7 +70,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     QuestionMsg(q_msg) -> {
       // 現在の問題を取得し、更新する
       let new_questions =
-        list_ex.update_at(
+        list_.update_at(
           model.questions,
           model.current_question_index,
           question.update(_, q_msg),
@@ -89,19 +78,19 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       #(Model(..model, questions: new_questions), effect.none())
     }
     NextQuestion -> {
-      // 現在の問題の回答を answers に記録する
-      let new_answers = update_answers(model)
+      // 現在の問題の回答を quiz_result に記録する
+      let new_quiz_result = update_quiz_result(model)
       //スコア
-      let new_score = get_score(new_answers)
+      let new_score = get_score(new_quiz_result)
 
       // 次の問題に進むか、クイズを終了する
       let next_index = model.current_question_index + 1
-      let is_finished = next_index >= list.length(model.questions) |> echo
+      let is_finished = next_index >= list.length(model.questions)
       case is_finished {
         True -> #(
           Model(
             ..model,
-            answers: new_answers,
+            quiz_result: new_quiz_result,
             quiz_finished: True,
             score: new_score,
           ),
@@ -110,7 +99,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         False -> #(
           Model(
             ..model,
-            answers: new_answers,
+            quiz_result: new_quiz_result,
             current_question_index: next_index,
             score: new_score,
           ),
@@ -124,29 +113,28 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   }
 }
 
-pub fn update_answers(model: Model) -> History {
-  model.questions
-  |> list_ex.get_at(model.current_question_index)
-  |> fn(question) {
-    case question {
-      Some(q) -> {
-        dict.insert(model.answers, q.id, question.check_answer(q))
-      }
-      None -> model.answers
+pub fn update_quiz_result(model: Model) -> QuizResults {
+  let current_question =
+    list_.get_at(model.questions, model.current_question_index)
+  case current_question {
+    Some(q) -> {
+      let new_answer = question.check_answer(q)
+      list_.update_if(model.quiz_result, fn(r) { r.id == q.id }, fn(r) {
+        Record(..r, answer: new_answer)
+      })
     }
+    None -> model.quiz_result
   }
 }
 
-// answers 辞書からスコアを計算する
-pub fn get_score(answers: History) -> Int {
-  answers
-  |> dict.values
-  |> list.filter(fn(answer) { answer == Correct })
+// quiz_result からスコアを計算する
+pub fn get_score(quiz_result: QuizResults) -> Int {
+  quiz_result
+  |> list.filter(fn(result) { result.answer == Correct })
   |> list.length
 }
 
 // --- ビュー -----------------------------------------------------------------
-
 pub fn view(model: Model) -> Element(Msg) {
   case model.quiz_finished {
     True -> view_quiz_finished(model)
@@ -156,7 +144,7 @@ pub fn view(model: Model) -> Element(Msg) {
 
 /// 現在の問題を描画します。
 fn view_question(model: Model) -> Element(Msg) {
-  case list_ex.get_at(model.questions, model.current_question_index) {
+  case list_.get_at(model.questions, model.current_question_index) {
     Some(current_question) -> {
       let progress =
         "Question "
@@ -187,8 +175,8 @@ fn view_question(model: Model) -> Element(Msg) {
 
 /// クイズ完了画面を描画します。
 fn view_quiz_finished(model: Model) -> Element(Msg) {
-  // answers 辞書からスコアを計算する
-  let score = get_score(model.answers)
+  // quiz_result からスコアを計算する
+  let score = get_score(model.quiz_result)
   let total_questions = list.length(model.questions)
 
   html.div([], [

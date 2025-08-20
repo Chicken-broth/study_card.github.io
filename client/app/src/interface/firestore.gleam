@@ -6,7 +6,7 @@ import gleam/javascript/promise.{type Promise}
 import gleam/json
 import gleam/result
 
-import utils/json_ex
+import extra/json_
 
 pub type DB
 
@@ -36,7 +36,7 @@ pub fn get_category(db: DB) -> Promise(Result(List(category.Category), String)) 
   let promise = get_categories_dynamic(db)
   use dynamic <- promise.map(promise)
   decode.run(dynamic, decode.list(category.decoder()))
-  |> result.map_error(json_ex.errs_to_string)
+  |> result.map_error(json_.errs_to_string)
 }
 
 pub fn get_question_by_id(
@@ -46,7 +46,7 @@ pub fn get_question_by_id(
   let promise = get_question_by_id_dynamic(db, id)
   use dynamic <- promise.map(promise)
   decode.run(dynamic, question.decoder())
-  |> result.map_error(json_ex.errs_to_string)
+  |> result.map_error(json_.errs_to_string)
 }
 /// Promiseが返すResultのエラー型を、このモジュールで定義された`Err`型に変換するヘルパー関数。
 // @external(javascript, "./firestore_ffi.mjs", "getCollection")

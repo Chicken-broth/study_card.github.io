@@ -1,8 +1,7 @@
+import core/answer
 import core/category
-import gleam/int
-import gleam/javascript/promise.{type Promise}
-import gleam/list
-
+import core/history
+import gleam/javascript/promise
 import gleeunit
 import gleeunit/should
 import interface/indexed_db
@@ -64,6 +63,32 @@ pub fn get_question_by_id_test() {
   use dynamic <- promise.tap(indexed_db.get_question_by_id(db, 1))
   // echo dynamic
   indexed_db.get_question_by_id_decode(dynamic)
+  |> should.be_ok
+  Nil
+}
+
+pub fn save_and_get_quiz_history_test() {
+  let category_1 = category.Category(id: 1, name: "Gleam基礎")
+  let category_2 = category.Category(id: 2, name: "Lustre基礎")
+  let quiz_history = [
+    history.Record(id: 1, category: category_1, answer: answer.Correct),
+    history.Record(id: 2, category: category_2, answer: answer.Incorrect),
+  ]
+  let json_history = history.to_json(quiz_history)
+  use db <- promise.await(indexed_db.setup("db_save_quiz_history", 1))
+  use _ <- promise.await(indexed_db.save_quiz_history(db, json_history))
+  use dynamic <- promise.tap(indexed_db.get_quiz_historys(db))
+  echo dynamic
+  let assert Ok(quiz_history_result) = indexed_db.decode_quiz_historys(dynamic)
+  should.equal(quiz_history, quiz_history_result)
+  Nil
+}
+
+//decode_question_id_and_category_listpub 
+pub fn get_question_id_and_category_list_test() {
+  use db <- promise.await(indexed_db.setup("db_get_id_and_category_list", 1))
+  use dynamic <- promise.tap(indexed_db.get_question_id_and_category_list(db))
+  indexed_db.decode_question_id_and_category_list(dynamic)
   |> should.be_ok
   Nil
 }

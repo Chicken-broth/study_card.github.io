@@ -1,11 +1,12 @@
-import core/answer.{type History, Correct, Incorrect, NotAnswered}
+import core/answer.{Correct, Incorrect, NotAnswered}
 import core/category.{type Category}
-import core/question
+import core/history.{type History}
+import core/question.{type IdAndCategory}
+import extra/list_
+import extra/promise_
 import gleam/bool
-import gleam/dict
 import gleam/int
 import gleam/io
-import gleam/json
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import interface/indexed_db.{type DB} as db
@@ -14,8 +15,6 @@ import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
-import utils/list_ex
-import utils/promise_ex
 
 /// Home画面のアプリケーションの状態を保持するモデル。
 pub type Model {
@@ -23,8 +22,9 @@ pub type Model {
     db: DB,
     /// 利用可能なすべてのカテゴリのリスト。
     categories: List(Category),
-    question_ids: List(Int),
-    /// 問題のリスト。
+    /// データベースから取得したすべての問題IDとカテゴリのリスト。
+    question_id_categories: List(IdAndCategory),
+    /// クイズの結果として表示される問題のリスト。
     outcome: List(question.Model),
     /// ユーザーによって選択されたカテゴリのIDリスト。
     selected_category: Option(Category),
@@ -33,8 +33,10 @@ pub type Model {
     /// データのロード中かどうかを示すフラグ。
     loading: Bool,
     /// 処理中に発生したエラーメッセージ。
-    error: Option(json.DecodeError),
+    error: Option(db.Err),
+    /// ユーザーの学習履歴。
     history: History,
+    /// 履歴表示のON/OFFを切り替えるフラグ。
     show_history: Bool,
   )
 }
@@ -45,50 +47,67 @@ pub type Msg {
   SelectCategory(Int, Bool)
   /// ユーザーが問題数を選択した際に送信される。
   SelectCount(Int)
-  /// クイズ開始ボタンがクリックされた際に送信される。
-  StartQuiz
   /// 学習履歴ボタンがクリックされた際に送信される。
   ViewHistory
+  /// カテゴリのリストが取得された際に送信される。
   GetCategories(List(Category))
-  GetQuestionIds(List(Int))
+  /// 問題IDのリストが取得された際に送信される。
+  GetQuestionIdAndCategoryList(List(IdAndCategory))
+  /// 学習記録が取得された
+  GetQuizHistory(History)
+  /// クイズ開始ボタンがクリックされた際に送信される。
+  StartQuiz
+  /// クイズの結果（問題リスト）が取得された際に送信される。
   OutCome(List(question.Model))
-  ErrScreen(json.DecodeError)
+  /// エラーが発生した際に送信される。
+  ErrScreen(db.Err)
 }
 
 /// アプリケーションの初期状態を生成する。
-pub fn init(db: DB, history: History) -> #(Model, Effect(Msg)) {
+/// データベースからカテゴリと問題IDのリストを非同期で取得する。
+pub fn init(db: DB) -> #(Model, Effect(Msg)) {
   let get_categories =
-    promise_ex.to_effect(
+    promise_.to_effect(
       db.get_categories(db),
       db.get_categories_decode,
       GetCategories,
       ErrScreen,
     )
 
-  let get_question_id_list =
-    promise_ex.to_effect(
-      db.get_question_id_list(db),
-      db.get_question_id_list_decode,
-      GetQuestionIds,
+  let get_question_id_and_category_list =
+    promise_.to_effect(
+      db.get_question_id_and_category_list(db),
+      db.decode_question_id_and_category_list,
+      GetQuestionIdAndCategoryList,
       ErrScreen,
     )
 
-  let eff = effect.batch([get_categories, get_question_id_list])
+  let get_history =
+    promise_.to_effect(
+      db.get_quiz_historys(db),
+      db.decode_quiz_historys,
+      GetQuizHistory,
+      ErrScreen,
+    )
 
   #(
     Model(
       db: db,
       categories: [],
-      question_ids: [],
+      question_id_categories: [],
       outcome: [],
       selected_category: None,
       selected_count: 1,
       loading: False,
       error: None,
-      history: history,
+      history: [],
       show_history: False,
     ),
-    eff,
+    effect.batch([
+      get_categories,
+      get_question_id_and_category_list,
+      get_history,
+    ]),
   )
 }
 
@@ -97,7 +116,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
     SelectCategory(ind, is_selected) -> {
       let new_selected_category = case is_selected {
-        True -> list_ex.get_at(model.categories, ind)
+        True -> list_.get_at(model.categories, ind)
         False -> None
       }
       #(Model(..model, selected_category: new_selected_category), effect.none())
@@ -108,14 +127,17 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     )
     StartQuiz -> {
       echo "Start Quiz"
+      let all_question_ids =
+        model.question_id_categories
+        |> list.map(fn(item) { item.id })
       let selected_ids =
-        model.question_ids
+        all_question_ids
         |> list.shuffle()
         |> list.take(model.selected_count)
       // |> echo
 
       let eff =
-        promise_ex.to_effect(
+        promise_.to_effect(
           db.get_question_by_ids(model.db, selected_ids),
           db.get_question_by_ids_decode,
           OutCome,
@@ -133,20 +155,33 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       #(model, effect.none())
     }
     ViewHistory -> {
-      io.println("View History")
+      echo "View History"
       #(
         Model(..model, show_history: bool.negate(model.show_history)),
         effect.none(),
       )
     }
     GetCategories(categories) -> {
+      echo "GetCategories"
       #(Model(..model, categories: categories), effect.none())
     }
-    GetQuestionIds(ids) -> {
+    GetQuestionIdAndCategoryList(id_and_category_list) -> {
+      // let history = history.from_id_category(id_and_category_list)
+      // let save_history =
+      //   history
+      //   |> history.to_json
+      //   |> db.save_quiz_history(model.db, _)
+      //   |> promise_.to_effect_no_decode(fn(_) { SaveQuizHistory })
+      echo "GetQuestionIdAndCategoryList"
       #(
-        Model(..model, question_ids: ids, history: answer.init(ids)),
+        Model(..model, question_id_categories: id_and_category_list),
         effect.none(),
       )
+    }
+    GetQuizHistory(history) -> {
+      echo "GetQuizHistory"
+      // Update the model with the fetched history.
+      #(Model(..model, history: history), effect.none())
     }
     ErrScreen(json_err) -> {
       echo "err screen"
@@ -155,15 +190,25 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   }
 }
 
+/// カテゴリ選択の更新。
+/// 問題数選択の更新。
+/// クイズ開始処理。選択された問題数に基づいて問題IDをシャッフルし、データベースから問題を取得する。
+/// 取得した問題リストでモデルを更新する。
+/// 履歴表示のON/OFFを切り替える。
+/// 取得したカテゴリリストでモデルを更新する。
+/// 取得した問題IDリストでモデルを更新し、履歴を初期化する。
+/// エラーメッセージでモデルを更新する。
 // --- View Functions ---
 
-fn view_error(error: Option(json.DecodeError)) -> Element(Msg) {
+/// エラーメッセージを表示する。
+fn view_error(error: Option(db.Err)) -> Element(Msg) {
   case error {
     Some(_) -> html.p([attr.class("Loading error")], [])
     None -> html.text("")
   }
 }
 
+/// カテゴリ選択UIをレンダリングする。
 fn view_category_selection(
   categories: List(Category),
   selected_category: Option(Category),
@@ -189,6 +234,7 @@ fn view_category_selection(
   )
 }
 
+/// 問題数選択UIをレンダリングする。
 fn view_count_selection(selected_count: Int) -> Element(Msg) {
   let counts = [1, 10, 20, 30]
   html.div(
@@ -209,6 +255,7 @@ fn view_count_selection(selected_count: Int) -> Element(Msg) {
   )
 }
 
+/// アクションボタン（クイズ開始、学習履歴）をレンダリングする。
 fn view_actions(
   is_start_quiz_enabled: Bool,
   show_history: Bool,
@@ -230,6 +277,7 @@ fn view_actions(
   ])
 }
 
+/// ローディングメッセージを表示する。
 fn view_loading(loading: Bool) -> Element(Msg) {
   case loading {
     True -> html.p([], [html.text("Loading...")])
@@ -237,24 +285,24 @@ fn view_loading(loading: Bool) -> Element(Msg) {
   }
 }
 
-//履歴を表示する
+/// ユーザーの学習履歴を表示するテーブルをレンダリングする。
 fn view_history(history: History) -> Element(Msg) {
-  let history_list = dict.to_list(history)
   html.table([attr.class("history-table")], [
     html.thead([], [
       html.tr([], [
         html.th([], [html.text("ID")]),
+        html.th([], [html.text("Category")]),
         html.th([], [html.text("Result")]),
       ]),
     ]),
     html.tbody(
       [],
-      list.map(history_list, fn(item) {
-        let #(id, result) = item
+      list.map(history, fn(h) {
         html.tr([], [
-          html.td([], [html.text(int.to_string(id))]),
+          html.td([], [html.text(int.to_string(h.id))]),
+          html.td([], [html.text(h.category.name)]),
           html.td([], [
-            case result {
+            case h.answer {
               Correct -> html.text("○")
               Incorrect -> html.text("✖")
               NotAnswered -> html.text("-")
@@ -266,10 +314,12 @@ fn view_history(history: History) -> Element(Msg) {
   ])
 }
 
+/// アプリケーションのメインビューをレンダリングする。
 pub fn view(model: Model) -> Element(Msg) {
-  // Enable start button only if categories and question IDs have been loaded.
+  // カテゴリと問題IDがロードされている場合にのみクイズ開始ボタンを有効にする。
   let is_start_quiz_enabled =
-    list.length(model.categories) > 0 && list.length(model.question_ids) > 0
+    list.length(model.categories) > 0
+    && list.length(model.question_id_categories) > 0
 
   html.div([], [
     html.h1([], [html.text("Quiz App")]),
