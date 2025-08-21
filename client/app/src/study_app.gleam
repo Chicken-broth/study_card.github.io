@@ -45,6 +45,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       case msg {
         DataInitialized(db) -> {
           // Pass categories and questions to quiz_home.init
+          echo "DataInitialized"
           let #(home_model, home_effect) = quiz_home.init(db)
           #(Home(home_model), effect.map(home_effect, HomeMsg))
         }

@@ -1,4 +1,4 @@
-  // import "fake-indexeddb/auto";
+// import "fake-indexeddb/auto";
 import data from './data.mjs'
 import { Ok, Error } from "../gleam.mjs";
 
@@ -6,7 +6,7 @@ const CATEGORY_STORE = "categories";
 const QUESTION_STORE = "questions";
 const HISTORY_STORE = "history";
 
-export function get_data(){
+export function get_data() {
   return data;
 }
 /**
@@ -31,7 +31,7 @@ const STORE_CONFIGS = [
   },
   {
     storeName: HISTORY_STORE,
-    keyPath: { keyPath: "id"},
+    keyPath: { keyPath: "id" },
   }
 ];
 
@@ -68,11 +68,19 @@ export function setup(dbName, version) {
       });
 
       const transaction = event.target.transaction;
+      transaction.onerror = (e) => {
+        console.log("setup Error", event.target.error);
+        reject(db);
+      };
+      transaction.oncomplete = (_) => {
+        console.log("Quiz history saved successfully");
+        resolve(db);
+      }
 
       if (data.categories) {
         const categoryStore = transaction.objectStore(CATEGORY_STORE);
         data.categories.forEach(category => {
-          console.log("category:", category);
+          // console.log("category:", category);
           categoryStore.add(category);
         });
       }
@@ -87,10 +95,11 @@ export function setup(dbName, version) {
         const historyStore = transaction.objectStore(HISTORY_STORE);
         data.questions.forEach(q => {
           historyStore.add({
-          id: q.id,
-          category: q.category,
-          answer: "NotAnswered"
-        })});
+            id: q.id,
+            category: q.category,
+            answer: "NotAnswered"
+          })
+        });
       }
 
       console.log("Database setup and data seeding complete.");
@@ -129,7 +138,7 @@ export function getQuestionCount(db) {
     const transaction = db.transaction([QUESTION_STORE], 'readonly');
     const store = transaction.objectStore(QUESTION_STORE);
     const request = store.count();
-    
+
     request.onerror = (event) => {
       reject(event.target.error);
     };
@@ -238,7 +247,7 @@ export function getQuestionById(db, id) {
     };
 
     request.onsuccess = (event) => {
-        resolve(event.target.result);
+      resolve(event.target.result);
     };
   });
 }
@@ -273,7 +282,7 @@ export function saveQuizHistory(db, results) {
       //   console.error("Error saving quiz history:", event.target.error);
       //   reject(new Error(null));
       // };
-  
+
       // request.onsuccess = (event) => {
       //   console.log("Quiz history saved successfully",event.target.result);
       //   resolve(new Ok(null));

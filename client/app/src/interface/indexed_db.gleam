@@ -58,7 +58,7 @@ pub fn get_question_by_id_decode(
   dynamic: Dynamic,
 ) -> Result(question.Model, Err) {
   decode.run(dynamic, question.decoder())
-  |> echo
+  // |> echo
 }
 
 /// データベースからすべての問題のIDとカテゴリのリストを取得します。

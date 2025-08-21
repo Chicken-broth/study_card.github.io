@@ -1419,6 +1419,24 @@ function reverse(list4) {
 function is_empty2(list4) {
   return isEqual(list4, toList([]));
 }
+function contains(loop$list, loop$elem) {
+  while (true) {
+    let list4 = loop$list;
+    let elem = loop$elem;
+    if (list4 instanceof Empty) {
+      return false;
+    } else {
+      let first$1 = list4.head;
+      if (isEqual(first$1, elem)) {
+        return true;
+      } else {
+        let rest$1 = list4.tail;
+        loop$list = rest$1;
+        loop$elem = elem;
+      }
+    }
+  }
+}
 function filter_loop(loop$list, loop$fun, loop$acc) {
   while (true) {
     let list4 = loop$list;
@@ -5440,48 +5458,6 @@ function start3(app, selector, start_args) {
   );
 }
 
-// build/dev/javascript/study_app/core/answer.mjs
-var Correct = class extends CustomType {
-};
-var Incorrect = class extends CustomType {
-};
-var NotAnswered = class extends CustomType {
-};
-function from_string(s) {
-  if (s === "Correct") {
-    return new Some(new Correct());
-  } else if (s === "Incorrect") {
-    return new Some(new Incorrect());
-  } else if (s === "NotAnswered") {
-    return new Some(new NotAnswered());
-  } else {
-    return new None();
-  }
-}
-function decoder() {
-  return then$(
-    string2,
-    (s) => {
-      let $ = from_string(s);
-      if ($ instanceof Some) {
-        let ans = $[0];
-        return success(ans);
-      } else {
-        return failure(new NotAnswered(), "decode err :NotAnswered");
-      }
-    }
-  );
-}
-function to_string4(answer) {
-  if (answer instanceof Correct) {
-    return "Correct";
-  } else if (answer instanceof Incorrect) {
-    return "Incorrect";
-  } else {
-    return "NotAnswered";
-  }
-}
-
 // build/dev/javascript/gleam_javascript/gleam_javascript_ffi.mjs
 var PromiseLayer = class _PromiseLayer {
   constructor(promise) {
@@ -5512,6 +5488,39 @@ function tap(promise, callback) {
   );
 }
 
+// build/dev/javascript/study_app/extra/promise_.mjs
+function to_effect(promise, decoder7, to_success_msg, to_err_msg) {
+  return from(
+    (dispatch) => {
+      let _pipe = promise;
+      let _pipe$1 = map_promise(
+        _pipe,
+        (dynamic2) => {
+          let result = decoder7(dynamic2);
+          if (result instanceof Ok) {
+            let a = result[0];
+            return to_success_msg(a);
+          } else {
+            let err = result[0];
+            return to_err_msg(err);
+          }
+        }
+      );
+      tap(_pipe$1, dispatch);
+      return void 0;
+    }
+  );
+}
+function to_effect_no_decode(promise, to_msg) {
+  return from(
+    (dispatch) => {
+      let _pipe = map_promise(promise, to_msg);
+      tap(_pipe, dispatch);
+      return void 0;
+    }
+  );
+}
+
 // build/dev/javascript/study_app/core/category.mjs
 var Category = class extends CustomType {
   constructor(id, name2) {
@@ -5527,7 +5536,7 @@ function to_json4(category) {
     toList([["id", int3(id)], ["name", string3(name2)]])
   );
 }
-function decoder2() {
+function decoder() {
   return field(
     "id",
     int2,
@@ -5541,6 +5550,48 @@ function decoder2() {
       );
     }
   );
+}
+
+// build/dev/javascript/study_app/core/answer.mjs
+var Correct = class extends CustomType {
+};
+var Incorrect = class extends CustomType {
+};
+var NotAnswered = class extends CustomType {
+};
+function from_string(s) {
+  if (s === "Correct") {
+    return new Some(new Correct());
+  } else if (s === "Incorrect") {
+    return new Some(new Incorrect());
+  } else if (s === "NotAnswered") {
+    return new Some(new NotAnswered());
+  } else {
+    return new None();
+  }
+}
+function decoder2() {
+  return then$(
+    string2,
+    (s) => {
+      let $ = from_string(s);
+      if ($ instanceof Some) {
+        let ans = $[0];
+        return success(ans);
+      } else {
+        return failure(new NotAnswered(), "decode err :NotAnswered");
+      }
+    }
+  );
+}
+function to_string4(answer) {
+  if (answer instanceof Correct) {
+    return "Correct";
+  } else if (answer instanceof Incorrect) {
+    return "Incorrect";
+  } else {
+    return "NotAnswered";
+  }
 }
 
 // build/dev/javascript/lustre/lustre/event.mjs
@@ -6150,7 +6201,7 @@ function decoder4() {
   );
 }
 
-// build/dev/javascript/study_app/utils/json_ex.mjs
+// build/dev/javascript/study_app/extra/json_.mjs
 function custom_type_docoder(tab_string, decoder7) {
   return field(
     "type",
@@ -6306,7 +6357,7 @@ function decoder5() {
     (id) => {
       return field(
         "category",
-        decoder2(),
+        decoder(),
         (category) => {
           return field(
             "question_text",
@@ -6364,11 +6415,11 @@ function decoder6() {
       (id) => {
         return field(
           "category",
-          decoder2(),
+          decoder(),
           (category) => {
             return field(
               "answer",
-              decoder(),
+              decoder2(),
               (history) => {
                 return success(new Record2(id, category, history));
               }
@@ -6416,117 +6467,245 @@ function update_from_quiz_results(history, results) {
 
 // build/dev/javascript/study_app/interface/data.mjs
 var data_default = {
-  categories: [
+  "categories": [
     {
       id: 1,
-      name: "Gleam\u57FA\u790E"
+      name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u3068\u306F",
+      sub: [
+        { id: 1, name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u3068\u306F" },
+        { id: 2, name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u306E\u76EE\u7684\u3068\u8003\u3048\u65B9" },
+        { id: 3, name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u306E\u57FA\u672C" },
+        { id: 4, name: "\u8105\u5A01\u306E\u7A2E\u985E" },
+        { id: 5, name: "\u30DE\u30EB\u30A6\u30A7\u30A2\u30FB\u4E0D\u6B63\u30D7\u30ED\u30B0\u30E9\u30E0" },
+        { id: 6, name: "\u4E0D\u6B63\u3068\u653B\u6483\u306E\u30E1\u30AB\u30CB\u30BA\u30E0" }
+      ]
     },
     {
       id: 2,
-      name: "Lustre\u57FA\u790E"
+      name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u6280\u8853",
+      sub: [
+        { id: 1, name: "\u30D1\u30B9\u30EF\u30FC\u30C9\u306B\u95A2\u3059\u308B\u653B\u6483" },
+        { id: 2, name: "Web\u30B5\u30A4\u30C8\u306B\u95A2\u3059\u308B\u653B\u6483" },
+        { id: 3, name: "\u901A\u4FE1\u306B\u95A2\u3059\u308B\u653B\u6483" },
+        { id: 4, name: "\u6A19\u7684\u578B\u653B\u6483\u30FB\u305D\u306E\u4ED6" },
+        { id: 5, name: "\u6697\u53F7\u5316\u6280\u8853" },
+        { id: 6, name: "\u8A8D\u8A3C\u6280\u8853" },
+        { id: 7, name: "\u5229\u7528\u8005\u8A8D\u8A3C\u30FB\u751F\u4F53\u8A8D\u8A3C" },
+        { id: 8, name: "\u516C\u958B\u9375\u57FA\u76E4" }
+      ]
+    },
+    {
+      id: 3,
+      name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7BA1\u7406",
+      sub: [
+        { id: 1, name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7BA1\u7406" },
+        { id: 2, name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u8AF8\u898F\u7A0B" },
+        { id: 3, name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8\u30B7\u30B9\u30C6\u30E0" },
+        { id: 4, name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7D99\u7D9A" },
+        { id: 5, name: "\u60C5\u5831\u8CC7\u7523\u306E\u8ABF\u67FB\u30FB\u5206\u985E" },
+        { id: 6, name: "\u30EA\u30B9\u30AF\u306E\u7A2E\u985E" },
+        { id: 7, name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30EA\u30B9\u30AF\u30A2\u30BB\u30B9\u30E1\u30F3\u30C8" },
+        { id: 8, name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30EA\u30B9\u30AF\u5BFE\u5FDC" },
+        { id: 9, name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7D44\u7E54\u30FB\u6A5F\u95A2" },
+        { id: 10, name: "\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u8A55\u4FA1" }
+      ]
+    },
+    {
+      id: 4,
+      name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+      sub: [
+        { id: 1, name: "\u4EBA\u7684\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56" },
+        { id: 2, name: "\u30AF\u30E9\u30C3\u30AD\u30F3\u30B0\u30FB\u4E0D\u6B63\u30A2\u30AF\u30BB\u30B9\u5BFE\u7B56" },
+        { id: 3, name: "\u30DE\u30EB\u30A6\u30A7\u30A2\u30FB\u4E0D\u6B63\u30D7\u30ED\u30B0\u30E9\u30E0\u5BFE\u7B56" },
+        { id: 4, name: "\u643A\u5E2F\u7AEF\u672B\u30FB\u7121\u7DDALAN\u306E\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56" },
+        { id: 5, name: "\u30C7\u30B8\u30BF\u30EB\u30D5\u30A9\u30EC\u30F3\u30B8\u30C3\u30AF\u30B9\u30FB\u8A3C\u62E0\u4FDD\u5168\u5BFE\u7B56" },
+        { id: 6, name: "\u305D\u306E\u4ED6\u306E\u6280\u8853\u7684\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56" },
+        { id: 7, name: "\u7269\u7406\u7684\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56" },
+        { id: 8, name: "\u30BB\u30AD\u30E5\u30A2\u30D7\u30ED\u30C8\u30B3\u30EB" },
+        { id: 9, name: "\u8A8D\u8A3C\u6280\u8853" },
+        { id: 10, name: "\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3" },
+        { id: 11, name: "\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3" },
+        { id: 12, name: "\u30A2\u30D7\u30EA\u30B1\u30FC\u30B7\u30E7\u30F3\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3" }
+      ]
+    },
+    {
+      id: 5,
+      name: "\u6CD5\u52D9",
+      sub: [
+        { id: 1, name: "\u30B5\u30A4\u30D0\u30FC\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u57FA\u672C\u6CD5" },
+        { id: 2, name: "\u4E0D\u6B63\u30A2\u30AF\u30BB\u30B9\u7981\u6B62\u6CD5" },
+        { id: 3, name: "\u500B\u4EBA\u60C5\u5831\u4FDD\u8B77\u6CD5" },
+        { id: 4, name: "\u5211\u6CD5" },
+        { id: 5, name: "\u305D\u306E\u4ED6\u306E\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u95A2\u9023\u6CD5\u898F\u30FB\u57FA\u6E96" },
+        { id: 6, name: "\u77E5\u7684\u8CA1\u7523\u6A29" },
+        { id: 7, name: "\u52B4\u50CD\u95A2\u9023\u30FB\u53D6\u5F15\u95A2\u9023\u6CD5\u898F" },
+        { id: 8, name: "\u305D\u306E\u4ED6\u306E\u6CD5\u5F8B\u30FB\u30AC\u30A4\u30C9\u30E9\u30A4\u30F3\u30FB\u6280\u8853\u8005\u502B\u7406" },
+        { id: 9, name: "\u6A19\u6E96\u5316\u95A2\u9023" }
+      ]
+    },
+    {
+      id: 6,
+      name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+      sub: [
+        { id: 1, name: "\u30B7\u30B9\u30C6\u30E0\u76E3\u67FB" },
+        { id: 2, name: "\u5185\u90E8\u7D71\u5236" },
+        { id: 3, name: "\u30B5\u30FC\u30D3\u30B9\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8" },
+        { id: 4, name: "\u30B5\u30FC\u30D3\u30B9\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8\u30B7\u30B9\u30C6\u30E0\u306E\u8A08\u753B\u53CA\u3073\u904B\u7528" },
+        { id: 5, name: "\u30D1\u30D5\u30A9\u30FC\u30DE\u30F3\u30B9\u8A55\u4FA1\u53CA\u3073\u6539\u5584" },
+        { id: 6, name: "\u30B5\u30FC\u30D3\u30B9\u306E\u904B\u7528" },
+        { id: 7, name: "\u30D5\u30A1\u30B7\u30EA\u30C6\u30A3\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8" },
+        { id: 8, name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8" },
+        { id: 9, name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u7D71\u5408" },
+        { id: 10, name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u30B9\u30C6\u30FC\u30AF\u30DB\u30EB\u30C0" },
+        { id: 11, name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u30B9\u30B3\u30FC\u30D7" },
+        { id: 12, name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u8CC7\u6E90" },
+        { id: 13, name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u6642\u9593" },
+        { id: 14, name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u30B3\u30B9\u30C8" },
+        { id: 15, name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u30EA\u30B9\u30AF" },
+        { id: 16, name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u54C1\u8CEA" },
+        { id: 17, name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u8ABF\u9054" },
+        { id: 18, name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u30B3\u30DF\u30E5\u30CB\u30B1\u30FC\u30B7\u30E7\u30F3" }
+      ]
+    },
+    {
+      id: 7,
+      name: "\u30C6\u30AF\u30CE\u30ED\u30B8",
+      sub: [
+        { id: 1, name: "\u30B7\u30B9\u30C6\u30E0\u306E\u69CB\u6210" },
+        { id: 2, name: "\u30B7\u30B9\u30C6\u30E0\u306E\u8A55\u4FA1\u6307\u6A19" },
+        { id: 3, name: "\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9\u65B9\u5F0F" },
+        { id: 4, name: "\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9\u8A2D\u8A08" },
+        { id: 5, name: "\u30C7\u30FC\u30BF\u64CD\u4F5C" },
+        { id: 6, name: "\u30C8\u30E9\u30F3\u30B6\u30AF\u30B7\u30E7\u30F3\u51E6\u7406" },
+        { id: 7, name: "\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9\u5FDC\u7528" },
+        { id: 8, name: "\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u65B9\u5F0F" },
+        { id: 9, name: "\u30C7\u30FC\u30BF\u901A\u4FE1\u3068\u5236\u5FA1" },
+        { id: 10, name: "\u901A\u4FE1\u30D7\u30ED\u30C8\u30B3\u30EB" },
+        { id: 11, name: "\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u7BA1\u7406" },
+        { id: 12, name: "\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u5FDC\u7528" }
+      ]
+    },
+    {
+      id: 8,
+      name: "\u30B9\u30C8\u30E9\u30C6\u30B8",
+      sub: [
+        { id: 1, name: "\u7D4C\u55B6\u30FB\u7D44\u7E54\u8AD6" },
+        { id: 2, name: "\u696D\u52D9\u5206\u6790\u30FB\u30C7\u30FC\u30BF\u5229\u6D3B\u7528" },
+        { id: 3, name: "\u4F1A\u8A08\u30FB\u8CA1\u52D9" },
+        { id: 4, name: "\u60C5\u5831\u30B7\u30B9\u30C6\u30E0\u6226\u7565" },
+        { id: 5, name: "\u696D\u52D9\u30D7\u30ED\u30BB\u30B9" },
+        { id: 6, name: "\u30BD\u30EA\u30E5\u30FC\u30B7\u30E7\u30F3\u30D3\u30B8\u30CD\u30B9" },
+        { id: 7, name: "\u30B7\u30B9\u30C6\u30E0\u6D3B\u7528\u4FC3\u9032\u30FB\u8A55\u4FA1" },
+        { id: 8, name: "\u30B7\u30B9\u30C6\u30E0\u5316\u8A08\u753B" },
+        { id: 9, name: "\u8981\u4EF6\u5B9A\u7FA9" },
+        { id: 10, name: "\u8ABF\u9054\u8A08\u753B\u30FB\u5B9F\u65BD" }
+      ]
     }
   ],
-  questions: [
+  "questions": [
+    // sub_id 1: "情報セキュリティとは"
     {
       id: 1,
       category: {
         id: 1,
-        name: "Gleam\u57FA\u790E"
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u3068\u306F",
+        sub_id: 1,
+        sub_name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u3068\u306F"
       },
-      question_text: "Gleam\u306E\u578B\u3067\u3001\u4E0D\u5909\u306A\u30C7\u30FC\u30BF\u69CB\u9020\u3092\u8868\u73FE\u3059\u308B\u3082\u306E\u306F\u3069\u308C\uFF1F",
+      question_text: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u304C\u5B88\u308B\u5BFE\u8C61\u3068\u3057\u3066\u6700\u3082\u9069\u5207\u306A\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
       question_interaction: {
         type: "MultipleChoice",
         data: {
-          texts: ["List", "Tuple", "Map", "All of the above"],
-          correct_answer_index: 3
+          texts: ["\u5BB6\u306E\u65BD\u9320", "\u9632\u72AF\u30AB\u30E1\u30E9\u306E\u8A2D\u7F6E", "\u60C5\u5831\uFF08\u30C7\u30FC\u30BF\u3001\u66F8\u985E\u306A\u3069\uFF09", "\u4F1A\u793E\u306E\u5EFA\u7269"],
+          correct_answer_index: 2
         }
       }
     },
     {
       id: 2,
       category: {
-        id: 2,
-        name: "Lustre\u57FA\u790E"
+        id: 1,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u3068\u306F",
+        sub_id: 1,
+        sub_name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u3068\u306F"
       },
-      question_text: "Lustre\u306ETEA\uFF08The Elm Architecture\uFF09\u306E\u69CB\u6210\u8981\u7D20\u3092\u5BFE\u5FDC\u4ED8\u3051\u306A\u3055\u3044\u3002",
+      question_text: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u3092\u78BA\u4FDD\u3059\u308B\u4E0A\u3067\u3001\u6280\u8853\u7684\u306A\u5BFE\u7B56\u4EE5\u5916\u306B\u91CD\u8981\u3068\u3055\u308C\u3066\u3044\u308B\u8981\u7D20\u306F\u4F55\u3067\u3059\u304B\uFF1F",
       question_interaction: {
-        type: "Association",
-        data: [
-          {
-            id: 1,
-            left: "Model",
-            right: "\u72B6\u614B"
-          },
-          {
-            id: 2,
-            left: "View",
-            right: "UI\u306E\u63CF\u753B"
-          },
-          {
-            id: 3,
-            left: "Update",
-            right: "\u72B6\u614B\u306E\u66F4\u65B0"
-          }
-        ]
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u6700\u65B0\u306E\u30BD\u30D5\u30C8\u30A6\u30A7\u30A2\u5C0E\u5165", "\u9AD8\u6A5F\u80FD\u306A\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u6A5F\u5668\u306E\u5C0E\u5165", "\u7D44\u7E54\u5168\u4F53\u306E\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8", "\u500B\u4EBA\u306EIT\u77E5\u8B58\u5411\u4E0A\u306E\u307F"],
+          correct_answer_index: 2
+        }
       }
     },
     {
       id: 3,
       category: {
         id: 1,
-        name: "Gleam\u57FA\u790E"
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u3068\u306F",
+        sub_id: 1,
+        sub_name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u3068\u306F"
       },
-      question_text: "Gleam\u3067\u6761\u4EF6\u5206\u5C90\u306B\u4F7F\u7528\u3055\u308C\u308B\u4E3B\u8981\u306A\u69CB\u6587\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_text: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u72AF\u7F6A\u306B\u304A\u3044\u3066\u3001\u60C5\u5831\u6F0F\u3048\u3044\u306E\u4E3B\u306A\u539F\u56E0\u3068\u3057\u3066\u6319\u3052\u3089\u308C\u3066\u3044\u308B\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
       question_interaction: {
         type: "MultipleChoice",
         data: {
-          texts: ["if/else", "switch", "case", "for"],
-          correct_answer_index: 2
+          texts: ["\u5916\u90E8\u304B\u3089\u306E\u9AD8\u5EA6\u306A\u30B5\u30A4\u30D0\u30FC\u653B\u6483", "\u793E\u54E1\u306A\u3069\u306E\u5185\u90E8\u95A2\u4FC2\u8005\u306B\u3088\u308B\u4E0D\u6B63", "\u81EA\u7136\u707D\u5BB3\u306B\u3088\u308B\u30B7\u30B9\u30C6\u30E0\u505C\u6B62", "\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30BD\u30D5\u30C8\u30A6\u30A7\u30A2\u306E\u30D0\u30B0"],
+          correct_answer_index: 1
         }
       }
     },
+    // sub_id 2: "情報セキュリティの目的と考え方"
     {
       id: 4,
       category: {
         id: 1,
-        name: "Gleam\u57FA\u790E"
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u3068\u306F",
+        sub_id: 2,
+        sub_name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u306E\u76EE\u7684\u3068\u8003\u3048\u65B9"
       },
-      question_text: "\u5916\u90E8\u30E2\u30B8\u30E5\u30FC\u30EB\u304B\u3089\u95A2\u6570\u3092\u547C\u3073\u51FA\u305B\u308B\u3088\u3046\u306B\u3059\u308B\u305F\u3081\u306B\u4F7F\u7528\u3059\u308B\u30AD\u30FC\u30EF\u30FC\u30C9\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_text: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u306E\u5B9A\u7FA9\u306B\u304A\u3051\u308B\u4E09\u3064\u306E\u8981\u7D20\u3092\u5BFE\u5FDC\u4ED8\u3051\u306A\u3055\u3044\u3002",
       question_interaction: {
-        type: "MultipleChoice",
-        data: {
-          texts: ["public", "pub", "export", "external"],
-          correct_answer_index: 1
-        }
+        type: "Association",
+        data: [
+          { id: 1, left: "\u6A5F\u5BC6\u6027", right: "\u8A8D\u53EF\u3055\u308C\u3066\u3044\u306A\u3044\u500B\u4EBA\u306B\u60C5\u5831\u3092\u4F7F\u7528\u3055\u305B\u305A\u3001\u307E\u305F\u958B\u793A\u3057\u306A\u3044\u7279\u6027" },
+          { id: 2, left: "\u5B8C\u5168\u6027", right: "\u6B63\u78BA\u3055\u53CA\u3073\u5B8C\u5168\u3055\u306E\u7279\u6027" },
+          { id: 3, left: "\u53EF\u7528\u6027", right: "\u8A8D\u53EF\u3055\u308C\u305F\u30A8\u30F3\u30C6\u30A3\u30C6\u30A3\u304C\u8981\u6C42\u3057\u305F\u3068\u304D\u306B\u3001\u30A2\u30AF\u30BB\u30B9\u53CA\u3073\u4F7F\u7528\u304C\u53EF\u80FD\u3067\u3042\u308B\u7279\u6027" }
+        ]
       }
     },
     {
       id: 5,
       category: {
         id: 1,
-        name: "Gleam\u57FA\u790E"
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u3068\u306F",
+        sub_id: 2,
+        sub_name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u306E\u76EE\u7684\u3068\u8003\u3048\u65B9"
       },
-      question_text: "\u95A2\u6570\u306E\u7D50\u679C\u3092\u6B21\u306E\u95A2\u6570\u306B\u6E21\u3059\u305F\u3081\u306B\u4F7F\u308F\u308C\u308B\u6F14\u7B97\u5B50\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_text: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8\u30B7\u30B9\u30C6\u30E0\uFF08ISMS\uFF09\u306E\u63A1\u7528\u306F\u3001\u7D44\u7E54\u306B\u3068\u3063\u3066\u3069\u306E\u3088\u3046\u306A\u6C7A\u5B9A\u3068\u3055\u308C\u3066\u3044\u307E\u3059\u304B\uFF1F",
       question_interaction: {
         type: "MultipleChoice",
         data: {
-          texts: ["|>", "|>>", "->", "=>"],
-          correct_answer_index: 0
+          texts: ["\u6280\u8853\u7684\u6C7A\u5B9A", "\u6226\u8853\u7684\u6C7A\u5B9A", "\u6226\u7565\u7684\u6C7A\u5B9A", "\u4E00\u6642\u7684\u6C7A\u5B9A"],
+          correct_answer_index: 2
         }
       }
     },
+    // sub_id 3: "情報セキュリティの基本"
     {
       id: 6,
       category: {
         id: 1,
-        name: "Gleam\u57FA\u790E"
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u3068\u306F",
+        sub_id: 3,
+        sub_name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u306E\u57FA\u672C"
       },
-      question_text: "Result\u578B\u3084Option\u578B\u3092\u6271\u3046\u969B\u306B\u30CD\u30B9\u30C8\u3092\u907F\u3051\u308B\u305F\u3081\u306B\u63A8\u5968\u3055\u308C\u308B\u69CB\u6587\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_text: "\u4F01\u696D\u304C\u4FDD\u6709\u3059\u308B\u4FA1\u5024\u306E\u3042\u308B\u3082\u306E\u5168\u822C\u3092\u6307\u3057\u3001\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8\u306B\u3088\u3063\u3066\u5B88\u308B\u5BFE\u8C61\u3068\u306A\u308B\u3082\u306E\u306F\u4F55\u3067\u3059\u304B\uFF1F",
       question_interaction: {
         type: "MultipleChoice",
         data: {
-          texts: ["try", "let...in", "use", "with"],
-          correct_answer_index: 2
+          texts: ["\u60C5\u5831\u8CC7\u6E90", "\u60C5\u5831\u8CC7\u7523", "\u60C5\u5831\u8CA1\u7523", "\u60C5\u5831\u30B7\u30B9\u30C6\u30E0"],
+          correct_answer_index: 1
         }
       }
     },
@@ -6534,116 +6713,3878 @@ var data_default = {
       id: 7,
       category: {
         id: 1,
-        name: "Gleam\u57FA\u790E"
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u3068\u306F",
+        sub_id: 3,
+        sub_name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u306E\u57FA\u672C"
       },
-      question_text: "Gleam\u306E\u57FA\u672C\u7684\u306A\u30C7\u30FC\u30BF\u578B\u3068\u305D\u306E\u8AAC\u660E\u3092\u5BFE\u5FDC\u4ED8\u3051\u306A\u3055\u3044\u3002",
+      question_text: "\u307E\u3060\u8D77\u3053\u3063\u3066\u306F\u3044\u306A\u3044\u3053\u3068\u3067\u3059\u304C\u3001\u3082\u3057\u305D\u308C\u304C\u767A\u751F\u3059\u308C\u3070\u60C5\u5831\u8CC7\u7523\u306B\u5F71\u97FF\u3092\u4E0E\u3048\u308B\u4E8B\u8C61\u3084\u72B6\u614B\u3092\u6307\u3059\u6982\u5FF5\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
       question_interaction: {
-        type: "Association",
-        data: [
-          {
-            id: 1,
-            left: "Int",
-            right: "\u6574\u6570"
-          },
-          {
-            id: 2,
-            left: "String",
-            right: "\u6587\u5B57\u5217"
-          },
-          {
-            id: 3,
-            left: "Bool",
-            right: "\u771F\u507D\u5024"
-          }
-        ]
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30A4\u30F3\u30B7\u30C7\u30F3\u30C8", "\u8106\u5F31\u6027", "\u8105\u5A01", "\u30EA\u30B9\u30AF"],
+          correct_answer_index: 3
+        }
       }
     },
     {
       id: 8,
       category: {
-        id: 2,
-        name: "Lustre\u57FA\u790E"
+        id: 1,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u3068\u306F",
+        sub_id: 3,
+        sub_name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u306E\u57FA\u672C"
       },
-      question_text: "Lustre\u3067HTML\u8981\u7D20\u3092\u751F\u6210\u3059\u308B\u305F\u3081\u306B\u4E3B\u306B\u4F7F\u308F\u308C\u308B\u30E2\u30B8\u30E5\u30FC\u30EB\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_text: "\u8105\u5A01\u304C\u3064\u3051\u8FBC\u3080\u3053\u3068\u304C\u3067\u304D\u308B\u3001\u60C5\u5831\u8CC7\u7523\u304C\u3082\u3064\u5F31\u70B9\u3092\u6307\u3059\u7528\u8A9E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
       question_interaction: {
         type: "MultipleChoice",
         data: {
-          texts: ["lustre/element/html", "lustre/ui", "lustre/components", "lustre/dom"],
-          correct_answer_index: 0
+          texts: ["\u30D0\u30B0", "\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30DB\u30FC\u30EB", "\u4EBA\u70BA\u7684\u8106\u5F31\u6027", "\u5168\u3066"],
+          correct_answer_index: 3
         }
       }
     },
+    // sub_id 4: "脅威の種類"
     {
       id: 9,
       category: {
-        id: 2,
-        name: "Lustre\u57FA\u790E"
+        id: 1,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u3068\u306F",
+        sub_id: 4,
+        sub_name: "\u8105\u5A01\u306E\u7A2E\u985E"
       },
-      question_text: "\u30AF\u30EA\u30C3\u30AF\u30A4\u30D9\u30F3\u30C8\u3092\u51E6\u7406\u3059\u308B\u305F\u3081\u306B\u4F7F\u7528\u3059\u308B\u30E2\u30B8\u30E5\u30FC\u30EB\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_text: "\u76F4\u63A5\u7684\u306B\u60C5\u5831\u8CC7\u7523\u304C\u88AB\u5BB3\u3092\u53D7\u3051\u308B\u53EF\u80FD\u6027\u306E\u3042\u308B\u8105\u5A01\u306E\u7A2E\u985E\u3068\u3057\u3066\u6319\u3052\u3089\u308C\u3066\u3044\u308B\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
       question_interaction: {
         type: "MultipleChoice",
         data: {
-          texts: ["lustre/attribute", "lustre/event", "lustre/handler", "lustre/signal"],
-          correct_answer_index: 1
+          texts: ["\u4E0D\u6B63\u30A2\u30AF\u30BB\u30B9", "\u76D7\u8074", "\u707D\u5BB3", "\u306A\u308A\u3059\u307E\u3057"],
+          correct_answer_index: 2
         }
       }
     },
     {
       id: 10,
       category: {
-        id: 2,
-        name: "Lustre\u57FA\u790E"
+        id: 1,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u3068\u306F",
+        sub_id: 4,
+        sub_name: "\u8105\u5A01\u306E\u7A2E\u985E"
       },
-      question_text: "HTML\u8981\u7D20\u306BCSS\u30AF\u30E9\u30B9\u3092\u8FFD\u52A0\u3059\u308B\u969B\u306B\u4F7F\u7528\u3059\u308B\u95A2\u6570\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_text: "\u4EBA\u9593\u306E\u5FC3\u7406\u3084\u793E\u4F1A\u7684\u6027\u8CEA\u306B\u3064\u3051\u8FBC\u3093\u3067\u79D8\u5BC6\u60C5\u5831\u3092\u5165\u624B\u3059\u308B\u653B\u6483\u624B\u6CD5\u306E\u7DCF\u79F0\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
       question_interaction: {
         type: "MultipleChoice",
         data: {
-          texts: ["style()", "class()", "id()", "selector()"],
+          texts: ["\u30D5\u30A3\u30C3\u30B7\u30F3\u30B0", "\u30BD\u30FC\u30B7\u30E3\u30EB\u30A8\u30F3\u30B8\u30CB\u30A2\u30EA\u30F3\u30B0", "\u30D3\u30B8\u30CD\u30B9\u30E1\u30FC\u30EB\u8A50\u6B3A\uFF08BEC\uFF09", "\u306A\u308A\u3059\u307E\u3057\u653B\u6483"],
           correct_answer_index: 1
         }
       }
     },
+    // sub_id 5: "マルウェア・不正プログラム"
     {
       id: 11,
       category: {
-        id: 2,
-        name: "Lustre\u57FA\u790E"
+        id: 1,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u3068\u306F",
+        sub_id: 5,
+        sub_name: "\u30DE\u30EB\u30A6\u30A7\u30A2\u30FB\u4E0D\u6B63\u30D7\u30ED\u30B0\u30E9\u30E0"
       },
-      question_text: "Lustre\u30A2\u30D7\u30EA\u30B1\u30FC\u30B7\u30E7\u30F3\u306E\u4E3B\u8981\u306A\u69CB\u6210\u8981\u7D20\u3068\u305D\u306E\u5F79\u5272\u3092\u5BFE\u5FDC\u4ED8\u3051\u306A\u3055\u3044\u3002",
+      question_text: "\u60AA\u610F\u306E\u3042\u308B\u30BD\u30D5\u30C8\u30A6\u30A7\u30A2\u306E\u7DCF\u79F0\u3068\u3057\u3066\u4F7F\u308F\u308C\u308B\u7528\u8A9E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
       question_interaction: {
-        type: "Association",
-        data: [
-          {
-            id: 1,
-            left: "init",
-            right: "\u30E2\u30C7\u30EB\u306E\u521D\u671F\u5316"
-          },
-          {
-            id: 2,
-            left: "update",
-            right: "\u30E1\u30C3\u30BB\u30FC\u30B8\u306B\u57FA\u3065\u304F\u30E2\u30C7\u30EB\u306E\u66F4\u65B0"
-          },
-          {
-            id: 3,
-            left: "view",
-            right: "\u30E2\u30C7\u30EB\u3092HTML\u306B\u5909\u63DB"
-          }
-        ]
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30A6\u30A4\u30EB\u30B9", "\u30EF\u30FC\u30E0", "\u30C8\u30ED\u30A4\u306E\u6728\u99AC", "\u30DE\u30EB\u30A6\u30A7\u30A2"],
+          correct_answer_index: 3
+        }
       }
     },
     {
       id: 12,
       category: {
-        id: 2,
-        name: "Lustre\u57FA\u790E"
+        id: 1,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u3068\u306F",
+        sub_id: 5,
+        sub_name: "\u30DE\u30EB\u30A6\u30A7\u30A2\u30FB\u4E0D\u6B63\u30D7\u30ED\u30B0\u30E9\u30E0"
       },
-      question_text: "Lustre\u30A2\u30D7\u30EA\u30B1\u30FC\u30B7\u30E7\u30F3\u306E\u30A8\u30F3\u30C8\u30EA\u30FC\u30DD\u30A4\u30F3\u30C8\u3068\u306A\u308B\u95A2\u6570\u306E\u540D\u524D\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_text: "\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u653B\u6483\u3092\u6210\u529F\u3055\u305B\u305F\u5F8C\u306B\u3001\u305D\u306E\u75D5\u8DE1\u3092\u6D88\u3057\u3066\u898B\u3064\u304B\u308A\u306B\u304F\u304F\u3059\u308B\u305F\u3081\u306E\u30C4\u30FC\u30EB\u306E\u540D\u79F0\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
       question_interaction: {
         type: "MultipleChoice",
         data: {
-          texts: ["start", "main", "run", "app"],
+          texts: ["\u30D0\u30C3\u30AF\u30C9\u30A2", "\u30B9\u30D1\u30A4\u30A6\u30A7\u30A2", "\u30EB\u30FC\u30C8\u30AD\u30C3\u30C8", "\u30E9\u30F3\u30B5\u30E0\u30A6\u30A7\u30A2"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 13,
+      category: {
+        id: 1,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u3068\u306F",
+        sub_id: 5,
+        sub_name: "\u30DE\u30EB\u30A6\u30A7\u30A2\u30FB\u4E0D\u6B63\u30D7\u30ED\u30B0\u30E9\u30E0"
+      },
+      question_text: "\u30E1\u30FC\u30EB\u30A2\u30AB\u30A6\u30F3\u30C8\u3084\u30E1\u30FC\u30EB\u30C7\u30FC\u30BF\u306A\u3069\u306E\u60C5\u5831\u7A83\u53D6\u306B\u52A0\u3048\u3066\u3001\u4ED6\u306E\u30DE\u30EB\u30A6\u30A7\u30A2\u3078\u306E\u4E8C\u6B21\u611F\u67D3\u306E\u305F\u3081\u306B\u60AA\u7528\u3055\u308C\u308B\u30DE\u30EB\u30A6\u30A7\u30A2\u306E\u540D\u79F0\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30EF\u30FC\u30E0", "\u30C8\u30ED\u30A4\u306E\u6728\u99AC", "EMOTET", "\u30A2\u30C9\u30A6\u30A7\u30A2"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    // sub_id 6: "不正と攻撃のメカニズム"
+    {
+      id: 14,
+      category: {
+        id: 1,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u3068\u306F",
+        sub_id: 6,
+        sub_name: "\u4E0D\u6B63\u3068\u653B\u6483\u306E\u30E1\u30AB\u30CB\u30BA\u30E0"
+      },
+      question_text: "\u30A4\u30F3\u30BF\u30FC\u30CD\u30C3\u30C8\u4E0A\u3067\u516C\u958B\u3055\u308C\u3066\u3044\u308B\u7C21\u5358\u306A\u30AF\u30E9\u30C3\u30AD\u30F3\u30B0\u30C4\u30FC\u30EB\u3092\u5229\u7528\u3057\u3066\u4E0D\u6B63\u30A2\u30AF\u30BB\u30B9\u3092\u8A66\u307F\u308B\u653B\u6483\u8005\u3092\u6307\u3059\u7528\u8A9E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30DC\u30C3\u30C8\u30CF\u30FC\u30C0\u30FC", "\u5185\u90E8\u95A2\u4FC2\u8005", "\u30B9\u30AF\u30EA\u30D7\u30C8\u30AD\u30C7\u30A3", "\u6109\u5FEB\u72AF"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 15,
+      category: {
+        id: 1,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u3068\u306F",
+        sub_id: 6,
+        sub_name: "\u4E0D\u6B63\u3068\u653B\u6483\u306E\u30E1\u30AB\u30CB\u30BA\u30E0"
+      },
+      question_text: "\u30B5\u30A4\u30D0\u30FC\u653B\u6483\u306E\u6BB5\u968E\u30927\u3064\u306B\u533A\u5206\u3057\u305F\u30E2\u30C7\u30EB\u3067\u3001\u653B\u6483\u8005\u306E\u610F\u56F3\u3084\u884C\u52D5\u3092\u7406\u89E3\u3059\u308B\u3053\u3068\u3092\u76EE\u7684\u3068\u3057\u3066\u3044\u308B\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30A4\u30F3\u30B7\u30C7\u30F3\u30C8\u30EC\u30B9\u30DD\u30F3\u30B9", "\u30B5\u30A4\u30D0\u30FC\u30AD\u30EB\u30C1\u30A7\u30FC\u30F3", "\u4E0D\u6B63\u306E\u30C8\u30E9\u30A4\u30A2\u30F3\u30B0\u30EB", "\u30EA\u30B9\u30AF\u30A2\u30BB\u30B9\u30E1\u30F3\u30C8"],
           correct_answer_index: 1
         }
+      }
+    },
+    {
+      id: 16,
+      category: {
+        id: 1,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u3068\u306F",
+        sub_id: 6,
+        sub_name: "\u4E0D\u6B63\u3068\u653B\u6483\u306E\u30E1\u30AB\u30CB\u30BA\u30E0"
+      },
+      question_text: "\u30B5\u30A4\u30D0\u30FC\u30AD\u30EB\u30C1\u30A7\u30FC\u30F3\u306E\u4E3B\u8981\u306A\u6BB5\u968E\u3068\u3001\u305D\u306E\u6982\u8981\u3092\u5BFE\u5FDC\u4ED8\u3051\u306A\u3055\u3044\u3002",
+      question_interaction: {
+        type: "Association",
+        data: [
+          { id: 1, left: "\u5075\u5BDF", right: "\u7D44\u7E54\u3084\u4EBA\u7269\u306B\u95A2\u3059\u308B\u60C5\u5831\u3092\u30A4\u30F3\u30BF\u30FC\u30CD\u30C3\u30C8\u306A\u3069\u304B\u3089\u53D6\u5F97\u3059\u308B" },
+          { id: 2, left: "\u6B66\u5668\u5316", right: "\u30A8\u30AF\u30B9\u30D7\u30ED\u30A4\u30C8\u3084\u30DE\u30EB\u30A6\u30A7\u30A2\u3092\u4F5C\u6210\u3059\u308B" },
+          { id: 3, left: "\u30C7\u30EA\u30D0\u30EA", right: "\u306A\u308A\u3059\u307E\u3057\u30E1\u30FC\u30EB\u3067\u30DE\u30EB\u30A6\u30A7\u30A2\u3092\u9001\u308A\u3064\u3051\u305F\u308A\u3001\u4E0D\u6B63\u30B5\u30A4\u30C8\u3078\u8A98\u5C0E\u3057\u305F\u308A\u3059\u308B" },
+          { id: 4, left: "\u30A8\u30AF\u30B9\u30D7\u30ED\u30A4\u30C8", right: "\u30E6\u30FC\u30B6\u30FC\u306B\u30DE\u30EB\u30A6\u30A7\u30A2\u6DFB\u4ED8\u30D5\u30A1\u30A4\u30EB\u3092\u5B9F\u884C\u3055\u305B\u308B\u3001\u307E\u305F\u306F\u8106\u5F31\u6027\u3092\u5229\u7528\u3059\u308B" },
+          { id: 5, left: "\u30A4\u30F3\u30B9\u30C8\u30FC\u30EB", right: "\u653B\u6483\u5B9F\u884C\u306E\u7D50\u679C\u3001\u6A19\u7684\u306EPC\u304C\u30DE\u30EB\u30A6\u30A7\u30A2\u306B\u611F\u67D3\u3059\u308B" },
+          { id: 6, left: "\u76EE\u7684\u306E\u5B9F\u884C", right: "\u63A2\u3057\u51FA\u3057\u305F\u5185\u90E8\u60C5\u5831\u3092\u5727\u7E2E\u30FB\u6697\u53F7\u5316\u3057\u3066\u6301\u3061\u51FA\u3059" }
+        ]
+      }
+    },
+    // --- カテゴリ2: 情報セキュリティ技術 (新規生成分) ---
+    // sub_id 1: "パスワードに関する攻撃"
+    {
+      id: 17,
+      category: {
+        id: 2,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u6280\u8853",
+        sub_id: 1,
+        sub_name: "\u30D1\u30B9\u30EF\u30FC\u30C9\u306B\u95A2\u3059\u308B\u653B\u6483"
+      },
+      question_text: "\u540C\u3058\u30D1\u30B9\u30EF\u30FC\u30C9\u3092\u4F7F\u3063\u3066\u69D8\u3005\u306A\u5229\u7528\u8005ID\u306B\u5BFE\u3057\u3066\u30ED\u30B0\u30A4\u30F3\u3092\u8A66\u884C\u3059\u308B\u653B\u6483\u306E\u540D\u79F0\u306F\u4F55\u3067\u3059\u304B\uFF1F [8]",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30D6\u30EB\u30FC\u30C8\u30D5\u30A9\u30FC\u30B9\u653B\u6483", "\u30EA\u30D0\u30FC\u30B9\u30D6\u30EB\u30FC\u30C8\u30D5\u30A9\u30FC\u30B9\u653B\u6483", "\u8F9E\u66F8\u653B\u6483", "\u30D1\u30B9\u30EF\u30FC\u30C9\u30EA\u30B9\u30C8\u653B\u6483"],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 18,
+      category: {
+        id: 2,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u6280\u8853",
+        sub_id: 1,
+        sub_name: "\u30D1\u30B9\u30EF\u30FC\u30C9\u306B\u95A2\u3059\u308B\u653B\u6483"
+      },
+      question_text: "\u8907\u6570\u306EWeb\u30B5\u30A4\u30C8\u3067\u4F7F\u3044\u56DE\u3055\u308C\u3066\u3044\u308B\u5229\u7528\u8005ID\u3068\u30D1\u30B9\u30EF\u30FC\u30C9\u306E\u30EA\u30B9\u30C8\u3092\u4E0D\u6B63\u306B\u5229\u7528\u3057\u3066\u30ED\u30B0\u30A4\u30F3\u3092\u8A66\u884C\u3059\u308B\u653B\u6483\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F [9]",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30D6\u30EB\u30FC\u30C8\u30D5\u30A9\u30FC\u30B9\u653B\u6483", "\u30EA\u30D0\u30FC\u30B9\u30D6\u30EB\u30FC\u30C8\u30D5\u30A9\u30FC\u30B9\u653B\u6483", "\u8F9E\u66F8\u653B\u6483", "\u30D1\u30B9\u30EF\u30FC\u30C9\u30EA\u30B9\u30C8\u653B\u6483"],
+          correct_answer_index: 3
+        }
+      }
+    },
+    {
+      id: 19,
+      category: {
+        id: 2,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u6280\u8853",
+        sub_id: 1,
+        sub_name: "\u30D1\u30B9\u30EF\u30FC\u30C9\u306B\u95A2\u3059\u308B\u653B\u6483"
+      },
+      question_text: "\u30D1\u30B9\u30EF\u30FC\u30C9\u304C\u30CF\u30C3\u30B7\u30E5\u5024\u3067\u4FDD\u7BA1\u3055\u308C\u3066\u3044\u308B\u30B7\u30B9\u30C6\u30E0\u306B\u304A\u3044\u3066\u3001\u3042\u3089\u304B\u3058\u3081\u30D1\u30B9\u30EF\u30FC\u30C9\u3068\u30CF\u30C3\u30B7\u30E5\u5024\u306E\u7D44\u307F\u5408\u308F\u305B\u30EA\u30B9\u30C8\u3092\u7528\u610F\u3057\u3066\u304A\u304D\u3001\u305D\u308C\u3092\u7A81\u304D\u5408\u308F\u305B\u3066\u30D1\u30B9\u30EF\u30FC\u30C9\u3092\u63A8\u6E2C\u3059\u308B\u653B\u6483\u306F\u4F55\u3067\u3059\u304B\uFF1F [9]",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u8F9E\u66F8\u653B\u6483", "\u30D6\u30EB\u30FC\u30C8\u30D5\u30A9\u30FC\u30B9\u653B\u6483", "\u30EC\u30A4\u30F3\u30DC\u30FC\u653B\u6483", "\u30EA\u30D7\u30EC\u30A4\u653B\u6483"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    // sub_id 2: "Webサイトに関する攻撃"
+    {
+      id: 20,
+      category: {
+        id: 2,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u6280\u8853",
+        sub_id: 2,
+        sub_name: "Web\u30B5\u30A4\u30C8\u306B\u95A2\u3059\u308B\u653B\u6483"
+      },
+      question_text: "Web\u30A2\u30D7\u30EA\u30B1\u30FC\u30B7\u30E7\u30F3\u306B\u304A\u3044\u3066\u3001\u4E0D\u6B63\u306ASQL\u6587\u3092\u6295\u5165\u3057\u3066\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9\u3092\u4E0D\u6B63\u306B\u64CD\u4F5C\u3059\u308BSQL\u30A4\u30F3\u30B8\u30A7\u30AF\u30B7\u30E7\u30F3\u653B\u6483\u3078\u306E\u5BFE\u7B56\u3068\u3057\u3066\u6700\u3082\u6709\u52B9\u306A\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F [10, 11]",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u5165\u529B\u6587\u5B57\u5217\u9577\u306E\u30C1\u30A7\u30C3\u30AF\u3092\u53B3\u683C\u306B\u884C\u3046", "Web\u30B5\u30FC\u30D0\u3078\u306E\u30A2\u30AF\u30BB\u30B9\u5143IP\u30A2\u30C9\u30EC\u30B9\u3092\u5236\u9650\u3059\u308B", "\u30D7\u30EC\u30FC\u30B9\u30DB\u30EB\u30C0\u3092\u4F7F\u3063\u3066\u547D\u4EE4\u6587\u3092\u7D44\u307F\u7ACB\u3066\u308B", "\u4E0D\u6B63\u306A\u30B9\u30AF\u30EA\u30D7\u30C8\u306E\u5B9F\u884C\u3092\u59A8\u3052\u308B\u30A8\u30B9\u30B1\u30FC\u30D7\u51E6\u7406\u3092\u884C\u3046"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 21,
+      category: {
+        id: 2,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u6280\u8853",
+        sub_id: 2,
+        sub_name: "Web\u30B5\u30A4\u30C8\u306B\u95A2\u3059\u308B\u653B\u6483"
+      },
+      question_text: "\u60AA\u610F\u306E\u3042\u308B\u30B9\u30AF\u30EA\u30D7\u30C8\u3092Web\u30B5\u30A4\u30C8\u306B\u57CB\u3081\u8FBC\u307F\u3001\u305D\u306EWeb\u30B5\u30A4\u30C8\u306B\u30A2\u30AF\u30BB\u30B9\u3057\u305F\u30E6\u30FC\u30B6\u30FC\u306E\u30D6\u30E9\u30A6\u30B6\u4E0A\u3067\u30B9\u30AF\u30EA\u30D7\u30C8\u3092\u5B9F\u884C\u3055\u305B\u308B\u3053\u3068\u3067\u3001Cookie\u60C5\u5831\u306A\u3069\u3092\u76D7\u307F\u51FA\u3059\u653B\u6483\u306F\u4F55\u3067\u3059\u304B\uFF1F [12]",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["SQL\u30A4\u30F3\u30B8\u30A7\u30AF\u30B7\u30E7\u30F3", "\u30AF\u30ED\u30B9\u30B5\u30A4\u30C8\u30B9\u30AF\u30EA\u30D7\u30C6\u30A3\u30F3\u30B0\u653B\u6483", "\u30C7\u30A3\u30EC\u30AF\u30C8\u30EA\u30C8\u30E9\u30D0\u30FC\u30B5\u30EB\u653B\u6483", "\u30AF\u30EA\u30C3\u30AF\u30B8\u30E3\u30C3\u30AD\u30F3\u30B0"],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 22,
+      category: {
+        id: 2,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u6280\u8853",
+        sub_id: 2,
+        sub_name: "Web\u30B5\u30A4\u30C8\u306B\u95A2\u3059\u308B\u653B\u6483"
+      },
+      question_text: "\u30ED\u30B0\u30A4\u30F3\u4E2D\u306E\u30E6\u30FC\u30B6\u30FC\u306E\u30D6\u30E9\u30A6\u30B6\u3092\u5229\u7528\u3057\u3066\u3001\u30E6\u30FC\u30B6\u30FC\u306E\u610F\u56F3\u3057\u306A\u3044\u51E6\u7406\u3092Web\u30B5\u30FC\u30D0\u4E0A\u3067\u5B9F\u884C\u3055\u305B\u308B\u653B\u6483\u3067\u3001XSS\uFF08\u30AF\u30ED\u30B9\u30B5\u30A4\u30C8\u30B9\u30AF\u30EA\u30D7\u30C6\u30A3\u30F3\u30B0\uFF09\u3068\u306F\u7570\u306A\u308A\u3001\u4E3B\u306B\u30B5\u30FC\u30D0\u5074\u3067\u4E0D\u6B63\u306A\u66F8\u304D\u8FBC\u307F\u306A\u3069\u3092\u884C\u3046\u3082\u306E\u306F\u4F55\u3067\u3059\u304B\uFF1F [12]",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["SQL\u30A4\u30F3\u30B8\u30A7\u30AF\u30B7\u30E7\u30F3\u653B\u6483", "\u30AF\u30ED\u30B9\u30B5\u30A4\u30C8\u30EA\u30AF\u30A8\u30B9\u30C8\u30D5\u30A9\u30FC\u30B8\u30A7\u30EA\u653B\u6483\uFF08CSRF\uFF09", "\u30BB\u30C3\u30B7\u30E7\u30F3\u30CF\u30A4\u30B8\u30E3\u30C3\u30AF", "OS\u30B3\u30DE\u30F3\u30C9\u30A4\u30F3\u30B8\u30A7\u30AF\u30B7\u30E7\u30F3"],
+          correct_answer_index: 1
+        }
+      }
+    },
+    // sub_id 3: "通信に関する攻撃"
+    {
+      id: 23,
+      category: {
+        id: 2,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u6280\u8853",
+        sub_id: 3,
+        sub_name: "\u901A\u4FE1\u306B\u95A2\u3059\u308B\u653B\u6483"
+      },
+      question_text: "DNS\u30B5\u30FC\u30D0\u306E\u30AD\u30E3\u30C3\u30B7\u30E5\u306B\u4E0D\u6B63\u306A\u60C5\u5831\u3092\u6CE8\u5165\u3057\u3001\u5229\u7528\u8005\u3092\u507D\u306EWeb\u30B5\u30A4\u30C8\u3078\u8A98\u5C0E\u3059\u308B\u653B\u6483\u306E\u540D\u79F0\u306F\u4F55\u3067\u3059\u304B\uFF1F [13]",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["DNS\u30EA\u30D5\u30EC\u30AF\u30B7\u30E7\u30F3\u653B\u6483", "DNS\u30A2\u30F3\u30D7\u653B\u6483", "DNS\u30AD\u30E3\u30C3\u30B7\u30E5\u30DD\u30A4\u30BA\u30CB\u30F3\u30B0\u653B\u6483", "\u30E9\u30F3\u30C0\u30E0\u30B5\u30D6\u30C9\u30E1\u30A4\u30F3\u653B\u6483"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 24,
+      category: {
+        id: 2,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u6280\u8853",
+        sub_id: 3,
+        sub_name: "\u901A\u4FE1\u306B\u95A2\u3059\u308B\u653B\u6483"
+      },
+      question_text: "\u653B\u6483\u8005\u304C\u3001\u95A2\u4FC2\u306E\u306A\u3044\u7B2C\u4E09\u8005\u306E\u30E1\u30FC\u30EB\u30B5\u30FC\u30D0\u3084DNS\u30B5\u30FC\u30D0\u306A\u3069\u3092\u4E0D\u6B63\u306B\u5229\u7528\u3057\u3001\u4ED6\u306E\u653B\u6483\u306E\u4E2D\u7D99\u70B9\u3068\u3057\u3066\u60AA\u7528\u3059\u308B\u653B\u6483\u306E\u7DCF\u79F0\u306F\u4F55\u3067\u3059\u304B\uFF1F [14]",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u4E2D\u9593\u8005\u653B\u6483", "\u8E0F\u307F\u53F0\u653B\u6483", "IP\u30B9\u30D7\u30FC\u30D5\u30A3\u30F3\u30B0", "\u30DD\u30FC\u30C8\u30B9\u30AD\u30E3\u30F3"],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 25,
+      category: {
+        id: 2,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u6280\u8853",
+        sub_id: 3,
+        sub_name: "\u901A\u4FE1\u306B\u95A2\u3059\u308B\u653B\u6483"
+      },
+      question_text: "\u30AF\u30E9\u30A6\u30C9\u30B5\u30FC\u30D3\u30B9\u306E\u5229\u7528\u8005\u3092\u6A19\u7684\u3068\u3057\u3001\u30B5\u30FC\u30D3\u30B9\u5229\u7528\u8CBB\u306E\u5897\u5927\u306A\u3069\u3092\u76EE\u7684\u3068\u3057\u3066\u3001\u904E\u5270\u306A\u30A2\u30AF\u30BB\u30B9\u3092\u767A\u751F\u3055\u305B\u3066\u7D4C\u6E08\u7684\u640D\u5931\u3092\u4E0E\u3048\u308B\u653B\u6483\u306F\u4F55\u3067\u3059\u304B\uFF1F [15]",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["DoS\u653B\u6483", "DDoS\u653B\u6483", "EDoS\u653B\u6483", "\u30B5\u30A4\u30D0\u30FC\u30C6\u30ED\u30EA\u30BA\u30E0"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    // sub_id 4: "標的型攻撃・その他"
+    {
+      id: 26,
+      category: {
+        id: 2,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u6280\u8853",
+        sub_id: 4,
+        sub_name: "\u6A19\u7684\u578B\u653B\u6483\u30FB\u305D\u306E\u4ED6"
+      },
+      question_text: "\u30BD\u30D5\u30C8\u30A6\u30A7\u30A2\u306B\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u4E0A\u306E\u8106\u5F31\u6027\u304C\u767A\u898B\u3055\u308C\u3066\u304B\u3089\u3001\u305D\u306E\u8106\u5F31\u6027\u306B\u5BFE\u51E6\u3059\u308B\u305F\u3081\u306E\u4FEE\u6B63\u30D7\u30ED\u30B0\u30E9\u30E0\u3084\u60C5\u5831\u304C\u63D0\u4F9B\u3055\u308C\u308B\u307E\u3067\u306E\u671F\u9593\u306B\u3001\u305D\u306E\u8106\u5F31\u6027\u3092\u60AA\u7528\u3057\u3066\u884C\u308F\u308C\u308B\u653B\u6483\u306F\u4F55\u3067\u3059\u304B\uFF1F [16]",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u6C34\u98F2\u307F\u5834\u578B\u653B\u6483", "\u6A19\u7684\u578B\u653B\u6483", "\u30BC\u30ED\u30C7\u30A4\u653B\u6483", "\u30B5\u30A4\u30C9\u30C1\u30E3\u30CD\u30EB\u653B\u6483"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 27,
+      category: {
+        id: 2,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u6280\u8853",
+        sub_id: 4,
+        sub_name: "\u6A19\u7684\u578B\u653B\u6483\u30FB\u305D\u306E\u4ED6"
+      },
+      question_text: "AI\uFF08\u4EBA\u5DE5\u77E5\u80FD\uFF09\u3092\u60AA\u7528\u3057\u305F\u653B\u6483\u624B\u6CD5\u3068\u3001\u305D\u306E\u5177\u4F53\u7684\u306A\u4F8B\u3092\u5BFE\u5FDC\u4ED8\u3051\u306A\u3055\u3044\u3002 [17, 18]",
+      question_interaction: {
+        type: "Association",
+        data: [
+          { id: 1, left: "\u30C7\u30A3\u30FC\u30D7\u30D5\u30A7\u30A4\u30AF", right: "AI\u3092\u4F7F\u3063\u3066\u672C\u7269\u305D\u3063\u304F\u308A\u306E\u507D\u306E\u753B\u50CF\u30FB\u52D5\u753B\u30FB\u97F3\u58F0\u3092\u751F\u6210\u3057\u3001\u8A50\u6B3A\u3084\u6050\u559D\u306B\u60AA\u7528\u3059\u308B" },
+          { id: 2, left: "\u6575\u5BFE\u7684\u30B5\u30F3\u30D7\u30EB\u653B\u6483", right: "\u4EBA\u9593\u306B\u306F\u77E5\u899A\u3067\u304D\u306A\u3044\u30CE\u30A4\u30BA\u3084\u5FAE\u5C0F\u306A\u5909\u5316\u3092\u753B\u50CF\u306B\u542B\u3081\u308B\u3053\u3068\u3067\u3001AI\u306B\u8AA4\u3063\u305F\u5224\u65AD\u3092\u3055\u305B\u308B" },
+          { id: 3, left: "\u30E2\u30C7\u30EB\u53CD\u8EE2\u653B\u6483", right: "AI\u306E\u5B66\u7FD2\u6E08\u307F\u30E2\u30C7\u30EB\u304B\u3089\u3001\u5B66\u7FD2\u306B\u7528\u3044\u3089\u308C\u305F\u5143\u306E\u753B\u50CF\u306A\u3069\u306E\u6A5F\u5BC6\u60C5\u5831\u3092\u53D6\u5F97\u3059\u308B" },
+          { id: 4, left: "\u30D7\u30ED\u30F3\u30D7\u30C8\u30A4\u30F3\u30B8\u30A7\u30AF\u30B7\u30E7\u30F3", right: "AI\u30C1\u30E3\u30C3\u30C8\u30DC\u30C3\u30C8\u306A\u3069\u306B\u60AA\u610F\u306E\u3042\u308B\u6307\u793A\u3092\u5165\u529B\u3057\u3001\u610F\u56F3\u3057\u306A\u3044\u52D5\u4F5C\u3084\u6A5F\u5BC6\u60C5\u5831\u306E\u5F15\u304D\u51FA\u3057\u3092\u3055\u305B\u308B" }
+        ]
+      }
+    },
+    {
+      id: 28,
+      category: {
+        id: 2,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u6280\u8853",
+        sub_id: 4,
+        sub_name: "\u6A19\u7684\u578B\u653B\u6483\u30FB\u305D\u306E\u4ED6"
+      },
+      question_text: "\u653B\u6483\u8005\u304C\u653B\u6483\u306E\u6E96\u5099\u3068\u3057\u3066\u3001\u653B\u6483\u5BFE\u8C61\u306E\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u3001\u30B7\u30B9\u30C6\u30E0\u3001\u30B5\u30FC\u30D0\u3001PC\u306A\u3069\u306B\u95A2\u3059\u308B\u516C\u958B\u60C5\u5831\u3092\u53CE\u96C6\u3059\u308B\u884C\u70BA\u306F\u4F55\u3067\u3059\u304B\uFF1F [16]",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30D0\u30C3\u30AF\u30C9\u30A2", "\u30D5\u30C3\u30C8\u30D7\u30EA\u30F3\u30C6\u30A3\u30F3\u30B0", "\u30EB\u30FC\u30C8\u30AD\u30C3\u30C8", "\u30AF\u30EA\u30D7\u30C8\u30B8\u30E3\u30C3\u30AD\u30F3\u30B0"],
+          correct_answer_index: 1
+        }
+      }
+    },
+    // sub_id 5: "暗号化技術"
+    {
+      id: 29,
+      category: {
+        id: 2,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u6280\u8853",
+        sub_id: 5,
+        sub_name: "\u6697\u53F7\u5316\u6280\u8853"
+      },
+      question_text: "\u6697\u53F7\u5316\u3068\u5FA9\u53F7\u306B\u540C\u3058\u9375\u3092\u4F7F\u7528\u3057\u3001\u9375\u306E\u7A2E\u985E\u304C\u4E00\u3064\u3057\u304B\u306A\u3044\u305F\u3081\u3001\u9375\u3092\u79D8\u5BC6\u306B\u3057\u3066\u304A\u304F\u5FC5\u8981\u304C\u3042\u308B\u6697\u53F7\u65B9\u5F0F\u306F\u4F55\u3067\u3059\u304B\uFF1F [19]",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u516C\u958B\u9375\u6697\u53F7\u65B9\u5F0F", "\u5171\u901A\u9375\u6697\u53F7\u65B9\u5F0F", "\u30CF\u30A4\u30D6\u30EA\u30C3\u30C9\u6697\u53F7\u65B9\u5F0F", "\u6955\u5186\u66F2\u7DDA\u6697\u53F7\u65B9\u5F0F"],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 30,
+      category: {
+        id: 2,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u6280\u8853",
+        sub_id: 5,
+        sub_name: "\u6697\u53F7\u5316\u6280\u8853"
+      },
+      question_text: "\u516C\u958B\u9375\u6697\u53F7\u65B9\u5F0F\u3068\u5171\u901A\u9375\u6697\u53F7\u65B9\u5F0F\u3092\u7D44\u307F\u5408\u308F\u305B\u308B\u3053\u3068\u3067\u3001\u305D\u308C\u305E\u308C\u306E\u9577\u6240\u3092\u6D3B\u304B\u3057\u3001\u30C7\u30FC\u30BF\u306E\u79D8\u533F\u6027\u3068\u52B9\u7387\u6027\u3092\u4E21\u7ACB\u3055\u305B\u308B\u6697\u53F7\u65B9\u5F0F\u306F\u4F55\u3067\u3059\u304B\uFF1F [20, 21]",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u5171\u901A\u9375\u6697\u53F7\u65B9\u5F0F", "\u516C\u958B\u9375\u6697\u53F7\u65B9\u5F0F", "\u30CF\u30A4\u30D6\u30EA\u30C3\u30C9\u6697\u53F7\u65B9\u5F0F", "\u30D6\u30ED\u30C3\u30AF\u6697\u53F7\u65B9\u5F0F"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 31,
+      category: {
+        id: 2,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u6280\u8853",
+        sub_id: 5,
+        sub_name: "\u6697\u53F7\u5316\u6280\u8853"
+      },
+      question_text: "\u9001\u4FE1\u3055\u308C\u305F\u30C7\u30FC\u30BF\u306E\u5185\u5BB9\u304C\u6539\u3056\u3093\u3055\u308C\u3066\u3044\u306A\u3044\u304B\u3001\u307E\u305F\u6B63\u3057\u3044\u9001\u4FE1\u8005\u304B\u3089\u9001\u3089\u308C\u305F\u3082\u306E\u304B\u3092\u78BA\u8A8D\u3059\u308B\u305F\u3081\u306B\u3001\u5143\u306E\u30E1\u30C3\u30BB\u30FC\u30B8\u306B\u5171\u901A\u9375\u3092\u52A0\u3048\u3066\u751F\u6210\u3055\u308C\u308B\u30B3\u30FC\u30C9\u306F\u4F55\u3067\u3059\u304B\uFF1F [22]",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30CF\u30C3\u30B7\u30E5\u5024", "\u30C7\u30B8\u30BF\u30EB\u7F72\u540D", "\u30E1\u30C3\u30BB\u30FC\u30B8\u8A8D\u8A3C\u30B3\u30FC\u30C9\uFF08MAC\uFF09", "\u516C\u958B\u9375"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    // sub_id 6: "認証技術"
+    {
+      id: 32,
+      category: {
+        id: 2,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u6280\u8853",
+        sub_id: 6,
+        sub_name: "\u8A8D\u8A3C\u6280\u8853"
+      },
+      question_text: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u306B\u304A\u3051\u308B\u8A8D\u8A3C\u306E3\u8981\u7D20\u3092\u5BFE\u5FDC\u4ED8\u3051\u306A\u3055\u3044\u3002 [23]",
+      question_interaction: {
+        type: "Association",
+        data: [
+          { id: 1, left: "\u8A18\u61B6", right: "\u30D1\u30B9\u30EF\u30FC\u30C9\u3084\u6697\u8A3C\u756A\u53F7\u306A\u3069\u3001\u77E5\u3063\u3066\u3044\u308B\u60C5\u5831\u306B\u3088\u308B\u8A8D\u8A3C" },
+          { id: 2, left: "\u6240\u6301", right: "IC\u30AB\u30FC\u30C9\u3084\u30B9\u30DE\u30FC\u30C8\u30D5\u30A9\u30F3\u306A\u3069\u3001\u6301\u3063\u3066\u3044\u308B\u7269\u306B\u3088\u308B\u8A8D\u8A3C" },
+          { id: 3, left: "\u751F\u4F53", right: "\u6307\u7D0B\u3084\u8679\u5F69\u306A\u3069\u3001\u8EAB\u4F53\u7684\u7279\u5FB4\u306B\u3088\u308B\u8A8D\u8A3C" }
+        ]
+      }
+    },
+    {
+      id: 33,
+      category: {
+        id: 2,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u6280\u8853",
+        sub_id: 6,
+        sub_name: "\u8A8D\u8A3C\u6280\u8853"
+      },
+      question_text: "\u96FB\u5B50\u30E1\u30FC\u30EB\u306B\u30C7\u30B8\u30BF\u30EB\u7F72\u540D\u3092\u4ED8\u4E0E\u3059\u308B\u3053\u3068\u306B\u3088\u3063\u3066\u3001\u4E3B\u306B\u3069\u306E\u3088\u3046\u306A\u52B9\u679C\u304C\u5F97\u3089\u308C\u307E\u3059\u304B\uFF1F [24, 25]",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u6A5F\u5BC6\u6027\u304C\u5411\u4E0A\u3059\u308B", "\u53EF\u7528\u6027\u304C\u5411\u4E0A\u3059\u308B", "\u5B8C\u5168\u6027\u304C\u5411\u4E0A\u3059\u308B", "\u51E6\u7406\u901F\u5EA6\u304C\u5411\u4E0A\u3059\u308B"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 34,
+      category: {
+        id: 2,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u6280\u8853",
+        sub_id: 6,
+        sub_name: "\u8A8D\u8A3C\u6280\u8853"
+      },
+      question_text: "JIS Q 27000:2019\u3067\u5B9A\u7FA9\u3055\u308C\u3066\u3044\u308B\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u306E\u7279\u6027\u306B\u95A2\u3059\u308B\u8A18\u8FF0\u306E\u3046\u3061\u3001\u5426\u8A8D\u9632\u6B62\u306E\u7279\u6027\u306B\u95A2\u3059\u308B\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F [26]",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u8A8D\u53EF\u3055\u308C\u305F\u30A8\u30F3\u30C6\u30A3\u30C6\u30A3\u304C\u8981\u6C42\u3057\u305F\u3068\u304D\u306B\u3001\u30A2\u30AF\u30BB\u30B9\u53CA\u3073\u4F7F\u7528\u304C\u53EF\u80FD\u3067\u3042\u308B\u7279\u6027", "\u8A8D\u53EF\u3055\u308C\u3066\u3044\u306A\u3044\u500B\u4EBA\u306B\u60C5\u5831\u3092\u4F7F\u7528\u3055\u305B\u305A\u3001\u307E\u305F\u958B\u793A\u3057\u306A\u3044\u7279\u6027", "\u6B63\u78BA\u3055\u53CA\u3073\u5B8C\u5168\u3055\u306E\u7279\u6027", "\u4E3B\u5F35\u3055\u308C\u305F\u4E8B\u8C61\u53C8\u306F\u51E6\u7F6E\u306E\u767A\u751F\u3001\u53CA\u3073\u305D\u308C\u3089\u3092\u5F15\u304D\u8D77\u3053\u3057\u305F\u30A8\u30F3\u30C6\u30A3\u30C6\u30A3\u3092\u8A3C\u660E\u3059\u308B\u80FD\u529B"],
+          correct_answer_index: 3
+        }
+      }
+    },
+    // sub_id 7: "利用者認証・生体認証"
+    {
+      id: 35,
+      category: {
+        id: 2,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u6280\u8853",
+        sub_id: 7,
+        sub_name: "\u5229\u7528\u8005\u8A8D\u8A3C\u30FB\u751F\u4F53\u8A8D\u8A3C"
+      },
+      question_text: "\u30D1\u30B9\u30EF\u30FC\u30C9\u3092\u4F7F\u7528\u305B\u305A\u306B\u3001\u751F\u4F53\u8A8D\u8A3C\uFF08\u6307\u7D0B\u3001\u9854\u8A8D\u8A3C\u306A\u3069\uFF09\u3084\u516C\u958B\u9375\u6697\u53F7\u65B9\u5F0F\u306A\u3069\u3092\u5229\u7528\u3057\u3066\u672C\u4EBA\u78BA\u8A8D\u3092\u884C\u3046\u8A8D\u8A3C\u65B9\u5F0F\u306E\u7DCF\u79F0\u306F\u4F55\u3067\u3059\u304B\uFF1F [27]",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u591A\u8981\u7D20\u8A8D\u8A3C", "\u30EF\u30F3\u30BF\u30A4\u30E0\u30D1\u30B9\u30EF\u30FC\u30C9", "\u30D1\u30B9\u30EF\u30FC\u30C9\u30EC\u30B9\u8A8D\u8A3C", "\u30EA\u30B9\u30AF\u30D9\u30FC\u30B9\u8A8D\u8A3C"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 36,
+      category: {
+        id: 2,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u6280\u8853",
+        sub_id: 7,
+        sub_name: "\u5229\u7528\u8005\u8A8D\u8A3C\u30FB\u751F\u4F53\u8A8D\u8A3C"
+      },
+      question_text: "\u4E00\u5EA6\u306E\u8A8D\u8A3C\u3067\u8907\u6570\u306E\u30B5\u30FC\u30D0\u3084\u30A2\u30D7\u30EA\u30B1\u30FC\u30B7\u30E7\u30F3\u306B\u30ED\u30B0\u30A4\u30F3\u3057\u3001\u305D\u308C\u3089\u3092\u5229\u7528\u3067\u304D\u308B\u4ED5\u7D44\u307F\u3092\u4F55\u3068\u547C\u3073\u307E\u3059\u304B\uFF1F [28]",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u591A\u8981\u7D20\u8A8D\u8A3C", "\u30B7\u30F3\u30B0\u30EB\u30B5\u30A4\u30F3\u30AA\u30F3\uFF08SSO\uFF09", "\u591A\u6BB5\u968E\u8A8D\u8A3C", "\u30BB\u30C3\u30B7\u30E7\u30F3\u30CF\u30A4\u30B8\u30E3\u30C3\u30AF"],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 37,
+      category: {
+        id: 2,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u6280\u8853",
+        sub_id: 7,
+        sub_name: "\u5229\u7528\u8005\u8A8D\u8A3C\u30FB\u751F\u4F53\u8A8D\u8A3C"
+      },
+      question_text: "\u5229\u7528\u8005\u306EIP\u30A2\u30C9\u30EC\u30B9\u3084Web\u30D6\u30E9\u30A6\u30B6\u306A\u3069\u306E\u74B0\u5883\u3092\u5206\u6790\u3057\u3001\u901A\u5E38\u3068\u306F\u7570\u306A\u308B\u30A2\u30AF\u30BB\u30B9\u30D1\u30BF\u30FC\u30F3\u304C\u691C\u51FA\u3055\u308C\u305F\u5834\u5408\u306B\u306E\u307F\u8FFD\u52A0\u306E\u8A8D\u8A3C\uFF08\u4F8B: \u30EF\u30F3\u30BF\u30A4\u30E0\u30D1\u30B9\u30EF\u30FC\u30C9\uFF09\u3092\u8981\u6C42\u3059\u308B\u8A8D\u8A3C\u65B9\u5F0F\u306F\u4F55\u3067\u3059\u304B\uFF1F [29]",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u751F\u4F53\u8A8D\u8A3C", "\u4E8C\u8981\u7D20\u8A8D\u8A3C", "\u30EA\u30B9\u30AF\u30D9\u30FC\u30B9\u8A8D\u8A3C", "\u30C1\u30E3\u30EC\u30F3\u30B8\u30EC\u30B9\u30DD\u30F3\u30B9\u65B9\u5F0F"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 38,
+      category: {
+        id: 2,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u6280\u8853",
+        sub_id: 7,
+        sub_name: "\u5229\u7528\u8005\u8A8D\u8A3C\u30FB\u751F\u4F53\u8A8D\u8A3C"
+      },
+      question_text: "\u30D0\u30A4\u30AA\u30E1\u30C8\u30EA\u30AF\u30B9\u8A8D\u8A3C\u306B\u304A\u3051\u308B\u8A8D\u8A3C\u7CBE\u5EA6\u306B\u95A2\u3059\u308B\u6307\u6A19\u3092\u5BFE\u5FDC\u4ED8\u3051\u306A\u3055\u3044\u3002 [30]",
+      question_interaction: {
+        type: "Association",
+        data: [
+          { id: 1, left: "\u672C\u4EBA\u62D2\u5426\u7387\uFF08FRR\uFF09", right: "\u8AA4\u3063\u3066\u672C\u4EBA\u3092\u62D2\u5426\u3059\u308B\u78BA\u7387" },
+          { id: 2, left: "\u4ED6\u4EBA\u53D7\u5165\u7387\uFF08FAR\uFF09", right: "\u8AA4\u3063\u3066\u4ED6\u4EBA\u3092\u53D7\u3051\u5165\u308C\u308B\u78BA\u7387" },
+          { id: 3, left: "\u672A\u5BFE\u5FDC\u7387", right: "\u8A8D\u8A3C\u306E\u88C5\u7F6E\u307E\u305F\u306F\u30A2\u30EB\u30B4\u30EA\u30BA\u30E0\u304C\u751F\u4F53\u60C5\u5831\u3092\u8A8D\u8B58\u3067\u304D\u306A\u3044\u5272\u5408" }
+        ]
+      }
+    },
+    // sub_id 8: "公開鍵基盤"
+    {
+      id: 39,
+      category: {
+        id: 2,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u6280\u8853",
+        sub_id: 8,
+        sub_name: "\u516C\u958B\u9375\u57FA\u76E4"
+      },
+      question_text: "\u516C\u958B\u9375\u6697\u53F7\u65B9\u5F0F\u3092\u5229\u7528\u3057\u3001\u4FE1\u983C\u3067\u304D\u308B\u7B2C\u4E09\u8005\u6A5F\u95A2\u3067\u3042\u308B\u8A8D\u8A3C\u5C40\uFF08CA\uFF09\u304C\u30C7\u30B8\u30BF\u30EB\u8A3C\u660E\u66F8\u3092\u767A\u884C\u3059\u308B\u3053\u3068\u3067\u3001\u500B\u4EBA\u3084\u7D44\u7E54\u306E\u4FE1\u983C\u3092\u78BA\u4FDD\u3059\u308B\u793E\u4F1A\u57FA\u76E4\uFF08\u30A4\u30F3\u30D5\u30E9\uFF09\u306E\u7DCF\u79F0\u306F\u4F55\u3067\u3059\u304B\uFF1F [31]",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u5171\u901A\u9375\u57FA\u76E4\uFF08SKPI\uFF09", "\u79D8\u5BC6\u9375\u57FA\u76E4\uFF08PKSI\uFF09", "\u516C\u958B\u9375\u57FA\u76E4\uFF08PKI\uFF09", "\u5206\u6563\u578B\u53F0\u5E33\uFF08DLT\uFF09"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 40,
+      category: {
+        id: 2,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u6280\u8853",
+        sub_id: 8,
+        sub_name: "\u516C\u958B\u9375\u57FA\u76E4"
+      },
+      question_text: "\u8A8D\u8A3C\u5C40\uFF08CA\uFF09\u304C\u767A\u884C\u3059\u308B\u30C7\u30B8\u30BF\u30EB\u8A3C\u660E\u66F8\u306B\u306F\u3001\u901A\u5E38\u3069\u306E\u3088\u3046\u306A\u60C5\u5831\u304C\u4ED8\u52A0\u3055\u308C\u3001CA\u306B\u3088\u3063\u3066\u30C7\u30B8\u30BF\u30EB\u7F72\u540D\u304C\u65BD\u3055\u308C\u307E\u3059\u304B\uFF1F [32, 33]",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u5171\u901A\u9375", "\u79D8\u5BC6\u9375", "\u516C\u958B\u9375", "\u30CF\u30C3\u30B7\u30E5\u5024"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 41,
+      category: {
+        id: 2,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u6280\u8853",
+        sub_id: 8,
+        sub_name: "\u516C\u958B\u9375\u57FA\u76E4"
+      },
+      question_text: "\u30C7\u30B8\u30BF\u30EB\u8A3C\u660E\u66F8\u304C\u6709\u52B9\u671F\u9650\u5185\u306B\u5931\u52B9\u3057\u3066\u3044\u308B\u304B\u3069\u3046\u304B\u3092\u3001\u30AA\u30F3\u30E9\u30A4\u30F3\u3067\u78BA\u8A8D\u3059\u308B\u305F\u3081\u306E\u30D7\u30ED\u30C8\u30B3\u30EB\u306F\u4F55\u3067\u3059\u304B\uFF1F [33]",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["CRL\uFF08Certificate Revocation List\uFF09", "OCSP\uFF08Online Certificate Status Protocol\uFF09", "LDAP\uFF08Lightweight Directory Access Protocol\uFF09", "SAML\uFF08Security Assertion Markup Language\uFF09"],
+          correct_answer_index: 1
+        }
+      }
+    },
+    // sub_id 1: "情報セキュリティ管理"
+    {
+      id: 42,
+      category: {
+        id: 3,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7BA1\u7406",
+        sub_id: 1,
+        sub_name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7BA1\u7406"
+      },
+      question_text: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7BA1\u7406\u306B\u304A\u3044\u3066\u3001\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u3092\u8105\u304B\u3059\u4E8B\u4EF6\u3084\u4E8B\u6545\u306E\u3053\u3068\u3092\u4F55\u3068\u547C\u3073\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u8105\u5A01", "\u8106\u5F31\u6027", "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30A4\u30F3\u30B7\u30C7\u30F3\u30C8", "\u30EA\u30B9\u30AF\u6E90"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 43,
+      category: {
+        id: 3,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7BA1\u7406",
+        sub_id: 1,
+        sub_name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7BA1\u7406"
+      },
+      question_text: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7BA1\u7406\u306B\u304A\u3051\u308B\u30A4\u30F3\u30B7\u30C7\u30F3\u30C8\u30CF\u30F3\u30C9\u30EA\u30F3\u30B0\u306E\u6BB5\u968E\u3092\u5BFE\u5FDC\u4ED8\u3051\u306A\u3055\u3044\u3002",
+      question_interaction: {
+        type: "Association",
+        data: [
+          { id: 1, left: "\u691C\u77E5/\u9023\u7D61\u53D7\u4ED8", right: "\u76E3\u8996\u30B7\u30B9\u30C6\u30E0\u3084\u30E6\u30FC\u30B6\u30FC\u304B\u3089\u306E\u5831\u544A\u3092\u901A\u3058\u3066\u30A4\u30F3\u30B7\u30C7\u30F3\u30C8\u3092\u8A8D\u8B58\u3059\u308B" },
+          { id: 2, left: "\u30C8\u30EA\u30A2\u30FC\u30B8", right: "\u30A4\u30F3\u30B7\u30C7\u30F3\u30C8\u306E\u91CD\u8981\u5EA6\u3084\u7DCA\u6025\u5EA6\u3092\u8A55\u4FA1\u3057\u3001\u5BFE\u5FDC\u306E\u512A\u5148\u9806\u4F4D\u3092\u6C7A\u5B9A\u3059\u308B" },
+          { id: 3, left: "\u30A4\u30F3\u30B7\u30C7\u30F3\u30C8\u30EC\u30B9\u30DD\u30F3\u30B9", right: "\u88AB\u5BB3\u62E1\u5927\u9632\u6B62\u3001\u5FA9\u65E7\u4F5C\u696D\u3001\u539F\u56E0\u7A76\u660E\u3092\u5B9F\u65BD\u3059\u308B" },
+          { id: 4, left: "\u5831\u544A\uFF0F\u60C5\u5831\u516C\u958B", right: "\u72B6\u6CC1\u3084\u5BFE\u5FDC\u7D50\u679C\u3092\u95A2\u4FC2\u8005\u306B\u5831\u544A\u3057\u3001\u5FC5\u8981\u306B\u5FDC\u3058\u3066\u516C\u958B\u3059\u308B" }
+        ]
+      }
+    },
+    // sub_id 2: "情報セキュリティ諸規程"
+    {
+      id: 44,
+      category: {
+        id: 3,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7BA1\u7406",
+        sub_id: 2,
+        sub_name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u8AF8\u898F\u7A0B"
+      },
+      question_text: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u65B9\u91DD\uFF08\u57FA\u672C\u65B9\u91DD\uFF09\u306B\u3064\u3044\u3066\u8FF0\u3079\u305F\u3082\u306E\u3068\u3057\u3066\u3001\u6700\u3082\u9069\u5207\u306A\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56\u306E\u5177\u4F53\u7684\u306A\u624B\u9806\u3092\u8A73\u7D30\u306B\u8A18\u8FF0\u3057\u305F\u6587\u66F8\u3067\u3042\u308B\u3002",
+            "\u7D4C\u55B6\u9663\u306B\u3088\u3063\u3066\u627F\u8A8D\u3055\u308C\u3001\u7D44\u7E54\u306E\u57FA\u672C\u7684\u306A\u8003\u3048\u65B9\u3084\u65B9\u91DD\u3092\u793A\u3059\u3082\u306E\u3067\u3001\u5168\u5F93\u696D\u54E1\u53CA\u3073\u95A2\u4FC2\u8005\u306B\u516C\u8868\u3055\u308C\u308B\u3002",
+            "\u30EA\u30B9\u30AF\u30A2\u30BB\u30B9\u30E1\u30F3\u30C8\u306E\u7D50\u679C\u306B\u57FA\u3065\u3044\u3066\u3001\u5177\u4F53\u7684\u306A\u9806\u5B88\u4E8B\u9805\u3084\u57FA\u6E96\u3092\u5B9A\u3081\u305F\u3082\u306E\u3067\u3042\u308B\u3002",
+            "\u6A5F\u5BC6\u60C5\u5831\u306B\u95A2\u3059\u308B\u7F70\u5247\u898F\u5B9A\u306E\u307F\u3092\u8A18\u8F09\u3057\u3001\u5916\u90E8\u306B\u306F\u975E\u516C\u958B\u3068\u3059\u308B\u3082\u306E\u3067\u3042\u308B\u3002"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 45,
+      category: {
+        id: 3,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7BA1\u7406",
+        sub_id: 2,
+        sub_name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u8AF8\u898F\u7A0B"
+      },
+      question_text: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30EA\u30B9\u30AF\u5BFE\u5FDC\u306B\u304A\u3044\u3066\u4F5C\u6210\u3055\u308C\u308B\u6587\u66F8\u3067\u3001\u5FC5\u8981\u306A\u7BA1\u7406\u7B56\u3068\u305D\u306E\u7406\u7531\u3001\u5B9F\u65BD\u72B6\u6CC1\u304C\u8A18\u8FF0\u3055\u308C\u308B\u3082\u306E\u3092\u4F55\u3068\u547C\u3073\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u65B9\u91DD", "\u30EA\u30B9\u30AF\u5BFE\u5FDC\u8A08\u753B", "\u9069\u7528\u5BA3\u8A00\u66F8", "\u60C5\u5831\u8CC7\u7523\u53F0\u5E33"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    // sub_id 3: "情報セキュリティマネジメントシステム"
+    {
+      id: 46,
+      category: {
+        id: 3,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7BA1\u7406",
+        sub_id: 3,
+        sub_name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8\u30B7\u30B9\u30C6\u30E0"
+      },
+      question_text: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8\u30B7\u30B9\u30C6\u30E0\uFF08ISMS\uFF09\u306E\u63A1\u7528\u306F\u3001\u7D44\u7E54\u306B\u3068\u3063\u3066\u3069\u306E\u3088\u3046\u306A\u6C7A\u5B9A\u3068\u3055\u308C\u3066\u3044\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u6280\u8853\u7684\u6C7A\u5B9A", "\u904B\u7528\u4E0A\u306E\u6C7A\u5B9A", "\u6226\u7565\u7684\u6C7A\u5B9A", "\u4E00\u6642\u7684\u306A\u6C7A\u5B9A"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 47,
+      category: {
+        id: 3,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7BA1\u7406",
+        sub_id: 3,
+        sub_name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8\u30B7\u30B9\u30C6\u30E0"
+      },
+      question_text: "ISMS\u306B\u95A2\u9023\u3059\u308BJIS\u898F\u683C\u3068\u3001\u305D\u306E\u5185\u5BB9\u3092\u5BFE\u5FDC\u4ED8\u3051\u306A\u3055\u3044\u3002",
+      question_interaction: {
+        type: "Association",
+        data: [
+          { id: 1, left: "JIS Q 27001", right: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8\u30B7\u30B9\u30C6\u30E0\u306E\u8981\u6C42\u4E8B\u9805" },
+          { id: 2, left: "JIS Q 27002", right: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7BA1\u7406\u7B56\u306E\u5B9F\u8DF5\u306E\u305F\u3081\u306E\u898F\u7BC4" }
+        ]
+      }
+    },
+    {
+      id: 48,
+      category: {
+        id: 3,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7BA1\u7406",
+        sub_id: 3,
+        sub_name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8\u30B7\u30B9\u30C6\u30E0"
+      },
+      question_text: "ISMS\u306E\u6709\u52B9\u6027\u3092\u78BA\u4FDD\u3059\u308B\u305F\u3081\u306B\u3001\u7D44\u7E54\u306E\u7BA1\u7406\u4E0B\u3067\u50CD\u304F\u4EBA\u3005\u304C\u8A8D\u8B58\u3059\u3079\u304D\u4E8B\u9805\u3068\u3057\u3066\u9069\u5207\u3067\u306A\u3044\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u65B9\u91DD\u306E\u5185\u5BB9",
+            "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30D1\u30D5\u30A9\u30FC\u30DE\u30F3\u30B9\u5411\u4E0A\u306B\u3088\u308B\u4FBF\u76CA",
+            "ISMS\u8981\u6C42\u4E8B\u9805\u306B\u9069\u5408\u3057\u306A\u3044\u3053\u3068\u306E\u610F\u5473",
+            "ISMS\u306E\u5185\u90E8\u76E3\u67FB\u306E\u5177\u4F53\u7684\u306A\u5B9F\u65BD\u65B9\u6CD5"
+          ],
+          correct_answer_index: 3
+        }
+      }
+    },
+    // sub_id 4: "情報セキュリティ継続"
+    {
+      id: 49,
+      category: {
+        id: 3,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7BA1\u7406",
+        sub_id: 4,
+        sub_name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7D99\u7D9A"
+      },
+      question_text: "\u30B5\u30FC\u30D3\u30B9\u306E\u4E2D\u65AD\u3084\u707D\u5BB3\u767A\u751F\u6642\u306B\u3001\u30B7\u30B9\u30C6\u30E0\u3092\u8FC5\u901F\u304B\u3064\u52B9\u7387\u7684\u306B\u5FA9\u65E7\u3055\u305B\u308B\u8A08\u753B\u3092\u4F55\u3068\u547C\u3073\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30DD\u30EA\u30B7\u30FC", "\u30EA\u30B9\u30AF\u30A2\u30BB\u30B9\u30E1\u30F3\u30C8\u8A08\u753B", "\u7DCA\u6025\u6642\u5BFE\u5FDC\u8A08\u753B", "\u60C5\u5831\u8CC7\u7523\u7BA1\u7406\u53F0\u5E33"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 50,
+      category: {
+        id: 3,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7BA1\u7406",
+        sub_id: 4,
+        sub_name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7D99\u7D9A"
+      },
+      question_text: "JIS Q 27002:2014\u3067\u5B9A\u3081\u3089\u308C\u3066\u3044\u308B\u3001\u30B5\u30FC\u30D0\u5BA4\u306E\u7A7A\u8ABF\u3001\u96FB\u6C17\u3001\u6D88\u706B\u88C5\u7F6E\u306A\u3069\u306E\u30E9\u30A4\u30D5\u30E9\u30A4\u30F3\u306B\u5BFE\u3059\u308B\u7BA1\u7406\u7B56\u306E\u3053\u3068\u3092\u4F55\u3068\u547C\u3073\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u7269\u7406\u7684\u8CC7\u7523", "\u30B5\u30DD\u30FC\u30C8\u30E6\u30FC\u30C6\u30A3\u30EA\u30C6\u30A3", "\u74B0\u5883\u7BA1\u7406\u57FA\u6E96", "\u30A4\u30F3\u30D5\u30E9\u30B9\u30C8\u30E9\u30AF\u30C1\u30E3\u7BA1\u7406"],
+          correct_answer_index: 1
+        }
+      }
+    },
+    // sub_id 5: "情報資産の調査・分類"
+    {
+      id: 51,
+      category: {
+        id: 3,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7BA1\u7406",
+        sub_id: 5,
+        sub_name: "\u60C5\u5831\u8CC7\u7523\u306E\u8ABF\u67FB\u30FB\u5206\u985E"
+      },
+      question_text: "\u4F01\u696D\u304C\u4FDD\u6709\u3059\u308B\u60C5\u5831\u8CC7\u7523\u306E\u3046\u3061\u3001\u300C\u7D44\u7E54\u306E\u30A4\u30E1\u30FC\u30B8\u300D\u3084\u300C\u8A55\u5224\u300D\u3068\u3044\u3063\u305F\u5F62\u306E\u306A\u3044\u8CC7\u7523\u306F\u3069\u308C\u306B\u5206\u985E\u3055\u308C\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u7269\u7406\u7684\u8CC7\u7523", "\u30BD\u30D5\u30C8\u30A6\u30A7\u30A2\u8CC7\u7523", "\u4EBA\u7684\u8CC7\u7523", "\u7121\u5F62\u8CC7\u7523"],
+          correct_answer_index: 3
+        }
+      }
+    },
+    {
+      id: 52,
+      category: {
+        id: 3,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7BA1\u7406",
+        sub_id: 5,
+        sub_name: "\u60C5\u5831\u8CC7\u7523\u306E\u8ABF\u67FB\u30FB\u5206\u985E"
+      },
+      question_text: "\u60C5\u5831\u8CC7\u7523\u3092\u6F0F\u308C\u306A\u304F\u8A18\u8F09\u3057\u3001\u5909\u5316\u306B\u5FDC\u3058\u3066\u9069\u5207\u306B\u66F4\u65B0\u3057\u3066\u3044\u304F\u76EE\u7684\u3067\u4F5C\u6210\u3055\u308C\u308B\u6587\u66F8\u3092\u4F55\u3068\u547C\u3073\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30DD\u30EA\u30B7\u30FC", "\u30EA\u30B9\u30AF\u767B\u9332\u7C3F", "\u60C5\u5831\u8CC7\u7523\u53F0\u5E33", "\u9069\u7528\u5BA3\u8A00\u66F8"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    // sub_id 6: "リスクの種類"
+    {
+      id: 53,
+      category: {
+        id: 3,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7BA1\u7406",
+        sub_id: 6,
+        sub_name: "\u30EA\u30B9\u30AF\u306E\u7A2E\u985E"
+      },
+      question_text: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u306B\u304A\u3044\u3066\u3001\u300C\u307E\u3060\u8D77\u3053\u3063\u3066\u306F\u3044\u306A\u3044\u304C\u3001\u3082\u3057\u305D\u308C\u304C\u767A\u751F\u3059\u308C\u3070\u60C5\u5831\u8CC7\u7523\u306B\u5F71\u97FF\u3092\u4E0E\u3048\u308B\u4E8B\u8C61\u3084\u72B6\u614B\u300D\u3092\u6307\u3059\u8A00\u8449\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30A4\u30F3\u30B7\u30C7\u30F3\u30C8", "\u8105\u5A01", "\u8106\u5F31\u6027", "\u30EA\u30B9\u30AF"],
+          correct_answer_index: 3
+        }
+      }
+    },
+    {
+      id: 54,
+      category: {
+        id: 3,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7BA1\u7406",
+        sub_id: 6,
+        sub_name: "\u30EA\u30B9\u30AF\u306E\u7A2E\u985E"
+      },
+      question_text: "\u4FDD\u967A\u306B\u52A0\u5165\u3057\u3066\u3044\u308B\u3053\u3068\u306B\u3088\u3063\u3066\u3001\u30EA\u30B9\u30AF\u3092\u4F34\u3046\u884C\u52D5\u304C\u751F\u3058\u308B\u304A\u305D\u308C\u304C\u3042\u308B\u73FE\u8C61\u3092\u4F55\u3068\u547C\u3073\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30B5\u30D7\u30E9\u30A4\u30C1\u30A7\u30FC\u30F3\u30EA\u30B9\u30AF", "\u30AA\u30DA\u30EC\u30FC\u30B7\u30E7\u30CA\u30EB\u30EA\u30B9\u30AF", "\u5730\u653F\u5B66\u7684\u30EA\u30B9\u30AF", "\u30E2\u30E9\u30EB\u30CF\u30B6\u30FC\u30C9"],
+          correct_answer_index: 3
+        }
+      }
+    },
+    // sub_id 7: "情報セキュリティリスクアセスメント"
+    {
+      id: 55,
+      category: {
+        id: 3,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7BA1\u7406",
+        sub_id: 7,
+        sub_name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30EA\u30B9\u30AF\u30A2\u30BB\u30B9\u30E1\u30F3\u30C8"
+      },
+      question_text: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30EA\u30B9\u30AF\u30A2\u30BB\u30B9\u30E1\u30F3\u30C8\u3092\u69CB\u6210\u3059\u308B3\u3064\u306E\u30D7\u30ED\u30BB\u30B9\u3092\u5BFE\u5FDC\u4ED8\u3051\u306A\u3055\u3044\u3002",
+      question_interaction: {
+        type: "Association",
+        data: [
+          { id: 1, left: "\u30EA\u30B9\u30AF\u7279\u5B9A", right: "\u30EA\u30B9\u30AF\u3092\u767A\u898B\u3057\u3001\u8A8D\u8B58\u3057\u3001\u8A18\u8FF0\u3059\u308B\u30D7\u30ED\u30BB\u30B9" },
+          { id: 2, left: "\u30EA\u30B9\u30AF\u5206\u6790", right: "\u30EA\u30B9\u30AF\u306E\u7279\u8CEA\u3092\u7406\u89E3\u3057\u3001\u30EA\u30B9\u30AF\u30EC\u30D9\u30EB\u3092\u6C7A\u5B9A\u3059\u308B\u30D7\u30ED\u30BB\u30B9" },
+          { id: 3, left: "\u30EA\u30B9\u30AF\u8A55\u4FA1", right: "\u30EA\u30B9\u30AF\u3068\u305D\u306E\u5927\u304D\u3055\u304C\u53D7\u5BB9\u53EF\u80FD\u304B\u5426\u304B\u3092\u6C7A\u5B9A\u3059\u308B\u305F\u3081\u306B\u3001\u30EA\u30B9\u30AF\u5206\u6790\u306E\u7D50\u679C\u3092\u30EA\u30B9\u30AF\u57FA\u6E96\u3068\u6BD4\u8F03\u3059\u308B\u30D7\u30ED\u30BB\u30B9" }
+        ]
+      }
+    },
+    {
+      id: 56,
+      category: {
+        id: 3,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7BA1\u7406",
+        sub_id: 7,
+        sub_name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30EA\u30B9\u30AF\u30A2\u30BB\u30B9\u30E1\u30F3\u30C8"
+      },
+      question_text: "\u30EA\u30B9\u30AF\u5206\u6790\u306E\u624B\u6CD5\u306E\u4E00\u3064\u3067\u3001\u30EA\u30B9\u30AF\u3092\u91D1\u984D\u306A\u3069\u3067\u5B9A\u91CF\u7684\u306B\u8A55\u4FA1\u3059\u308B\u3053\u3068\u3092\u76EE\u7684\u3068\u3059\u308B\u3082\u306E\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30D9\u30FC\u30B9\u30E9\u30A4\u30F3\u30A2\u30D7\u30ED\u30FC\u30C1", "\u975E\u5F62\u5F0F\u7684\u30A2\u30D7\u30ED\u30FC\u30C1", "\u5B9A\u6027\u7684\u30EA\u30B9\u30AF\u5206\u6790", "\u5B9A\u91CF\u7684\u30EA\u30B9\u30AF\u5206\u6790"],
+          correct_answer_index: 3
+        }
+      }
+    },
+    {
+      id: 57,
+      category: {
+        id: 3,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7BA1\u7406",
+        sub_id: 7,
+        sub_name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30EA\u30B9\u30AF\u30A2\u30BB\u30B9\u30E1\u30F3\u30C8"
+      },
+      question_text: "\u30EA\u30B9\u30AF\u306B\u95A2\u3059\u308B\u6B63\u78BA\u306A\u60C5\u5831\u3092\u4F01\u696D\u306E\u5229\u5BB3\u95A2\u4FC2\u8005\u9593\u3067\u5171\u6709\u3057\u3001\u76F8\u4E92\u306B\u610F\u601D\u758E\u901A\u3092\u56F3\u308B\u3053\u3068\u3092\u4F55\u3068\u547C\u3073\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30EA\u30B9\u30AF\u5206\u6790", "\u30EA\u30B9\u30AF\u8A55\u4FA1", "\u30EA\u30B9\u30AF\u30B3\u30DF\u30E5\u30CB\u30B1\u30FC\u30B7\u30E7\u30F3", "\u30EA\u30B9\u30AF\u6240\u6709\u8005\u6C7A\u5B9A"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    // sub_id 8: "情報セキュリティリスク対応"
+    {
+      id: 58,
+      category: {
+        id: 3,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7BA1\u7406",
+        sub_id: 8,
+        sub_name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30EA\u30B9\u30AF\u5BFE\u5FDC"
+      },
+      question_text: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30EA\u30B9\u30AF\u5BFE\u5FDC\u6226\u7565\u306E\u3046\u3061\u3001\u30EA\u30B9\u30AF\u3092\u751F\u3058\u3055\u305B\u308B\u6D3B\u52D5\u305D\u306E\u3082\u306E\u3092\u4E2D\u6B62\u3059\u308B\u3053\u3068\u3067\u8105\u5A01\u3092\u5B8C\u5168\u306B\u53D6\u308A\u9664\u304F\u3053\u3068\u3092\u6307\u3059\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30EA\u30B9\u30AF\u30C6\u30A4\u30AF", "\u30EA\u30B9\u30AF\u56DE\u907F", "\u30EA\u30B9\u30AF\u5171\u6709", "\u30EA\u30B9\u30AF\u4FDD\u6709"],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 59,
+      category: {
+        id: 3,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7BA1\u7406",
+        sub_id: 8,
+        sub_name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30EA\u30B9\u30AF\u5BFE\u5FDC"
+      },
+      question_text: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30EA\u30B9\u30AF\u3078\u306E\u5BFE\u5FDC\u7B56\u306E\u3046\u3061\u3001\u640D\u5BB3\u306B\u5099\u3048\u3066\u4FDD\u967A\u306B\u52A0\u5165\u3059\u308B\u306A\u3069\u3001\u91D1\u92AD\u7684\u306A\u5074\u9762\u304B\u3089\u30EA\u30B9\u30AF\u306B\u5BFE\u5FDC\u3059\u308B\u3053\u3068\u3092\u4F55\u3068\u547C\u3073\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30EA\u30B9\u30AF\u30B3\u30F3\u30C8\u30ED\u30FC\u30EB", "\u30EA\u30B9\u30AF\u4F4E\u6E1B", "\u30EA\u30B9\u30AF\u30D5\u30A1\u30A4\u30CA\u30F3\u30B7\u30F3\u30B0", "\u30EA\u30B9\u30AF\u56DE\u907F"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    // sub_id 9: "情報セキュリティ組織・機関"
+    {
+      id: 60,
+      category: {
+        id: 3,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7BA1\u7406",
+        sub_id: 9,
+        sub_name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7D44\u7E54\u30FB\u6A5F\u95A2"
+      },
+      question_text: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30A4\u30F3\u30B7\u30C7\u30F3\u30C8\u767A\u751F\u6642\u306B\u3001\u305D\u306E\u5BFE\u5FDC\u3092\u5C02\u9580\u7684\u306B\u884C\u3046\u7D44\u7E54\u5185\u307E\u305F\u306F\u7D44\u7E54\u6A2A\u65AD\u7684\u306A\u30C1\u30FC\u30E0\u3092\u4F55\u3068\u547C\u3073\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["CISO", "CSIRT", "SOC", "NISC"],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 61,
+      category: {
+        id: 3,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7BA1\u7406",
+        sub_id: 9,
+        sub_name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7D44\u7E54\u30FB\u6A5F\u95A2"
+      },
+      question_text: "\u30B5\u30A4\u30D0\u30FC\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u57FA\u672C\u6CD5\u306B\u57FA\u3065\u304D\u3001\u56FD\u306E\u30B5\u30A4\u30D0\u30FC\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u6226\u7565\u672C\u90E8\u304C\u8A2D\u7F6E\u3055\u308C\u305F\u969B\u306B\u540C\u6642\u306B\u5185\u95A3\u5B98\u623F\u306B\u8A2D\u7F6E\u3055\u308C\u305F\u7D44\u7E54\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["IPA", "JPCERT/CC", "\u5185\u95A3\u30B5\u30A4\u30D0\u30FC\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30BB\u30F3\u30BF\u30FC\uFF08NISC\uFF09", "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u59D4\u54E1\u4F1A"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 62,
+      category: {
+        id: 3,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7BA1\u7406",
+        sub_id: 9,
+        sub_name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7D44\u7E54\u30FB\u6A5F\u95A2"
+      },
+      question_text: "\u30BD\u30D5\u30C8\u30A6\u30A7\u30A2\u88FD\u54C1\u306B\u304A\u3051\u308B\u8106\u5F31\u6027\u306B\u95A2\u3059\u308B\u60C5\u5831\u3092\u96C6\u7D04\u3057\u3001\u516C\u958B\u3057\u3066\u3044\u308B\u65E5\u672C\u306E\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["CVE", "CVSS", "JVN", "CWE"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    // sub_id 10: "セキュリティ評価"
+    {
+      id: 63,
+      category: {
+        id: 3,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7BA1\u7406",
+        sub_id: 10,
+        sub_name: "\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u8A55\u4FA1"
+      },
+      question_text: "\u5171\u901A\u8106\u5F31\u6027\u8A55\u4FA1\u30B7\u30B9\u30C6\u30E0\uFF08CVSS\uFF09\u306E\u76EE\u7684\u3068\u3057\u3066\u3001\u6700\u3082\u9069\u5207\u306A\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8\u30B7\u30B9\u30C6\u30E0\u306E\u9069\u5408\u6027\u3092\u8A55\u4FA1\u3059\u308B\u3002",
+            "\u30BD\u30D5\u30C8\u30A6\u30A7\u30A2\u306E\u6B20\u9665\u3092\u7279\u5B9A\u3059\u308B\u305F\u3081\u306E\u8B58\u5225\u5B50\u3092\u4ED8\u4E0E\u3059\u308B\u3002",
+            "\u8106\u5F31\u6027\u306E\u6DF1\u523B\u5EA6\u3092\u5171\u901A\u306E\u5C3A\u5EA6\u3067\u5B9A\u91CF\u7684\u306B\u8A55\u4FA1\u3059\u308B\u3002",
+            "\u4F01\u696D\u306E\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u610F\u8B58\u5411\u4E0A\u3092\u6E2C\u308B\u6307\u6A19\u3092\u63D0\u4F9B\u3059\u308B\u3002"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 64,
+      category: {
+        id: 3,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u7BA1\u7406",
+        sub_id: 10,
+        sub_name: "\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u8A55\u4FA1"
+      },
+      question_text: "\u5171\u901A\u8106\u5F31\u6027\u8B58\u5225\u5B50\uFF08CVE\uFF09\u306F\u3001\u4E3B\u306B\u4F55\u3092\u8B58\u5225\u3059\u308B\u305F\u3081\u306B\u7528\u3044\u3089\u308C\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u8106\u5F31\u6027\u306E\u30BF\u30A4\u30D7", "\u5177\u4F53\u7684\u306A\u30BD\u30D5\u30C8\u30A6\u30A7\u30A2\u306E\u8106\u5F31\u6027", "\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u8A55\u4FA1\u57FA\u6E96", "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30A4\u30F3\u30B7\u30C7\u30F3\u30C8\u306E\u7A2E\u985E"],
+          correct_answer_index: 1
+        }
+      }
+    },
+    // sub_id 1: "人的セキュリティ対策"
+    {
+      id: 65,
+      category: {
+        id: 4,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+        sub_id: 1,
+        sub_name: "\u4EBA\u7684\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56"
+      },
+      question_text: "\u7D44\u7E54\u306B\u304A\u3051\u308B\u5185\u90E8\u4E0D\u6B63\u3092\u9632\u6B62\u3059\u308B\u305F\u3081\u306E\u300E\u7D44\u7E54\u306B\u304A\u3051\u308B\u5185\u90E8\u4E0D\u6B63\u9632\u6B62\u30AC\u30A4\u30C9\u30E9\u30A4\u30F3\uFF08\u7B2C5\u7248\uFF09\u300F\u3067\u6319\u3052\u3089\u308C\u3066\u3044\u308B\u57FA\u672C\u539F\u5247\u306E\u4E00\u3064\u3067\u3001\u300C\u3084\u308A\u306B\u304F\u304F\u3059\u308B\u300D\u306B\u8A72\u5F53\u3059\u308B\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u72AF\u7F6A\u306E\u898B\u8FD4\u308A\u3092\u6E1B\u3089\u3059",
+            "\u6355\u307E\u308B\u30EA\u30B9\u30AF\u3092\u9AD8\u3081\u308B",
+            "\u72AF\u7F6A\u3092\u96E3\u3057\u304F\u3059\u308B",
+            "\u72AF\u884C\u306E\u8A98\u56E0\u3092\u6E1B\u3089\u3059"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 66,
+      category: {
+        id: 4,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+        sub_id: 1,
+        sub_name: "\u4EBA\u7684\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56"
+      },
+      question_text: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u306E\u89B3\u70B9\u304B\u3089\u3001\u9000\u8077\u3059\u308B\u5F93\u696D\u54E1\u306B\u5BFE\u3059\u308B\u9069\u5207\u306A\u63AA\u7F6E\u3068\u3057\u3066\u6700\u3082\u91CD\u8981\u306A\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u9000\u8077\u5F8C\u3082\u4F01\u696D\u30E1\u30FC\u30EB\u30A2\u30C9\u30EC\u30B9\u306E\u5229\u7528\u3092\u8A31\u53EF\u3059\u308B",
+            "\u96C7\u7528\u7D42\u4E86\u6642\u306B\u60C5\u5831\u8CC7\u7523\u3092\u3059\u3079\u3066\u8FD4\u5374\u3055\u305B\u3001\u60C5\u5831\u30B7\u30B9\u30C6\u30E0\u306E\u5229\u7528\u8005ID\u3084\u6A29\u9650\u3092\u524A\u9664\u3059\u308B",
+            "\u5728\u8077\u4E2D\u306B\u77E5\u308A\u5F97\u305F\u79D8\u5BC6\u60C5\u5831\u306E\u516C\u958B\u3092\u5236\u9650\u3059\u308B\u8A93\u7D04\u66F8\u3092\u63D0\u51FA\u3055\u305B\u306A\u3044",
+            "\u500B\u4EBA\u7684\u306A\u60C5\u5831\u6A5F\u5668\u3084\u8A18\u61B6\u5A92\u4F53\u306E\u696D\u52D9\u5229\u7528\u3092\u63A8\u5968\u3059\u308B"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 67,
+      category: {
+        id: 4,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+        sub_id: 1,
+        sub_name: "\u4EBA\u7684\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56"
+      },
+      question_text: "\u5185\u90E8\u4E0D\u6B63\u306E\u9632\u6B62\u306B\u304A\u3044\u3066\u3001\u5358\u72EC\u4F5C\u696D\u3067\u306E\u4E0D\u6B63\u767A\u751F\u30EA\u30B9\u30AF\u3092\u4F4E\u6E1B\u3059\u308B\u305F\u3081\u306B\u6709\u52B9\u306A\u5BFE\u7B56\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u5F93\u696D\u54E1\u306E\u30B9\u30C8\u30EC\u30B9\u8EFD\u6E1B\u306E\u305F\u3081\u306E\u30E1\u30F3\u30BF\u30EB\u30D8\u30EB\u30B9\u5BFE\u7B56",
+            "\u30A2\u30AF\u30BB\u30B9\u5C65\u6B74\u3084\u64CD\u4F5C\u5C65\u6B74\u306E\u30ED\u30B0\u30FB\u8A3C\u8DE1\u3092\u6B8B\u3057\u3001\u5B9A\u671F\u7684\u306B\u78BA\u8A8D\u3059\u308B",
+            "\u76F8\u4E92\u76E3\u8996\u304C\u3067\u304D\u306A\u3044\u74B0\u5883\u3067\u306E\u4F11\u65E5\u3084\u6DF1\u591C\u306E\u5358\u72EC\u4F5C\u696D\u3092\u5236\u9650\u3059\u308B",
+            "\u79D8\u5BC6\u4FDD\u6301\u7FA9\u52D9\u3092\u8AB2\u3059\u8A93\u7D04\u66F8\u306E\u63D0\u51FA\u3092\u6C42\u3081\u308B"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 68,
+      category: {
+        id: 4,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+        sub_id: 1,
+        sub_name: "\u4EBA\u7684\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56"
+      },
+      question_text: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5553\u767A\u6D3B\u52D5\u306B\u304A\u3044\u3066\u3001\u6700\u3082\u91CD\u8981\u306A\u76EE\u6A19\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u6700\u65B0\u306E\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u6280\u8853\u3092\u5C0E\u5165\u3059\u308B\u3053\u3068",
+            "\u5F93\u696D\u54E1\u306E\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u610F\u8B58\u3092\u9AD8\u3081\u308B\u3053\u3068",
+            "\u5916\u90E8\u59D4\u8A17\u5148\u306E\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56\u3092\u5F37\u5316\u3059\u308B\u3053\u3068",
+            "\u793E\u5185\u898F\u5B9A\u3092\u53B3\u683C\u306B\u6587\u66F8\u5316\u3059\u308B\u3053\u3068"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    // sub_id 2: "クラッキング・不正アクセス対策"
+    {
+      id: 69,
+      category: {
+        id: 4,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+        sub_id: 2,
+        sub_name: "\u30AF\u30E9\u30C3\u30AD\u30F3\u30B0\u30FB\u4E0D\u6B63\u30A2\u30AF\u30BB\u30B9\u5BFE\u7B56"
+      },
+      question_text: "Web\u30A2\u30D7\u30EA\u30B1\u30FC\u30B7\u30E7\u30F3\u306B\u7279\u5316\u3057\u3001SQL\u30A4\u30F3\u30B8\u30A7\u30AF\u30B7\u30E7\u30F3\u3084\u30AF\u30ED\u30B9\u30B5\u30A4\u30C8\u30B9\u30AF\u30EA\u30D7\u30C6\u30A3\u30F3\u30B0\u306A\u3069\u306E\u653B\u6483\u3092\u9632\u3050\u305F\u3081\u306E\u30D5\u30A1\u30A4\u30A2\u30A6\u30A9\u30FC\u30EB\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["IDS", "IPS", "WAF", "UTM"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 70,
+      category: {
+        id: 4,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+        sub_id: 2,
+        sub_name: "\u30AF\u30E9\u30C3\u30AD\u30F3\u30B0\u30FB\u4E0D\u6B63\u30A2\u30AF\u30BB\u30B9\u5BFE\u7B56"
+      },
+      question_text: "\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u3092\u901A\u904E\u3059\u308B\u901A\u4FE1\u3092\u76E3\u8996\u3057\u3001\u4E0D\u6B63\u306A\u4FB5\u5165\u3092\u691C\u77E5\u3059\u308B\u30B7\u30B9\u30C6\u30E0\u306FIDS\u3067\u3059\u304C\u3001\u305D\u308C\u306B\u52A0\u3048\u3066\u4E0D\u6B63\u306A\u901A\u4FE1\u3092\u9632\u5FA1\uFF08\u906E\u65AD\uFF09\u3059\u308B\u6A5F\u80FD\u3092\u6301\u3064\u30B7\u30B9\u30C6\u30E0\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["Firewall", "NIDS", "IPS", "SOC"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 71,
+      category: {
+        id: 4,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+        sub_id: 2,
+        sub_name: "\u30AF\u30E9\u30C3\u30AD\u30F3\u30B0\u30FB\u4E0D\u6B63\u30A2\u30AF\u30BB\u30B9\u5BFE\u7B56"
+      },
+      question_text: "\u30A4\u30F3\u30BF\u30FC\u30CD\u30C3\u30C8\u304B\u3089\u306E\u30A2\u30AF\u30BB\u30B9\u3092\u8A31\u53EF\u3059\u308BWeb\u30B5\u30FC\u30D0\u306A\u3069\u3092\u3001\u5185\u90E8\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u304B\u3089\u5206\u96E2\u3057\u3066\u8A2D\u7F6E\u3059\u308B\u533A\u57DF\u306F\u4F55\u3068\u547C\u3070\u308C\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["DMZ", "VPN", "LAN", "WAN"],
+          correct_answer_index: 0
+        }
+      }
+    },
+    // sub_id 3: "マルウェア・不正プログラム対策"
+    {
+      id: 72,
+      category: {
+        id: 4,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+        sub_id: 3,
+        sub_name: "\u30DE\u30EB\u30A6\u30A7\u30A2\u30FB\u4E0D\u6B63\u30D7\u30ED\u30B0\u30E9\u30E0\u5BFE\u7B56"
+      },
+      question_text: "\u30DE\u30EB\u30A6\u30A7\u30A2\u5BFE\u7B56\u306B\u304A\u3044\u3066\u3001\u30A6\u30A4\u30EB\u30B9\u5B9A\u7FA9\u30D5\u30A1\u30A4\u30EB\u3068\u6BD4\u8F03\u3059\u308B\u3053\u3068\u3067\u65E2\u77E5\u306E\u30A6\u30A4\u30EB\u30B9\u3092\u691C\u51FA\u3059\u308B\u624B\u6CD5\u306F\u4F55\u3068\u547C\u3070\u308C\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30D3\u30D8\u30A4\u30D3\u30A2\u6CD5", "\u30B3\u30F3\u30DA\u30A2\u6CD5", "\u30D1\u30BF\u30FC\u30F3\u30DE\u30C3\u30C1\u30F3\u30B0", "\u30B5\u30F3\u30C9\u30DC\u30C3\u30AF\u30B9"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 73,
+      category: {
+        id: 4,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+        sub_id: 3,
+        sub_name: "\u30DE\u30EB\u30A6\u30A7\u30A2\u30FB\u4E0D\u6B63\u30D7\u30ED\u30B0\u30E9\u30E0\u5BFE\u7B56"
+      },
+      question_text: "\u30DE\u30EB\u30A6\u30A7\u30A2\u611F\u67D3\u3092\u5B8C\u5168\u306B\u9632\u3050\u3053\u3068\u306F\u56F0\u96E3\u3067\u3042\u308B\u305F\u3081\u3001\u611F\u67D3\u5F8C\u306E\u88AB\u5BB3\u3092\u56DE\u907F\u307E\u305F\u306F\u4F4E\u6E1B\u3059\u308B\u305F\u3081\u306B\u8907\u6570\u306E\u5BFE\u7B56\u3092\u8B1B\u3058\u308B\u624B\u6CD5\u306F\u4F55\u3068\u547C\u3070\u308C\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u5358\u4E00\u9632\u5FA1", "\u5165\u53E3\u5BFE\u7B56", "\u51FA\u53E3\u5BFE\u7B56", "\u591A\u5C64\u9632\u5FA1"],
+          correct_answer_index: 3
+        }
+      }
+    },
+    {
+      id: 74,
+      category: {
+        id: 4,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+        sub_id: 3,
+        sub_name: "\u30DE\u30EB\u30A6\u30A7\u30A2\u30FB\u4E0D\u6B63\u30D7\u30ED\u30B0\u30E9\u30E0\u5BFE\u7B56"
+      },
+      question_text: "\u30BD\u30D5\u30C8\u30A6\u30A7\u30A2\u3092\u69CB\u6210\u3059\u308B\u30B3\u30F3\u30DD\u30FC\u30CD\u30F3\u30C8\u3068\u305D\u306E\u4F9D\u5B58\u95A2\u4FC2\u306A\u3069\u3092\u30EA\u30B9\u30C8\u5316\u3057\u305F\u3082\u306E\u3067\u3001\u8106\u5F31\u6027\u304C\u898B\u3064\u304B\u3063\u305F\u969B\u306B\u66F4\u65B0\u304C\u5FC5\u8981\u306A\u90E8\u5206\u3092\u7279\u5B9A\u3057\u3084\u3059\u304F\u306A\u308B\u3082\u306E\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["CMDB", "SIEM", "SBOM", "SOC"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    // sub_id 4: "携帯端末・無線LANのセキュリティ対策"
+    {
+      id: 75,
+      category: {
+        id: 4,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+        sub_id: 4,
+        sub_name: "\u643A\u5E2F\u7AEF\u672B\u30FB\u7121\u7DDALAN\u306E\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56"
+      },
+      question_text: "\u4F01\u696D\u5185\u3067\u5229\u7528\u3055\u308C\u308B\u30B9\u30DE\u30FC\u30C8\u30D5\u30A9\u30F3\u3084\u30BF\u30D6\u30EC\u30C3\u30C8\u306A\u3069\u306E\u30E2\u30D0\u30A4\u30EB\u30C7\u30D0\u30A4\u30B9\u3092\u7D71\u5408\u7684\u306B\u7BA1\u7406\u3059\u308B\u305F\u3081\u306E\u30B7\u30B9\u30C6\u30E0\u306F\u4F55\u3068\u547C\u3070\u308C\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["VPN", "MDM", "BYOD", "NTP"],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 76,
+      category: {
+        id: 4,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+        sub_id: 4,
+        sub_name: "\u643A\u5E2F\u7AEF\u672B\u30FB\u7121\u7DDALAN\u306E\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56"
+      },
+      question_text: "\u7121\u7DDALAN\u306E\u6697\u53F7\u5316\u65B9\u5F0F\u306E\u6700\u65B0\u7248\u3067\u3001\u3088\u308A\u5F37\u56FA\u306A\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u3092\u63D0\u4F9B\u3059\u308B\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["WEP", "WPA", "WPA2", "WPA3"],
+          correct_answer_index: 3
+        }
+      }
+    },
+    {
+      id: 77,
+      category: {
+        id: 4,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+        sub_id: 4,
+        sub_name: "\u643A\u5E2F\u7AEF\u672B\u30FB\u7121\u7DDALAN\u306E\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56"
+      },
+      question_text: "\u7121\u7DDALAN\u30A2\u30AF\u30BB\u30B9\u30DD\u30A4\u30F3\u30C8\u306B\u304A\u3044\u3066\u3001\u63A5\u7D9A\u3092\u8A31\u53EF\u3059\u308B\u7AEF\u672B\u306EMAC\u30A2\u30C9\u30EC\u30B9\u3092\u4E8B\u524D\u306B\u767B\u9332\u3057\u3001\u767B\u9332\u3055\u308C\u3066\u3044\u306A\u3044\u7AEF\u672B\u304B\u3089\u306E\u63A5\u7D9A\u3092\u62D2\u5426\u3059\u308B\u4ED5\u7D44\u307F\u306F\u4F55\u3068\u547C\u3070\u308C\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["SSID\u30B9\u30C6\u30EB\u30B9", "MAC\u30A2\u30C9\u30EC\u30B9\u30D5\u30A3\u30EB\u30BF\u30EA\u30F3\u30B0", "EAP", "WPA\u30A8\u30F3\u30BF\u30FC\u30D7\u30E9\u30A4\u30BA"],
+          correct_answer_index: 1
+        }
+      }
+    },
+    // sub_id 5: "デジタルフォレンジックス・証拠保全対策"
+    {
+      id: 78,
+      category: {
+        id: 4,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+        sub_id: 5,
+        sub_name: "\u30C7\u30B8\u30BF\u30EB\u30D5\u30A9\u30EC\u30F3\u30B8\u30C3\u30AF\u30B9\u30FB\u8A3C\u62E0\u4FDD\u5168\u5BFE\u7B56"
+      },
+      question_text: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30A4\u30F3\u30B7\u30C7\u30F3\u30C8\u767A\u751F\u6642\u306B\u3001\u6CD5\u7684\u306B\u6709\u52B9\u306A\u8A3C\u62E0\u3092\u6B8B\u3059\u305F\u3081\u306B\u884C\u308F\u308C\u308B\u6280\u8853\u7684\u304B\u3064\u6CD5\u7684\u306A\u624B\u6CD5\u306F\u4F55\u3068\u547C\u3070\u308C\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30DA\u30CD\u30C8\u30EC\u30FC\u30B7\u30E7\u30F3\u30C6\u30B9\u30C8", "\u30B7\u30B9\u30C6\u30E0\u76E3\u67FB", "\u30C7\u30B8\u30BF\u30EB\u30D5\u30A9\u30EC\u30F3\u30B8\u30C3\u30AF\u30B9", "\u8106\u5F31\u6027\u8A3A\u65AD"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 79,
+      category: {
+        id: 4,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+        sub_id: 5,
+        sub_name: "\u30C7\u30B8\u30BF\u30EB\u30D5\u30A9\u30EC\u30F3\u30B8\u30C3\u30AF\u30B9\u30FB\u8A3C\u62E0\u4FDD\u5168\u5BFE\u7B56"
+      },
+      question_text: "\u69D8\u3005\u306A\u6A5F\u5668\u304B\u3089\u96C6\u3081\u3089\u308C\u305F\u30ED\u30B0\u60C5\u5831\u3092\u7DCF\u5408\u7684\u306B\u5206\u6790\u3057\u3001\u30A4\u30F3\u30B7\u30C7\u30F3\u30C8\u306E\u4E88\u5146\u3092\u767A\u898B\u3057\u3066\u901A\u77E5\u3059\u308B\u30B7\u30B9\u30C6\u30E0\u306F\u4F55\u3068\u547C\u3070\u308C\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["CMDB", "SOC", "SIEM", "NIDS"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    // sub_id 6: "その他の技術的セキュリティ対策"
+    {
+      id: 80,
+      category: {
+        id: 4,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+        sub_id: 6,
+        sub_name: "\u305D\u306E\u4ED6\u306E\u6280\u8853\u7684\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56"
+      },
+      question_text: "PC\u306E\u30CF\u30FC\u30C9\u30C7\u30A3\u30B9\u30AF\u30C9\u30E9\u30A4\u30D6\uFF08HDD\uFF09\u81EA\u4F53\u306B\u30D1\u30B9\u30EF\u30FC\u30C9\u3092\u8A2D\u5B9A\u3057\u305F\u308A\u3001HDD\u5168\u4F53\u3092\u6697\u53F7\u5316\u3057\u305F\u308A\u3059\u308B\u5BFE\u7B56\u306F\u4F55\u3068\u547C\u3070\u308C\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30D5\u30A1\u30A4\u30EB\u6697\u53F7\u5316", "\u30D5\u30A9\u30EB\u30C0\u6697\u53F7\u5316", "HDD\u79D8\u533F\u5316", "OS\u30D1\u30B9\u30EF\u30FC\u30C9\u8A2D\u5B9A"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 81,
+      category: {
+        id: 4,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+        sub_id: 6,
+        sub_name: "\u305D\u306E\u4ED6\u306E\u6280\u8853\u7684\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56"
+      },
+      question_text: "\u30B7\u30B9\u30C6\u30E0\u3084\u88FD\u54C1\u306E\u4F01\u753B\u30FB\u8A2D\u8A08\u6BB5\u968E\u304B\u3089\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u3092\u8003\u616E\u3057\u3001\u8106\u5F31\u6027\u3092\u4F5C\u308A\u8FBC\u307E\u306A\u3044\u3088\u3046\u306B\u3059\u308B\u8003\u3048\u65B9\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30A2\u30BB\u30B9\u30E1\u30F3\u30C8", "\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u76E3\u67FB", "\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30D0\u30A4\u30C7\u30B6\u30A4\u30F3", "\u30EA\u30B9\u30AF\u30A2\u30BB\u30B9\u30E1\u30F3\u30C8"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 82,
+      category: {
+        id: 4,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+        sub_id: 6,
+        sub_name: "\u305D\u306E\u4ED6\u306E\u6280\u8853\u7684\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56"
+      },
+      question_text: "\u6A5F\u5BC6\u30C7\u30FC\u30BF\u3084\u500B\u4EBA\u60C5\u5831\u3092\u4FDD\u8B77\u3059\u308B\u305F\u3081\u3001\u5143\u306E\u30C7\u30FC\u30BF\u3092\u507D\u306E\u30C7\u30FC\u30BF\u3084\u6587\u5B57\u3067\u7F6E\u304D\u63DB\u3048\u308B\u6280\u8853\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30C7\u30FC\u30BF\u6697\u53F7\u5316", "\u30C7\u30FC\u30BF\u30DE\u30B9\u30AD\u30F3\u30B0", "k-\u533F\u540D\u5316", "\u30C7\u30FC\u30BF\u6B63\u898F\u5316"],
+          correct_answer_index: 1
+        }
+      }
+    },
+    // sub_id 7: "物理的セキュリティ対策"
+    {
+      id: 83,
+      category: {
+        id: 4,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+        sub_id: 7,
+        sub_name: "\u7269\u7406\u7684\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56"
+      },
+      question_text: "PC\u306E\u753B\u9762\u30ED\u30C3\u30AF\u3084\u3001\u91CD\u8981\u66F8\u985E\u3092\u673A\u4E0A\u306B\u653E\u7F6E\u3057\u306A\u3044\u306A\u3069\u306E\u7269\u7406\u7684\u5BFE\u7B56\u306F\u4F55\u3068\u547C\u3070\u308C\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30BE\u30FC\u30CB\u30F3\u30B0", "\u30AF\u30EA\u30A2\u30C7\u30B9\u30AF\u30FB\u30AF\u30EA\u30A2\u30B9\u30AF\u30EA\u30FC\u30F3", "\u65BD\u9320\u7BA1\u7406", "\u5165\u9000\u5BA4\u7BA1\u7406"],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 84,
+      category: {
+        id: 4,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+        sub_id: 7,
+        sub_name: "\u7269\u7406\u7684\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56"
+      },
+      question_text: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u306E\u7269\u7406\u7684\u5BFE\u7B56\u3068\u3057\u3066\u3001\u30AA\u30D5\u30A3\u30B9\u306A\u3069\u306E\u7A7A\u9593\u3092\u7269\u7406\u7684\u306B\u533A\u5207\u3063\u3066\u30BE\u30FC\u30F3\uFF08\u533A\u57DF\uFF09\u306B\u5206\u3051\u308B\u3053\u3068\u3092\u4F55\u3068\u3044\u3044\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30BE\u30FC\u30CB\u30F3\u30B0", "\u30A4\u30F3\u30B7\u30C7\u30F3\u30C8\u7BA1\u7406", "\u30A2\u30AF\u30BB\u30B9\u5236\u5FA1\u30EA\u30B9\u30C8", "DMZ"],
+          correct_answer_index: 0
+        }
+      }
+    },
+    {
+      id: 85,
+      category: {
+        id: 4,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+        sub_id: 7,
+        sub_name: "\u7269\u7406\u7684\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56"
+      },
+      question_text: "IC\u30AB\u30FC\u30C9\u306B\u3088\u308B\u5165\u9000\u5BA4\u7BA1\u7406\u306B\u304A\u3044\u3066\u3001\u76F4\u524D\u306B\u5165\u5BA4\u3057\u305F\u4EBA\u306E\u5F8C\u308D\u306B\u3064\u3044\u3066\u8A8D\u8A3C\u3092\u3059\u308A\u629C\u3051\u308B\u30D4\u30AE\u30FC\u30D0\u30C3\u30AF\uFF08\u5171\u9023\u308C\uFF09\u3092\u9632\u6B62\u3059\u308B\u305F\u3081\u3001\u5165\u5BA4\u6642\u306E\u8A8D\u8A3C\u306B\u7528\u3044\u3089\u308C\u306A\u304B\u3063\u305FID\u30AB\u30FC\u30C9\u3067\u306E\u9000\u5BA4\u3092\u8A31\u53EF\u3057\u306A\u3044\u3001\u307E\u305F\u306F\u9000\u5BA4\u6642\u306E\u8A8D\u8A3C\u306B\u7528\u3044\u3089\u308C\u306A\u304B\u3063\u305FID\u30AB\u30FC\u30C9\u3067\u306E\u518D\u5165\u5BA4\u3092\u8A31\u53EF\u3057\u306A\u3044\u65B9\u6CD5\u306F\u4F55\u3068\u547C\u3070\u308C\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30A4\u30F3\u30BF\u30FC\u30ED\u30C3\u30AF", "\u30A2\u30F3\u30C1\u30D1\u30B9\u30D0\u30C3\u30AF", "\u751F\u4F53\u8A8D\u8A3C", "\u65BD\u9320\u7BA1\u7406"],
+          correct_answer_index: 1
+        }
+      }
+    },
+    // sub_id 8: "セキュアプロトコル"
+    {
+      id: 86,
+      category: {
+        id: 4,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+        sub_id: 8,
+        sub_name: "\u30BB\u30AD\u30E5\u30A2\u30D7\u30ED\u30C8\u30B3\u30EB"
+      },
+      question_text: "Web\u30B5\u30A4\u30C8\u306E\u901A\u4FE1\u3092\u6697\u53F7\u5316\u3059\u308B\u305F\u3081\u306B\u3001HTTP\u3068\u7D44\u307F\u5408\u308F\u305B\u3066\u5229\u7528\u3055\u308C\u308B\u30D7\u30ED\u30C8\u30B3\u30EB\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["FTP", "SMTP", "SSL/TLS", "POP3"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 87,
+      category: {
+        id: 4,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+        sub_id: 8,
+        sub_name: "\u30BB\u30AD\u30E5\u30A2\u30D7\u30ED\u30C8\u30B3\u30EB"
+      },
+      question_text: "IPsec\u304C\u63D0\u4F9B\u3059\u308B\u4E3B\u8981\u306A\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u6A5F\u80FD\u3068\u3057\u3066\u3001\u30D1\u30B1\u30C3\u30C8\u306E\u6697\u53F7\u5316\u306B\u7528\u3044\u3089\u308C\u308B\u30D7\u30ED\u30C8\u30B3\u30EB\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["AH", "ESP", "IKE", "SSH"],
+          correct_answer_index: 1
+        }
+      }
+    },
+    // sub_id 9: "認証技術"
+    {
+      id: 88,
+      category: {
+        id: 4,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+        sub_id: 9,
+        sub_name: "\u8A8D\u8A3C\u6280\u8853"
+      },
+      question_text: "\u96FB\u5B50\u30E1\u30FC\u30EB\u306E\u9001\u4FE1\u5143\u30C9\u30E1\u30A4\u30F3\u3092\u8A8D\u8A3C\u3057\u3001\u9001\u4FE1\u5143\u30E1\u30FC\u30EB\u30B5\u30FC\u30D0\u306EIP\u30A2\u30C9\u30EC\u30B9\u3092\u78BA\u8A8D\u3059\u308B\u3053\u3068\u3067\u8A50\u79F0\u30E1\u30FC\u30EB\u5BFE\u7B56\u3092\u884C\u3046\u6280\u8853\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["DKIM", "DMARC", "S/MIME", "SPF"],
+          correct_answer_index: 3
+        }
+      }
+    },
+    {
+      id: 89,
+      category: {
+        id: 4,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+        sub_id: 9,
+        sub_name: "\u8A8D\u8A3C\u6280\u8853"
+      },
+      question_text: "\u96FB\u5B50\u30E1\u30FC\u30EB\u306E\u6697\u53F7\u5316\u3068\u30C7\u30B8\u30BF\u30EB\u7F72\u540D\u3092\u884C\u3046\u305F\u3081\u306E\u6A19\u6E96\u7684\u306A\u5F62\u5F0F\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["PGP", "GnuPG", "S/MIME", "OpenSSL"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    // sub_id 10: "ネットワークセキュリティ"
+    {
+      id: 90,
+      category: {
+        id: 4,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+        sub_id: 10,
+        sub_name: "\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3"
+      },
+      question_text: "\u30B5\u30FC\u30D0\u306E\u4EE3\u7406\u3067\u30A2\u30AF\u30BB\u30B9\u3092\u53D7\u3051\u4ED8\u3051\u3001\u5404\u30B5\u30FC\u30D0\u306B\u51E6\u7406\u3092\u5206\u6563\u3055\u305B\u308B\u3053\u3068\u3067\u8CA0\u8377\u8EFD\u6E1B\u3084\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5F37\u5316\u3092\u56F3\u308B\u6280\u8853\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30D5\u30A9\u30EF\u30FC\u30C9\u30D7\u30ED\u30AD\u30B7", "\u30EA\u30D0\u30FC\u30B9\u30D7\u30ED\u30AD\u30B7", "NAT", "VPN"],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 91,
+      category: {
+        id: 4,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+        sub_id: 10,
+        sub_name: "\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3"
+      },
+      question_text: "\u4F01\u696D\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u306B\u304A\u3044\u3066\u3001\u4E0D\u6B63\u306A\u30A2\u30AF\u30BB\u30B9\u3092\u691C\u77E5\u30FB\u9632\u5FA1\u3059\u308B\u305F\u3081\u306B\u3001\u5916\u90E8\u304B\u3089\u306E\u30A2\u30AF\u30BB\u30B9\u3092\u30D5\u30A3\u30EB\u30BF\u30EA\u30F3\u30B0\u3059\u308B\u6A5F\u5668\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30EB\u30FC\u30BF", "\u30D6\u30EA\u30C3\u30B8", "\u30D5\u30A1\u30A4\u30A2\u30A6\u30A9\u30FC\u30EB", "\u30CF\u30D6"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    // sub_id 11: "データベースセキュリティ"
+    {
+      id: 92,
+      category: {
+        id: 4,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+        sub_id: 11,
+        sub_name: "\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3"
+      },
+      question_text: "\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9\u306B\u683C\u7D0D\u3055\u308C\u308B\u30C7\u30FC\u30BF\u81EA\u4F53\u3092\u6697\u53F7\u5316\u3059\u308B\u5BFE\u7B56\u306E\u4E3B\u306A\u76EE\u7684\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "SQL\u30A4\u30F3\u30B8\u30A7\u30AF\u30B7\u30E7\u30F3\u653B\u6483\u3092\u9632\u3050",
+            "DBMS\u304C\u683C\u7D0D\u3055\u308C\u3066\u3044\u308B\u30B9\u30C8\u30EC\u30FC\u30B8\u304C\u76D7\u96E3\u3055\u308C\u305F\u5834\u5408\u306E\u30C7\u30FC\u30BF\u4FDD\u8B77",
+            "\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9\u306E\u30A2\u30AF\u30BB\u30B9\u901F\u5EA6\u3092\u5411\u4E0A\u3055\u305B\u308B",
+            "\u30C7\u30FC\u30BF\u5165\u529B\u6642\u306E\u8AA4\u308A\u3092\u691C\u51FA\u3059\u308B"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 93,
+      category: {
+        id: 4,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+        sub_id: 11,
+        sub_name: "\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3"
+      },
+      question_text: "\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9\u306E\u30C7\u30FC\u30BF\u6D88\u5931\u3092\u9632\u3050\u305F\u3081\u306B\u5B9A\u671F\u7684\u306B\u884C\u308F\u308C\u308B\u5BFE\u7B56\u3068\u3057\u3066\u3001\u30D0\u30C3\u30AF\u30A2\u30C3\u30D7\u30E1\u30C7\u30A3\u30A2\u306E\u5B89\u5168\u306A\u4FDD\u7BA1\u304C\u91CD\u8981\u306A\u7406\u7531\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u30D0\u30C3\u30AF\u30A2\u30C3\u30D7\u51E6\u7406\u306E\u9AD8\u901F\u5316\u306E\u305F\u3081",
+            "\u30D0\u30C3\u30AF\u30A2\u30C3\u30D7\u30E1\u30C7\u30A3\u30A2\u304B\u3089\u60C5\u5831\u304C\u6F0F\u3048\u3044\u3059\u308B\u53EF\u80FD\u6027\u3092\u6392\u9664\u3059\u308B\u305F\u3081",
+            "\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9\u306E\u5FA9\u5143\u6642\u9593\u3092\u77ED\u7E2E\u3059\u308B\u305F\u3081",
+            "\u30B9\u30C8\u30EC\u30FC\u30B8\u5BB9\u91CF\u3092\u7BC0\u7D04\u3059\u308B\u305F\u3081"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    // sub_id 12: "アプリケーションセキュリティ"
+    {
+      id: 94,
+      category: {
+        id: 4,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+        sub_id: 12,
+        sub_name: "\u30A2\u30D7\u30EA\u30B1\u30FC\u30B7\u30E7\u30F3\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3"
+      },
+      question_text: "\u30B7\u30B9\u30C6\u30E0\u958B\u767A\u6642\u306B\u8106\u5F31\u6027\u3092\u4F5C\u308A\u8FBC\u307E\u306A\u3044\u3088\u3046\u306B\u3001\u5165\u529B\u5024\u306E\u30C1\u30A7\u30C3\u30AF\u3084\u30A8\u30E9\u30FC\u8868\u793A\u306E\u5DE5\u592B\u306A\u3069\u3092\u884C\u3046\u30D7\u30ED\u30B0\u30E9\u30DF\u30F3\u30B0\u624B\u6CD5\u306F\u4F55\u3068\u547C\u3070\u308C\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u30A2\u30B8\u30E3\u30A4\u30EB\u30D7\u30ED\u30B0\u30E9\u30DF\u30F3\u30B0",
+            "\u30AA\u30D6\u30B8\u30A7\u30AF\u30C8\u6307\u5411\u30D7\u30ED\u30B0\u30E9\u30DF\u30F3\u30B0",
+            "\u30BB\u30AD\u30E5\u30A2\u30D7\u30ED\u30B0\u30E9\u30DF\u30F3\u30B0",
+            "\u30A4\u30D9\u30F3\u30C8\u99C6\u52D5\u578B\u30D7\u30ED\u30B0\u30E9\u30DF\u30F3\u30B0"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 95,
+      category: {
+        id: 4,
+        name: "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56",
+        sub_id: 12,
+        sub_name: "\u30A2\u30D7\u30EA\u30B1\u30FC\u30B7\u30E7\u30F3\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3"
+      },
+      question_text: "\u30D0\u30C3\u30D5\u30A1\u30AA\u30FC\u30D0\u30FC\u30D5\u30ED\u30FC\u5BFE\u7B56\u3068\u3057\u3066\u3001\u30D0\u30C3\u30D5\u30A1\u306E\u9577\u3055\u3092\u8D85\u3048\u308B\u30C7\u30FC\u30BF\u306E\u5165\u529B\u3092\u53D7\u3051\u4ED8\u3051\u306A\u3044\u3088\u3046\u306B\u3059\u308B\u5BFE\u7B56\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u30AB\u30CA\u30EA\u30A2\u30B3\u30FC\u30C9\u306E\u633F\u5165",
+            "\u5165\u529B\u6587\u5B57\u5217\u9577\u306E\u30C1\u30A7\u30C3\u30AF",
+            "\u30B9\u30BF\u30C3\u30AF\u4FDD\u8B77\u6A5F\u80FD\u306E\u6709\u52B9\u5316",
+            "\u30A2\u30C9\u30EC\u30B9\u7A7A\u9593\u914D\u7F6E\u306E\u30E9\u30F3\u30C0\u30E0\u5316\uFF08ASLR\uFF09"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    // id: 5, name: "法務" (Law)
+    // sub: 1, name: "サイバーセキュリティ基本法" (Cybersecurity Basic Act)
+    {
+      id: 96,
+      category: {
+        id: 5,
+        name: "\u6CD5\u52D9",
+        sub_id: 1,
+        sub_name: "\u30B5\u30A4\u30D0\u30FC\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u57FA\u672C\u6CD5"
+      },
+      question_text: "\u30B5\u30A4\u30D0\u30FC\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u57FA\u672C\u6CD5\u306E\u76EE\u7684\u3068\u3057\u3066\u6700\u3082\u9069\u5207\u306A\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u4F01\u696D\u306E\u4E0D\u6B63\u30A2\u30AF\u30BB\u30B9\u3092\u9632\u3050\u305F\u3081\u306E\u7F70\u5247\u3092\u5B9A\u3081\u308B\u3053\u3068",
+            "\u56FD\u304C\u30B5\u30A4\u30D0\u30FC\u653B\u6483\u306B\u5BFE\u3057\u3066\u53F8\u4EE4\u5854\u3068\u306A\u308B\u305F\u3081\u306E\u65BD\u7B56\u3092\u63A8\u9032\u3059\u308B\u3053\u3068",
+            "\u500B\u4EBA\u60C5\u5831\u306E\u9069\u5207\u306A\u53D6\u308A\u6271\u3044\u3092\u7FA9\u52D9\u4ED8\u3051\u308B\u3053\u3068",
+            "\u30BD\u30D5\u30C8\u30A6\u30A7\u30A2\u306E\u8106\u5F31\u6027\u60C5\u5831\u306E\u6D41\u901A\u3092\u4FC3\u9032\u3059\u308B\u3053\u3068"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 97,
+      category: {
+        id: 5,
+        name: "\u6CD5\u52D9",
+        sub_id: 1,
+        sub_name: "\u30B5\u30A4\u30D0\u30FC\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u57FA\u672C\u6CD5"
+      },
+      question_text: "\u30B5\u30A4\u30D0\u30FC\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u57FA\u672C\u6CD5\u306B\u57FA\u3065\u3044\u3066\u3001\u56FD\u306E\u30B5\u30A4\u30D0\u30FC\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u5BFE\u7B56\u306E\u53F8\u4EE4\u5854\u3068\u3057\u3066\u8A2D\u7F6E\u3055\u308C\u305F\u7D44\u7E54\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "IPA (\u60C5\u5831\u51E6\u7406\u63A8\u9032\u6A5F\u69CB)",
+            "JPCERT/CC (JPCERT\u30B3\u30FC\u30C7\u30A3\u30CD\u30FC\u30B7\u30E7\u30F3\u30BB\u30F3\u30BF\u30FC)",
+            "NISC (\u5185\u95A3\u30B5\u30A4\u30D0\u30FC\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30BB\u30F3\u30BF\u30FC)",
+            "JIPDEC (\u65E5\u672C\u60C5\u5831\u7D4C\u6E08\u793E\u4F1A\u63A8\u9032\u5354\u4F1A)"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    // sub: 2, name: "不正アクセス禁止法" (Unauthorized Access Prohibition Act)
+    {
+      id: 98,
+      category: {
+        id: 5,
+        name: "\u6CD5\u52D9",
+        sub_id: 2,
+        sub_name: "\u4E0D\u6B63\u30A2\u30AF\u30BB\u30B9\u7981\u6B62\u6CD5"
+      },
+      question_text: "\u4E0D\u6B63\u30A2\u30AF\u30BB\u30B9\u7981\u6B62\u6CD5\u304C\u898F\u5236\u3059\u308B\u884C\u70BA\u3068\u3057\u3066\u3001\u6700\u3082\u9069\u5207\u306A\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u4ED6\u4EBA\u306E\u30B3\u30F3\u30D4\u30E5\u30FC\u30BF\u3092\u64CD\u4F5C\u4E0D\u80FD\u306B\u3059\u308B\u30DE\u30EB\u30A6\u30A7\u30A2\u306E\u4F5C\u6210",
+            "\u6B63\u898F\u306E\u6A29\u9650\u306A\u304F\u3001\u30A2\u30AF\u30BB\u30B9\u5236\u5FA1\u6A5F\u80FD\u3092\u8D85\u3048\u3066\u30B3\u30F3\u30D4\u30E5\u30FC\u30BF\u306B\u4FB5\u5165\u3059\u308B\u3053\u3068",
+            "\u4F01\u696D\u306E\u6A5F\u5BC6\u60C5\u5831\u3092\u76D7\u3080\u305F\u3081\u306B\u3001\u540C\u696D\u4ED6\u793E\u306E\u793E\u54E1\u3092\u30B9\u30AB\u30A6\u30C8\u3059\u308B\u3053\u3068",
+            "\u30A4\u30F3\u30BF\u30FC\u30CD\u30C3\u30C8\u4E0A\u3067\u516C\u958B\u3055\u308C\u3066\u3044\u308B\u8106\u5F31\u6027\u60C5\u5831\u3092\u95B2\u89A7\u3059\u308B\u3053\u3068"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 99,
+      category: {
+        id: 5,
+        name: "\u6CD5\u52D9",
+        sub_id: 2,
+        sub_name: "\u4E0D\u6B63\u30A2\u30AF\u30BB\u30B9\u7981\u6B62\u6CD5"
+      },
+      question_text: "\u4E0D\u6B63\u30A2\u30AF\u30BB\u30B9\u7981\u6B62\u6CD5\u306B\u304A\u3044\u3066\u3001\u4E0D\u6B63\u30A2\u30AF\u30BB\u30B9\u884C\u70BA\u3092\u300E\u52A9\u9577\u3059\u308B\u884C\u70BA\u300F\u3068\u3057\u3066\u898F\u5236\u3055\u308C\u308B\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u4E0D\u6B63\u30A2\u30AF\u30BB\u30B9\u3092\u884C\u3046\u76EE\u7684\u3067\u3001\u4ED6\u4EBA\u306E\u5229\u7528\u8005ID\u3068\u30D1\u30B9\u30EF\u30FC\u30C9\u3092\u4E0D\u6B63\u306B\u5165\u624B\u3059\u308B\u3053\u3068",
+            "\u696D\u52D9\u4E0A\u6B63\u5F53\u306A\u7406\u7531\u306A\u304F\u3001\u4ED6\u4EBA\u306E\u5229\u7528\u8005ID\u3068\u30D1\u30B9\u30EF\u30FC\u30C9\u3092\u6B63\u898F\u306E\u5229\u7528\u8005\u4EE5\u5916\u306B\u63D0\u4F9B\u3059\u308B\u3053\u3068",
+            "\u30D5\u30A3\u30C3\u30B7\u30F3\u30B0\u30B5\u30A4\u30C8\u3092\u958B\u8A2D\u3057\u3001\u5229\u7528\u8005\u306B\u8B58\u5225\u7B26\u53F7\u306E\u5165\u529B\u3092\u4E0D\u6B63\u306B\u8981\u6C42\u3059\u308B\u3053\u3068",
+            "\u4E0D\u6B63\u306B\u5165\u624B\u3057\u305F\u4ED6\u4EBA\u306E\u5229\u7528\u8005ID\u3068\u30D1\u30B9\u30EF\u30FC\u30C9\u3092\u3001\u81EA\u5DF1\u306EPC\u306B\u4FDD\u7BA1\u3059\u308B\u3053\u3068"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    // sub: 3, name: "個人情報保護法" (Personal Information Protection Act)
+    {
+      id: 100,
+      category: {
+        id: 5,
+        name: "\u6CD5\u52D9",
+        sub_id: 3,
+        sub_name: "\u500B\u4EBA\u60C5\u5831\u4FDD\u8B77\u6CD5"
+      },
+      question_text: "\u500B\u4EBA\u60C5\u5831\u4FDD\u8B77\u6CD5\u306B\u304A\u3051\u308B\u300E\u500B\u4EBA\u60C5\u5831\u300F\u306E\u5B9A\u7FA9\u3068\u3057\u3066\u9069\u5207\u306A\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u4F01\u696D\u304C\u7BA1\u7406\u3057\u3066\u3044\u308B\u9867\u5BA2\u306B\u95A2\u3059\u308B\u60C5\u5831\u306B\u9650\u5B9A\u3055\u308C\u308B\u3002",
+            "\u500B\u4EBA\u304C\u79D8\u5BC6\u306B\u3057\u3066\u3044\u308B\u30D7\u30E9\u30A4\u30D0\u30B7\u30FC\u306B\u95A2\u3059\u308B\u60C5\u5831\u306B\u9650\u5B9A\u3055\u308C\u308B\u3002",
+            "\u751F\u5B58\u3057\u3066\u3044\u308B\u500B\u4EBA\u306B\u95A2\u3059\u308B\u60C5\u5831\u3067\u3042\u3063\u3066\u3001\u7279\u5B9A\u306E\u500B\u4EBA\u3092\u8B58\u5225\u3067\u304D\u308B\u3082\u306E\u3002",
+            "\u65E5\u672C\u56FD\u7C4D\u3092\u6709\u3059\u308B\u500B\u4EBA\u306B\u95A2\u3059\u308B\u60C5\u5831\u306B\u9650\u5B9A\u3055\u308C\u308B\u3002"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 101,
+      category: {
+        id: 5,
+        name: "\u6CD5\u52D9",
+        sub_id: 3,
+        sub_name: "\u500B\u4EBA\u60C5\u5831\u4FDD\u8B77\u6CD5"
+      },
+      question_text: "\u500B\u4EBA\u60C5\u5831\u53D6\u6271\u4E8B\u696D\u8005\u304C\u500B\u4EBA\u60C5\u5831\u3092\u7B2C\u4E09\u8005\u63D0\u4F9B\u3059\u308B\u969B\u306E\u539F\u5247\u7684\u306A\u65B9\u5F0F\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u30AA\u30D7\u30C8\u30A4\u30F3\u65B9\u5F0F\uFF08\u672C\u4EBA\u306E\u540C\u610F\u304C\u5FC5\u8981\uFF09",
+            "\u30AA\u30D7\u30C8\u30A2\u30A6\u30C8\u65B9\u5F0F\uFF08\u672C\u4EBA\u304C\u62D2\u5426\u3092\u901A\u77E5\u3057\u306A\u3044\u9650\u308A\u63D0\u4F9B\u53EF\u80FD\uFF09",
+            "\u4EFB\u610F\u63D0\u4F9B\u65B9\u5F0F\uFF08\u4E8B\u696D\u8005\u306E\u5224\u65AD\u3067\u63D0\u4F9B\u53EF\u80FD\uFF09",
+            "\u9650\u5B9A\u63D0\u4F9B\u65B9\u5F0F\uFF08\u7279\u5B9A\u306E\u6761\u4EF6\u3067\u63D0\u4F9B\u53EF\u80FD\uFF09"
+          ],
+          correct_answer_index: 0
+        }
+      }
+    },
+    {
+      id: 102,
+      category: {
+        id: 5,
+        name: "\u6CD5\u52D9",
+        sub_id: 3,
+        sub_name: "\u500B\u4EBA\u60C5\u5831\u4FDD\u8B77\u6CD5"
+      },
+      question_text: "\u500B\u4EBA\u60C5\u5831\u4FDD\u8B77\u6CD5\u306B\u304A\u3051\u308B\u30D7\u30E9\u30A4\u30D0\u30B7\u30FC\u5BFE\u7B56\u306E\u4E09\u3064\u306E\u67F1\u3092\u5BFE\u5FDC\u4ED8\u3051\u306A\u3055\u3044\u3002",
+      question_interaction: {
+        type: "Association",
+        data: [
+          { id: 1, left: "\u30D7\u30E9\u30A4\u30D0\u30B7\u30FC\u30D5\u30EC\u30FC\u30E0\u30EF\u30FC\u30AF", right: "\u500B\u4EBA\u60C5\u5831\u4FDD\u8B77\u5BFE\u7B56\u3092\u691C\u8A0E\u3059\u308B\u524D\u63D0\u3068\u306A\u308B\u6CD5\u5F8B\u3084\u30AC\u30A4\u30C9\u30E9\u30A4\u30F3\u3001\u6307\u4EE4" },
+          { id: 2, left: "\u30D7\u30E9\u30A4\u30D0\u30B7\u30FC\u5F71\u97FF\u8A55\u4FA1\uFF08PIA\uFF09", right: "\u7D44\u7E54\u3067\u306E\u500B\u4EBA\u60C5\u5831\u4FDD\u8B77\u304C\u3069\u306E\u3088\u3046\u306B\u904B\u7528\u3055\u308C\u3066\u3044\u308B\u304B\u3001\u30D7\u30E9\u30A4\u30D0\u30B7\u30FC\u8981\u4EF6\u3092\u6E80\u305F\u3057\u3066\u3044\u308B\u304B\u3092\u652F\u63F4\u3059\u308B\u30B7\u30B9\u30C6\u30E0" },
+          { id: 3, left: "\u30D7\u30E9\u30A4\u30D0\u30B7\u30FC\u30A2\u30FC\u30AD\u30C6\u30AF\u30C1\u30E3", right: "\u6280\u8853\u9762\u304B\u3089\u306E\u30D7\u30E9\u30A4\u30D0\u30B7\u30FC\u5F37\u5316\u7B56" }
+        ]
+      }
+    },
+    // sub: 4, name: "刑法" (Penal Code)
+    {
+      id: 103,
+      category: {
+        id: 5,
+        name: "\u6CD5\u52D9",
+        sub_id: 4,
+        sub_name: "\u5211\u6CD5"
+      },
+      question_text: "\u5211\u6CD5\u306B\u304A\u3044\u3066\u3001\u30B3\u30F3\u30D4\u30E5\u30FC\u30BF\u30B7\u30B9\u30C6\u30E0\u306B\u865A\u507D\u306E\u60C5\u5831\u3092\u4E0E\u3048\u3001\u4E0D\u6B63\u306A\u632F\u8FBC\u3084\u9001\u91D1\u3092\u3055\u305B\u308B\u884C\u70BA\u306B\u9069\u7528\u3055\u308C\u308B\u7F6A\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u96FB\u5B50\u8A08\u7B97\u6A5F\u640D\u58CA\u7B49\u696D\u52D9\u59A8\u5BB3\u7F6A",
+            "\u4E0D\u6B63\u6307\u4EE4\u96FB\u78C1\u7684\u8A18\u9332\u306B\u95A2\u3059\u308B\u7F6A\uFF08\u30A6\u30A4\u30EB\u30B9\u4F5C\u6210\u7F6A\uFF09",
+            "\u96FB\u5B50\u8A08\u7B97\u6A5F\u4F7F\u7528\u8A50\u6B3A\u7F6A",
+            "\u96FB\u78C1\u7684\u8A18\u9332\u4E0D\u6B63\u4F5C\u51FA\u53CA\u3073\u4F9B\u7528\u7F6A"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 104,
+      category: {
+        id: 5,
+        name: "\u6CD5\u52D9",
+        sub_id: 4,
+        sub_name: "\u5211\u6CD5"
+      },
+      question_text: "2011\u5E74\u306B\u5211\u6CD5\u306B\u8FFD\u52A0\u3055\u308C\u305F\u300E\u4E0D\u6B63\u6307\u4EE4\u96FB\u78C1\u7684\u8A18\u9332\u306B\u95A2\u3059\u308B\u7F6A\uFF08\u30A6\u30A4\u30EB\u30B9\u4F5C\u6210\u7F6A\uFF09\u300F\u306E\u4E3B\u306A\u76EE\u7684\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u30B3\u30F3\u30D4\u30E5\u30FC\u30BF\u30A6\u30A4\u30EB\u30B9\u306B\u611F\u67D3\u3057\u305F\u969B\u306E\u88AB\u5BB3\u56DE\u5FA9\u3092\u4FC3\u9032\u3059\u308B\u3053\u3068",
+            "\u30DE\u30EB\u30A6\u30A7\u30A2\u306A\u3069\u3001\u4E0D\u6B63\u306A\u6307\u793A\u3092\u4E0E\u3048\u308B\u96FB\u78C1\u7684\u8A18\u9332\u306E\u4F5C\u6210\u30FB\u63D0\u4F9B\u884C\u70BA\u3092\u51E6\u7F70\u3059\u308B\u3053\u3068",
+            "\u30B3\u30F3\u30D4\u30E5\u30FC\u30BF\u95A2\u9023\u8A50\u6B3A\u306E\u635C\u67FB\u3092\u5F37\u5316\u3059\u308B\u3053\u3068",
+            "\u30B5\u30A4\u30D0\u30FC\u653B\u6483\u306B\u3088\u308B\u56FD\u5BB6\u306E\u6A5F\u5BC6\u60C5\u5831\u6F0F\u3048\u3044\u3092\u9632\u3050\u3053\u3068"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    // sub: 5, name: "その他のセキュリティ関連法規・基準" (Other Security-Related Laws/Standards)
+    {
+      id: 105,
+      category: {
+        id: 5,
+        name: "\u6CD5\u52D9",
+        sub_id: 5,
+        sub_name: "\u305D\u306E\u4ED6\u306E\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u95A2\u9023\u6CD5\u898F\u30FB\u57FA\u6E96"
+      },
+      question_text: "\u5E83\u544A\u306A\u3069\u306E\u8FF7\u60D1\u30E1\u30FC\u30EB\u3092\u898F\u5236\u3057\u3001\u539F\u5247\u3068\u3057\u3066\u300E\u30AA\u30D7\u30C8\u30A4\u30F3\u65B9\u5F0F\u300F\u3092\u63A1\u7528\u3057\u3066\u3044\u308B\u6CD5\u5F8B\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u500B\u4EBA\u60C5\u5831\u4FDD\u8B77\u6CD5",
+            "\u7279\u5B9A\u5546\u53D6\u5F15\u6CD5",
+            "\u7279\u5B9A\u96FB\u5B50\u30E1\u30FC\u30EB\u6CD5",
+            "\u4E0D\u6B63\u30A2\u30AF\u30BB\u30B9\u7981\u6B62\u6CD5"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 106,
+      category: {
+        id: 5,
+        name: "\u6CD5\u52D9",
+        sub_id: 5,
+        sub_name: "\u305D\u306E\u4ED6\u306E\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u95A2\u9023\u6CD5\u898F\u30FB\u57FA\u6E96"
+      },
+      question_text: "\u7D4C\u6E08\u7523\u696D\u7701\u306A\u3069\u304C\u516C\u958B\u3057\u3066\u3044\u308B\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u306B\u95A2\u3059\u308B\u57FA\u6E96\u3068\u3057\u3066\u3001\u30B3\u30F3\u30D4\u30E5\u30FC\u30BF\u30A6\u30A4\u30EB\u30B9\u306B\u5BFE\u3059\u308B\u4E88\u9632\u3001\u767A\u898B\u3001\u99C6\u9664\u3001\u5FA9\u65E7\u306E\u305F\u3081\u306E\u5BFE\u7B56\u3092\u307E\u3068\u3081\u305F\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u30B3\u30F3\u30D4\u30E5\u30FC\u30BF\u4E0D\u6B63\u30A2\u30AF\u30BB\u30B9\u5BFE\u7B56\u57FA\u6E96",
+            "\u30BD\u30D5\u30C8\u30A6\u30A7\u30A2\u7B49\u8106\u5F31\u6027\u95A2\u9023\u60C5\u5831\u53D6\u6271\u57FA\u6E96",
+            "\u30B3\u30F3\u30D4\u30E5\u30FC\u30BF\u30A6\u30A4\u30EB\u30B9\u5BFE\u7B56\u57FA\u6E96",
+            "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u76E3\u67FB\u57FA\u6E96"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    // sub: 6, name: "知的財産権" (Intellectual Property Rights)
+    {
+      id: 107,
+      category: {
+        id: 5,
+        name: "\u6CD5\u52D9",
+        sub_id: 6,
+        sub_name: "\u77E5\u7684\u8CA1\u7523\u6A29"
+      },
+      question_text: "\u30BD\u30D5\u30C8\u30A6\u30A7\u30A2\u30D7\u30ED\u30B0\u30E9\u30E0\u3084\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9\u304C\u4FDD\u8B77\u306E\u5BFE\u8C61\u3068\u306A\u308B\u304C\u3001\u30A2\u30EB\u30B4\u30EA\u30BA\u30E0\u3084\u30A2\u30A4\u30C7\u30A2\u305D\u306E\u3082\u306E\u306F\u5BFE\u8C61\u3068\u306A\u3089\u306A\u3044\u6A29\u5229\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u7279\u8A31\u6A29",
+            "\u5B9F\u7528\u65B0\u6848\u6A29",
+            "\u8457\u4F5C\u6A29",
+            "\u5546\u6A19\u6A29"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 108,
+      category: {
+        id: 5,
+        name: "\u6CD5\u52D9",
+        sub_id: 6,
+        sub_name: "\u77E5\u7684\u8CA1\u7523\u6A29"
+      },
+      question_text: "\u4E0D\u6B63\u7AF6\u4E89\u9632\u6B62\u6CD5\u306B\u304A\u3044\u3066\u300E\u55B6\u696D\u79D8\u5BC6\u300F\u3068\u8A8D\u3081\u3089\u308C\u308B\u305F\u3081\u306E\u4E09\u3064\u306E\u8981\u4EF6\u3092\u5BFE\u5FDC\u4ED8\u3051\u306A\u3055\u3044\u3002",
+      question_interaction: {
+        type: "Association",
+        data: [
+          { id: 1, left: "\u79D8\u5BC6\u7BA1\u7406\u6027", right: "\u79D8\u5BC6\u3068\u3057\u3066\u7BA1\u7406\u3055\u308C\u3066\u3044\u308B\u3053\u3068" },
+          { id: 2, left: "\u6709\u7528\u6027", right: "\u6709\u7528\u3067\u3042\u308B\u3053\u3068" },
+          { id: 3, left: "\u975E\u516C\u77E5\u6027", right: "\u516C\u7136\u3068\u77E5\u3089\u308C\u3066\u3044\u306A\u3044\u3053\u3068" }
+        ]
+      }
+    },
+    {
+      id: 109,
+      category: {
+        id: 5,
+        name: "\u6CD5\u52D9",
+        sub_id: 6,
+        sub_name: "\u77E5\u7684\u8CA1\u7523\u6A29"
+      },
+      question_text: "\u65E5\u672C\u306B\u304A\u3051\u308B\u8457\u4F5C\u6A29\u306E\u4FDD\u8B77\u671F\u9593\u306F\u3001\u8457\u4F5C\u8005\u306E\u6B7B\u5F8C\uFF08\u307E\u305F\u306F\u516C\u8868\u5F8C\uFF09\u4F55\u5E74\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "30\u5E74",
+            "50\u5E74",
+            "70\u5E74",
+            "100\u5E74"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    // sub: 7, name: "労働関連・取引関連法規" (Labor/Transaction Related Laws)
+    {
+      id: 110,
+      category: {
+        id: 5,
+        name: "\u6CD5\u52D9",
+        sub_id: 7,
+        sub_name: "\u52B4\u50CD\u95A2\u9023\u30FB\u53D6\u5F15\u95A2\u9023\u6CD5\u898F"
+      },
+      question_text: "\u7279\u5B9A\u306E\u4ED5\u4E8B\u3092\u5B8C\u6210\u3055\u305B\u308B\u3053\u3068\u3092\u7D04\u675F\u3059\u308B\u5951\u7D04\u5F62\u614B\u3067\u3001\u4ED5\u4E8B\u306E\u5B8C\u6210\u306B\u5BFE\u3057\u3066\u8CAC\u4EFB\u3092\u8CA0\u3044\u3001\u52B4\u50CD\u8005\u3078\u306E\u6307\u63EE\u547D\u4EE4\u306F\u8ACB\u3051\u8CA0\u3063\u305F\u4F01\u696D\u304C\u884C\u3046\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u59D4\u4EFB\u5951\u7D04",
+            "\u6E96\u59D4\u4EFB\u5951\u7D04",
+            "\u8ACB\u8CA0\u5951\u7D04",
+            "\u6D3E\u9063\u5951\u7D04"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 111,
+      category: {
+        id: 5,
+        name: "\u6CD5\u52D9",
+        sub_id: 7,
+        sub_name: "\u52B4\u50CD\u95A2\u9023\u30FB\u53D6\u5F15\u95A2\u9023\u6CD5\u898F"
+      },
+      question_text: "\u4E0B\u8ACB\u4E8B\u696D\u8005\u306E\u5229\u76CA\u3092\u4FDD\u8B77\u3057\u3001\u4E0B\u8ACB\u53D6\u5F15\u306E\u516C\u6B63\u5316\u3092\u56F3\u308B\u305F\u3081\u306E\u6CD5\u5F8B\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u52B4\u50CD\u57FA\u6E96\u6CD5",
+            "\u52B4\u50CD\u8005\u6D3E\u9063\u6CD5",
+            "\u4E0B\u8ACB\u6CD5",
+            "\u6C11\u6CD5"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    // sub: 8, name: "その他の法律・ガイドライン・技術者倫理" (Other Laws/Guidelines/Engineer Ethics)
+    {
+      id: 112,
+      category: {
+        id: 5,
+        name: "\u6CD5\u52D9",
+        sub_id: 8,
+        sub_name: "\u305D\u306E\u4ED6\u306E\u6CD5\u5F8B\u30FB\u30AC\u30A4\u30C9\u30E9\u30A4\u30F3\u30FB\u6280\u8853\u8005\u502B\u7406"
+      },
+      question_text: "IT\u3092\u5229\u7528\u3059\u308B\u969B\u306E\u884C\u52D5\u898F\u7BC4\u3084\u3001\u60C5\u5831\u793E\u4F1A\u306B\u304A\u3051\u308B\u500B\u4EBA\u3084\u7D44\u7E54\u306E\u3042\u308B\u3079\u304D\u59FF\u3092\u793A\u3059\u6982\u5FF5\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u60C5\u5831\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3\u30DD\u30EA\u30B7\u30FC",
+            "\u30D7\u30E9\u30A4\u30D0\u30B7\u30FC\u30DD\u30EA\u30B7\u30FC",
+            "\u30B3\u30F3\u30D7\u30E9\u30A4\u30A2\u30F3\u30B9",
+            "\u60C5\u5831\u502B\u7406"
+          ],
+          correct_answer_index: 3
+        }
+      }
+    },
+    {
+      id: 113,
+      category: {
+        id: 5,
+        name: "\u6CD5\u52D9",
+        sub_id: 8,
+        sub_name: "\u305D\u306E\u4ED6\u306E\u6CD5\u5F8B\u30FB\u30AC\u30A4\u30C9\u30E9\u30A4\u30F3\u30FB\u6280\u8853\u8005\u502B\u7406"
+      },
+      question_text: "\u56FD\u7A0E\u95A2\u4FC2\u306E\u5E33\u7C3F\u66F8\u985E\u3092\u96FB\u5B50\u30C7\u30FC\u30BF\u3067\u4FDD\u5B58\u3059\u308B\u3053\u3068\u3092\u8A8D\u3081\u308B\u6CD5\u5F8B\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "e-\u6587\u66F8\u6CD5",
+            "\u96FB\u5B50\u5E33\u7C3F\u4FDD\u5B58\u6CD5",
+            "\u7279\u5B9A\u96FB\u5B50\u30E1\u30FC\u30EB\u6CD5",
+            "\u5546\u696D\u5E33\u7C3F\u898F\u5247"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 114,
+      category: {
+        id: 5,
+        name: "\u6CD5\u52D9",
+        sub_id: 8,
+        sub_name: "\u305D\u306E\u4ED6\u306E\u6CD5\u5F8B\u30FB\u30AC\u30A4\u30C9\u30E9\u30A4\u30F3\u30FB\u6280\u8853\u8005\u502B\u7406"
+      },
+      question_text: "\u96FB\u5B50\u7F72\u540D\u6CD5\u306B\u304A\u3044\u3066\u3001\u96FB\u5B50\u7F72\u540D\u306B\u8A8D\u3081\u3089\u308C\u3066\u3044\u308B\u52B9\u529B\u3068\u3057\u3066\u6700\u3082\u9069\u5207\u306A\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u96FB\u78C1\u7684\u8A18\u9332\u4EE5\u5916\u306E\u66F8\u9762\u3067\u306E\u7F72\u540D\u3068\u540C\u7B49\u306E\u52B9\u529B",
+            "\u6C11\u4E8B\u8A34\u8A1F\u6CD5\u306B\u304A\u3051\u308B\u62BC\u5370\u3068\u540C\u69D8\u306E\u52B9\u529B",
+            "\u96FB\u5B50\u5951\u7D04\u306B\u304A\u3051\u308B\u5408\u610F\u5F62\u6210\u306E\u6CD5\u7684\u5F37\u5236\u529B",
+            "\u516C\u7684\u306A\u8A8D\u8A3C\u5C40\u306B\u3088\u308B\u767A\u884C\u304C\u5FC5\u9808\u3067\u3042\u308B\u3068\u3044\u3046\u52B9\u529B"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    // sub: 9, name: "標準化関連" (Standardization Related)
+    {
+      id: 115,
+      category: {
+        id: 5,
+        name: "\u6CD5\u52D9",
+        sub_id: 9,
+        sub_name: "\u6A19\u6E96\u5316\u95A2\u9023"
+      },
+      question_text: "\u6A19\u6E96\u5316\u56E3\u4F53\u306B\u3088\u3063\u3066\u6B63\u5F0F\u306B\u5B9A\u3081\u3089\u308C\u305F\u6A19\u6E96\u898F\u683C\u3068\u3001\u516C\u5F0F\u306B\u306F\u6A19\u6E96\u5316\u3055\u308C\u3066\u3044\u306A\u3044\u304C\u4E8B\u5B9F\u4E0A\u5E83\u304F\u4F7F\u308F\u308C\u3066\u3044\u308B\u6A19\u6E96\u3092\u5BFE\u5FDC\u4ED8\u3051\u306A\u3055\u3044\u3002",
+      question_interaction: {
+        type: "Association",
+        data: [
+          { id: 1, left: "\u30C7\u30B8\u30E5\u30EC\u30B9\u30BF\u30F3\u30C0\u30FC\u30C9", right: "\u6A19\u6E96\u5316\u56E3\u4F53\u306B\u3088\u3063\u3066\u5B9A\u3081\u3089\u308C\u305F\u516C\u5F0F\u6A19\u6E96\u898F\u683C" },
+          { id: 2, left: "\u30C7\u30D5\u30A1\u30AF\u30C8\u30B9\u30BF\u30F3\u30C0\u30FC\u30C9", right: "\u516C\u7684\u306B\u6A19\u6E96\u5316\u3055\u308C\u3066\u3044\u306A\u3044\u304C\u4E8B\u5B9F\u4E0A\u306E\u898F\u683C\u30FB\u57FA\u6E96" }
+        ]
+      }
+    },
+    {
+      id: 116,
+      category: {
+        id: 5,
+        name: "\u6CD5\u52D9",
+        sub_id: 9,
+        sub_name: "\u6A19\u6E96\u5316\u95A2\u9023"
+      },
+      question_text: "\u65E5\u672C\u306E\u7523\u696D\u6A19\u6E96\u3092\u5B9A\u3081\u308B\u56FD\u306E\u6A19\u6E96\u5316\u56E3\u4F53\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "ISO (\u56FD\u969B\u6A19\u6E96\u5316\u6A5F\u69CB)",
+            "JIS (\u65E5\u672C\u7523\u696D\u898F\u683C)",
+            "ANSI (\u7C73\u56FD\u56FD\u5BB6\u898F\u683C\u5354\u4F1A)",
+            "IEC (\u56FD\u969B\u96FB\u6C17\u6A19\u6E96\u4F1A\u8B70)"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 117,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 1,
+        sub_name: "\u30B7\u30B9\u30C6\u30E0\u76E3\u67FB"
+      },
+      question_text: "\u30B7\u30B9\u30C6\u30E0\u76E3\u67FB\u306E\u4E3B\u306A\u76EE\u7684\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u4F01\u696D\u306E\u4F1A\u8A08\u5E33\u7C3F\u304C\u6CD5\u4EE4\u306B\u6E96\u62E0\u3057\u3066\u3044\u308B\u304B\u3092\u78BA\u8A8D\u3059\u308B\u3053\u3068",
+            "\u60C5\u5831\u30B7\u30B9\u30C6\u30E0\u304C\u9069\u6B63\u306B\u904B\u7528\u30FB\u6D3B\u7528\u3055\u308C\u3066\u3044\u308B\u304B\u3092\u8A55\u4FA1\u3059\u308B\u3053\u3068",
+            "\u5F93\u696D\u54E1\u306E\u52B4\u50CD\u6642\u9593\u304C\u9069\u5207\u306B\u7BA1\u7406\u3055\u308C\u3066\u3044\u308B\u304B\u3092\u691C\u8A3C\u3059\u308B\u3053\u3068",
+            "\u88FD\u54C1\u306E\u54C1\u8CEA\u304C\u9867\u5BA2\u306E\u8981\u6C42\u3092\u6E80\u305F\u3057\u3066\u3044\u308B\u304B\u3092\u78BA\u8A8D\u3059\u308B\u3053\u3068"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 118,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 1,
+        sub_name: "\u30B7\u30B9\u30C6\u30E0\u76E3\u67FB"
+      },
+      question_text: "\u30B7\u30B9\u30C6\u30E0\u76E3\u67FB\u306E\u6280\u6CD5\u3068\u305D\u306E\u8AAC\u660E\u3092\u5BFE\u5FDC\u4ED8\u3051\u306A\u3055\u3044\u3002",
+      question_interaction: {
+        type: "Association",
+        data: [
+          {
+            id: 1,
+            left: "ITF\uFF08Integrated Test Facility\uFF09\u6CD5",
+            right: "\u7A3C\u50CD\u4E2D\u306E\u30B7\u30B9\u30C6\u30E0\u306B\u30C6\u30B9\u30C8\u7528\u306E\u67B6\u7A7A\u53E3\u5EA7\u3092\u8A2D\u7F6E\u3057\u3001\u30B7\u30B9\u30C6\u30E0\u306E\u52D5\u4F5C\u3092\u691C\u8A3C\u3059\u308B\u3002"
+          },
+          {
+            id: 2,
+            left: "\u30C7\u30B8\u30BF\u30EB\u30D5\u30A9\u30EC\u30F3\u30B8\u30C3\u30AF\u30B9",
+            right: "\u8A3C\u62E0\u3092\u53CE\u96C6\u3057\u4FDD\u5168\u3059\u308B\u6280\u6CD5\u3067\u3001\u64CD\u4F5C\u8A18\u9332\u306A\u3069\u306E\u30ED\u30B0\u3092\u6539\u3056\u3093\u3055\u308C\u306A\u3044\u3088\u3046\u306B\u4FDD\u8B77\u3059\u308B\u3002"
+          },
+          {
+            id: 3,
+            left: "\u30DA\u30CD\u30C8\u30EC\u30FC\u30B7\u30E7\u30F3\u30C6\u30B9\u30C8\u6CD5",
+            right: "\u5BFE\u8C61\u306E\u30B7\u30B9\u30C6\u30E0\u306B\u5C02\u9580\u5BB6\u306B\u3088\u3063\u3066\u653B\u6483\u3092\u884C\u3044\u3001\u8106\u5F31\u6027\u304C\u306A\u3044\u304B\u3092\u78BA\u8A8D\u3059\u308B\u3002"
+          }
+        ]
+      }
+    },
+    {
+      id: 119,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 1,
+        sub_name: "\u30B7\u30B9\u30C6\u30E0\u76E3\u67FB"
+      },
+      question_text: "\u30B7\u30B9\u30C6\u30E0\u76E3\u67FB\u57FA\u6E96\u306F\u3001\u30B7\u30B9\u30C6\u30E0\u76E3\u67FB\u4EBA\u306E\u305F\u3081\u306E\u4F55\u3068\u3057\u3066\u69CB\u6210\u3055\u308C\u3066\u3044\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u6CD5\u5F8B",
+            "\u884C\u52D5\u898F\u7BC4",
+            "\u904B\u7528\u30DE\u30CB\u30E5\u30A2\u30EB",
+            "\u6280\u8853\u6A19\u6E96"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 120,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 1,
+        sub_name: "\u30B7\u30B9\u30C6\u30E0\u76E3\u67FB"
+      },
+      question_text: "\u30B7\u30B9\u30C6\u30E0\u76E3\u67FB\u306B\u304A\u3044\u3066\u3001\u4FE1\u983C\u6027\u3001\u5B89\u5168\u6027\u3001\u52B9\u7387\u6027\u3001\u6B63\u78BA\u6027\u3001\u7DB2\u7F85\u6027\u3092\u30B3\u30F3\u30C8\u30ED\u30FC\u30EB\u3059\u308B\u305F\u3081\u306B\u3001\u76E3\u67FB\u8A3C\u8DE1\u306F\u3069\u306E\u3088\u3046\u306A\u7279\u6027\u3092\u6301\u3064\u3079\u304D\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u4E3B\u89B3\u7684\u3067\u3042\u308B\u3053\u3068",
+            "\u90E8\u5206\u7684\u3067\u3042\u308B\u3053\u3068",
+            "\u5BA2\u89B3\u7684\u3067\u3001\u88CF\u4ED8\u3051\u304C\u3042\u308B\u3053\u3068",
+            "\u63A8\u6E2C\u306B\u57FA\u3065\u3044\u3066\u3044\u308B\u3053\u3068"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 121,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 1,
+        sub_name: "\u30B7\u30B9\u30C6\u30E0\u76E3\u67FB"
+      },
+      question_text: "\u30B7\u30B9\u30C6\u30E0\u76E3\u67FB\u4EBA\u304C\u76E3\u67FB\u5831\u544A\u66F8\u306E\u539F\u6848\u306B\u3064\u3044\u3066\u88AB\u76E3\u67FB\u90E8\u9580\u3068\u610F\u898B\u4EA4\u63DB\u3092\u884C\u3046\u6700\u3082\u9069\u5207\u306A\u76EE\u7684\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u76E3\u67FB\u4F9D\u983C\u8005\u306B\u76E3\u67FB\u5831\u544A\u66F8\u3092\u63D0\u51FA\u3059\u308B\u524D\u306B\u3001\u88AB\u76E3\u67FB\u90E8\u9580\u306B\u76E3\u67FB\u5831\u544A\u3092\u884C\u3046\u305F\u3081",
+            "\u76E3\u67FB\u5831\u544A\u66F8\u306B\u8A18\u8F09\u3059\u308B\u6539\u5584\u52E7\u544A\u306B\u3064\u3044\u3066\u3001\u88AB\u76E3\u67FB\u90E8\u9580\u306E\u8CAC\u4EFB\u8005\u306E\u627F\u8A8D\u3092\u5F97\u308B\u305F\u3081",
+            "\u76E3\u67FB\u5831\u544A\u66F8\u306B\u8A18\u8F09\u3059\u308B\u6307\u6458\u4E8B\u9805\u53CA\u3073\u6539\u5584\u52E7\u544A\u306B\u3064\u3044\u3066\u3001\u4E8B\u5B9F\u8AA4\u8A8D\u304C\u306A\u3044\u3053\u3068\u3092\u78BA\u8A8D\u3059\u308B\u305F\u3081",
+            "\u76E3\u67FB\u5831\u544A\u66F8\u306E\u8A18\u8F09\u5185\u5BB9\u306B\u95A2\u3057\u3066\u8ABF\u67FB\u304C\u4E0D\u8DB3\u3057\u3066\u3044\u308B\u4E8B\u9805\u3092\u88AB\u76E3\u67FB\u90E8\u9580\u306B\u53E3\u982D\u3067\u6307\u793A\u3059\u308B\u305F\u3081"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 122,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 2,
+        sub_name: "\u5185\u90E8\u7D71\u5236"
+      },
+      question_text: "\u300C\u5185\u90E8\u7D71\u5236\u300D\u3068\u306F\u3001\u4F01\u696D\u306A\u3069\u304C\u81EA\u3089\u69CB\u7BC9\u3057\u904B\u7528\u3059\u308B\u5065\u5168\u304B\u3064\u52B9\u7387\u7684\u306A\u7D44\u7E54\u904B\u55B6\u306E\u305F\u3081\u306E\u4F53\u5236\u3092\u6307\u3057\u307E\u3059\u3002\u3053\u306E\u5185\u90E8\u7D71\u5236\u306B\u304A\u3044\u3066\u3001\u7D4C\u55B6\u8005\u304C\u6700\u7D42\u7684\u306A\u8CAC\u4EFB\u3092\u8CA0\u3046\u306E\u306F\u306A\u305C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u682A\u4E3B\u304C\u65E5\u3005\u306E\u904B\u7528\u306B\u8CAC\u4EFB\u3092\u6301\u3064\u304B\u3089",
+            "\u76E3\u67FB\u5F79\u304C\u7D4C\u55B6\u306E\u9069\u6B63\u6027\u3092\u8A55\u4FA1\u3059\u308B\u304B\u3089",
+            "\u696D\u52D9\u62C5\u5F53\u8005\u304C\u5177\u4F53\u7684\u306A\u696D\u52D9\u3092\u9042\u884C\u3059\u308B\u8CAC\u4EFB\u3092\u6301\u3064\u304B\u3089",
+            "\u7D4C\u55B6\u8005\u304C\u4F01\u696D\u306E\u696D\u52D9\u65B9\u91DD\u3092\u5B9A\u3081\u3001\u5185\u90E8\u7D71\u5236\u30B7\u30B9\u30C6\u30E0\u3092\u69CB\u7BC9\u3059\u308B\u7ACB\u5834\u306B\u3042\u308B\u304B\u3089"
+          ],
+          correct_answer_index: 3
+        }
+      }
+    },
+    {
+      id: 123,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 2,
+        sub_name: "\u5185\u90E8\u7D71\u5236"
+      },
+      question_text: "\u5185\u90E8\u7D71\u5236\u306E\u57FA\u672C\u7684\u8981\u7D20\u306E\u4E00\u3064\u3067\u3042\u308B\u300C\u7D71\u5236\u6D3B\u52D5\u300D\u306B\u8A72\u5F53\u3059\u308B\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u7D4C\u55B6\u76EE\u7684\u3092\u9054\u6210\u3059\u308B\u305F\u3081\u306E\u7D4C\u55B6\u65B9\u91DD\u53CA\u3073\u7D4C\u55B6\u6226\u7565\u306E\u7B56\u5B9A",
+            "\u500B\u4EBA\u60C5\u5831\u4FDD\u8B77\u306B\u95A2\u3059\u308B\u8105\u5A01\u3068\u8106\u5F31\u6027\u306E\u5206\u6790",
+            "\u53D7\u6CE8\u304B\u3089\u51FA\u8377\u306B\u81F3\u308B\u696D\u52D9\u30D7\u30ED\u30BB\u30B9\u306B\u7D44\u307F\u8FBC\u307E\u308C\u305F\u51E6\u7406\u7D50\u679C\u306E\u691C\u8A3C",
+            "\u5B9A\u671F\u7684\u306B\u8A08\u753B\u3057\u3066\u5B9F\u65BD\u3059\u308B\u5185\u90E8\u696D\u52D9\u76E3\u67FB"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 124,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 3,
+        sub_name: "\u30B5\u30FC\u30D3\u30B9\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8"
+      },
+      question_text: "ITIL\xAE\u3067\u306F\u3001\u30B5\u30FC\u30D3\u30B9\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8\u3092\u3069\u306E\u3088\u3046\u306B\u5B9A\u7FA9\u3057\u3066\u3044\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u30B7\u30B9\u30C6\u30E0\u3092\u5C0E\u5165\u30FB\u69CB\u7BC9\u3059\u308B\u305F\u3081\u306E\u6280\u8853\u7684\u306A\u5C02\u9580\u80FD\u529B\u306E\u96C6\u307E\u308A",
+            "\u9867\u5BA2\u306B\u5BFE\u3057\u3001\u30B5\u30FC\u30D3\u30B9\u306E\u5F62\u3067\u4FA1\u5024\u3092\u63D0\u4F9B\u3059\u308B\u7D44\u7E54\u306E\u5C02\u9580\u80FD\u529B\u306E\u96C6\u307E\u308A",
+            "IT\u8CC7\u7523\u3092\u52B9\u7387\u7684\u306B\u7BA1\u7406\u3059\u308B\u305F\u3081\u306E\u6280\u8853\u7684\u30FB\u7D44\u7E54\u7684\u306A\u624B\u6CD5\u306E\u7DCF\u79F0",
+            "\u30B5\u30FC\u30D3\u30B9\u969C\u5BB3\u3092\u8FC5\u901F\u306B\u5FA9\u65E7\u3059\u308B\u305F\u3081\u306E\u624B\u9806\u306E\u4F53\u7CFB"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 125,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 3,
+        sub_name: "\u30B5\u30FC\u30D3\u30B9\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8"
+      },
+      question_text: "\u30B5\u30FC\u30D3\u30B9\u63D0\u4F9B\u8005\u3068\u59D4\u8A17\u8005\u3068\u306E\u9593\u3067\u3001\u63D0\u4F9B\u3059\u308B\u30B5\u30FC\u30D3\u30B9\u306E\u5185\u5BB9\u3068\u7BC4\u56F2\u3001\u54C1\u8CEA\u306B\u5BFE\u3059\u308B\u8981\u6C42\u4E8B\u9805\u3092\u660E\u78BA\u306B\u3057\u3001\u9054\u6210\u3067\u304D\u306A\u304B\u3063\u305F\u5834\u5408\u306E\u30EB\u30FC\u30EB\u3082\u542B\u3081\u3066\u5408\u610F\u3057\u3066\u304A\u304F\u3053\u3068\u306F\u4F55\u3068\u547C\u3070\u308C\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "OLA (Operational Level Agreement)",
+            "SLA (Service Level Agreement)",
+            "KPI (Key Performance Indicator)",
+            "BCP (Business Continuity Plan)"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 126,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 3,
+        sub_name: "\u30B5\u30FC\u30D3\u30B9\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8"
+      },
+      question_text: "\u30B5\u30FC\u30D3\u30B9\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8\u30B7\u30B9\u30C6\u30E0\u306B\u304A\u3044\u3066\u3001\u30B5\u30FC\u30D3\u30B9\u3084\u88FD\u54C1\u3092\u69CB\u6210\u3059\u308B\u3059\u3079\u3066\u306E\u69CB\u6210\u54C1\u76EE\uFF08CI\uFF09\u3092\u8B58\u5225\u3057\u3001\u7DAD\u6301\u7BA1\u7406\u3059\u308B\u6D3B\u52D5\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u8CC7\u7523\u7BA1\u7406",
+            "\u30B5\u30FC\u30D3\u30B9\u30AB\u30BF\u30ED\u30B0\u7BA1\u7406",
+            "\u69CB\u6210\u7BA1\u7406",
+            "\u9700\u8981\u7BA1\u7406"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 127,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 4,
+        sub_name: "\u30B5\u30FC\u30D3\u30B9\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8\u30B7\u30B9\u30C6\u30E0\u306E\u8A08\u753B\u53CA\u3073\u904B\u7528"
+      },
+      question_text: "IT\u30B5\u30FC\u30D3\u30B9\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8\u306B\u304A\u3051\u308B\u30A4\u30F3\u30B7\u30C7\u30F3\u30C8\u7BA1\u7406\u306E\u6700\u3082\u9069\u5207\u306A\u76EE\u7684\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u30A4\u30F3\u30B7\u30C7\u30F3\u30C8\u306E\u539F\u56E0\u3092\u5206\u6790\u3057\u3001\u6839\u672C\u7684\u306A\u539F\u56E0\u3092\u89E3\u6C7A\u3059\u308B\u3053\u3068\u306B\u3088\u3063\u3066\u3001\u30A4\u30F3\u30B7\u30C7\u30F3\u30C8\u306E\u518D\u767A\u3092\u9632\u6B62\u3059\u308B\u3002",
+            "\u30B5\u30FC\u30D3\u30B9\u306B\u5BFE\u3059\u308B\u5168\u3066\u306E\u5909\u66F4\u3092\u4E00\u5143\u7684\u306B\u7BA1\u7406\u3059\u308B\u3053\u3068\u306B\u3088\u3063\u3066\u3001\u5909\u66F4\u306B\u4F34\u3046\u969C\u5BB3\u767A\u751F\u306A\u3069\u306E\u30EA\u30B9\u30AF\u3092\u4F4E\u6E1B\u3059\u308B\u3002",
+            "\u30B5\u30FC\u30D3\u30B9\u3092\u69CB\u6210\u3059\u308B\u5168\u3066\u306E\u6A5F\u5668\u3084\u30BD\u30D5\u30C8\u30A6\u30A7\u30A2\u306B\u95A2\u3059\u308B\u60C5\u5831\u3092\u6700\u65B0\u3001\u6B63\u78BA\u306B\u7DAD\u6301\u7BA1\u7406\u3059\u308B\u3002",
+            "\u30A4\u30F3\u30B7\u30C7\u30F3\u30C8\u306B\u3088\u3063\u3066\u4E2D\u65AD\u3057\u3066\u3044\u308B\u30B5\u30FC\u30D3\u30B9\u3092\u53EF\u80FD\u306A\u9650\u308A\u8FC5\u901F\u306B\u56DE\u5FA9\u3059\u308B\u3002"
+          ],
+          correct_answer_index: 3
+        }
+      }
+    },
+    {
+      id: 128,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 4,
+        sub_name: "\u30B5\u30FC\u30D3\u30B9\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8\u30B7\u30B9\u30C6\u30E0\u306E\u8A08\u753B\u53CA\u3073\u904B\u7528"
+      },
+      question_text: "\u30B5\u30FC\u30D3\u30B9\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8\u30B7\u30B9\u30C6\u30E0\u306B\u304A\u3051\u308B\u554F\u984C\u7BA1\u7406\u306E\u6D3B\u52D5\u3068\u3057\u3066\u9069\u5207\u306A\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u540C\u3058\u30A4\u30F3\u30B7\u30C7\u30F3\u30C8\u304C\u767A\u751F\u3057\u306A\u3044\u3088\u3046\u306B\u3001\u554F\u984C\u306F\u6839\u672C\u539F\u56E0\u3092\u7279\u5B9A\u3057\u3066\u5FC5\u305A\u6052\u4E45\u7684\u306B\u89E3\u6C7A\u3059\u308B\u3002",
+            "\u540C\u3058\u554F\u984C\u304C\u91CD\u8907\u3057\u3066\u7BA1\u7406\u3055\u308C\u306A\u3044\u3088\u3046\u306B\u3001\u65E2\u77E5\u306E\u8AA4\u308A\u306F\u8A18\u9332\u3057\u306A\u3044\u3002",
+            "\u554F\u984C\u7BA1\u7406\u306E\u8CA0\u8377\u3092\u4F4E\u6E1B\u3059\u308B\u305F\u3081\u306B\u3001\u89E3\u6C7A\u3057\u305F\u554F\u984C\u306F\u76F4\u3061\u306B\u554F\u984C\u7BA1\u7406\u306E\u5BFE\u8C61\u304B\u3089\u9664\u5916\u3059\u308B\u3002",
+            "\u554F\u984C\u3092\u7279\u5B9A\u3059\u308B\u305F\u3081\u306B\u3001\u30A4\u30F3\u30B7\u30C7\u30F3\u30C8\u306E\u30C7\u30FC\u30BF\u53CA\u3073\u50BE\u5411\u3092\u5206\u6790\u3059\u308B\u3002"
+          ],
+          correct_answer_index: 3
+        }
+      }
+    },
+    {
+      id: 129,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 4,
+        sub_name: "\u30B5\u30FC\u30D3\u30B9\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8\u30B7\u30B9\u30C6\u30E0\u306E\u8A08\u753B\u53CA\u3073\u904B\u7528"
+      },
+      question_text: "\u30A4\u30F3\u30B7\u30C7\u30F3\u30C8\u7BA1\u7406\u3068\u554F\u984C\u7BA1\u7406\u306E\u4E3B\u306A\u9055\u3044\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u30A4\u30F3\u30B7\u30C7\u30F3\u30C8\u7BA1\u7406\u306F\u6839\u672C\u539F\u56E0\u306E\u7279\u5B9A\u306B\u7126\u70B9\u3092\u5F53\u3066\u3001\u554F\u984C\u7BA1\u7406\u306F\u30B5\u30FC\u30D3\u30B9\u306E\u8FC5\u901F\u306A\u5FA9\u65E7\u306B\u7126\u70B9\u3092\u5F53\u3066\u308B\u3002",
+            "\u30A4\u30F3\u30B7\u30C7\u30F3\u30C8\u7BA1\u7406\u306F\u8A08\u753B\u5916\u306E\u4E2D\u65AD\u3078\u306E\u5BFE\u51E6\u3001\u554F\u984C\u7BA1\u7406\u306F\u6839\u672C\u539F\u56E0\u306E\u7A76\u660E\u306B\u7126\u70B9\u3092\u5F53\u3066\u308B\u3002",
+            "\u30A4\u30F3\u30B7\u30C7\u30F3\u30C8\u7BA1\u7406\u306F\u4E88\u9632\u7B56\u306E\u5B9F\u65BD\u3001\u554F\u984C\u7BA1\u7406\u306F\u4E8B\u5F8C\u5BFE\u5FDC\u306B\u7126\u70B9\u3092\u5F53\u3066\u308B\u3002",
+            "\u30A4\u30F3\u30B7\u30C7\u30F3\u30C8\u7BA1\u7406\u306F\u500B\u5225\u306E\u969C\u5BB3\u3092\u6271\u3044\u3001\u554F\u984C\u7BA1\u7406\u306F\u5168\u3066\u306EIT\u30B5\u30FC\u30D3\u30B9\u3092\u7DB2\u7F85\u3059\u308B\u3002"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 130,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 5,
+        sub_name: "\u30D1\u30D5\u30A9\u30FC\u30DE\u30F3\u30B9\u8A55\u4FA1\u53CA\u3073\u6539\u5584"
+      },
+      question_text: "JIS Q 27000:2019\u306B\u304A\u3044\u3066\u3001\u4E0D\u9069\u5408\u306E\u539F\u56E0\u3092\u9664\u53BB\u3057\u3001\u518D\u767A\u3092\u9632\u6B62\u3059\u308B\u305F\u3081\u306E\u3082\u306E\u3068\u3057\u3066\u5B9A\u7FA9\u3055\u308C\u3066\u3044\u308B\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u7D99\u7D9A\u7684\u6539\u5584",
+            "\u4FEE\u6B63",
+            "\u662F\u6B63\u51E6\u7F6E",
+            "\u30EA\u30B9\u30AF\u30A2\u30BB\u30B9\u30E1\u30F3\u30C8"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 131,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 5,
+        sub_name: "\u30D1\u30D5\u30A9\u30FC\u30DE\u30F3\u30B9\u8A55\u4FA1\u53CA\u3073\u6539\u5584"
+      },
+      question_text: "ITIL\xAE\u306E\u7D99\u7D9A\u7684\u30B5\u30FC\u30D3\u30B9\u6539\u5584\u306B\u304A\u3051\u308B\u300C7\u30B9\u30C6\u30C3\u30D7\u306E\u6539\u5584\u30D7\u30ED\u30BB\u30B9\u300D\u306E\u6700\u7D42\u30B9\u30C6\u30C3\u30D7\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u30C7\u30FC\u30BF\u3092\u53CE\u96C6\u3059\u308B",
+            "\u60C5\u5831\u3092\u63D0\u793A\u3057\u3066\u5229\u7528\u3059\u308B",
+            "\u6539\u5584\u306E\u6226\u7565\u3092\u8B58\u5225\u3059\u308B",
+            "\u6539\u5584\u3092\u5B9F\u65BD\u3059\u308B"
+          ],
+          correct_answer_index: 3
+        }
+      }
+    },
+    {
+      id: 132,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 5,
+        sub_name: "\u30D1\u30D5\u30A9\u30FC\u30DE\u30F3\u30B9\u8A55\u4FA1\u53CA\u3073\u6539\u5584"
+      },
+      question_text: "\u30D1\u30D5\u30A9\u30FC\u30DE\u30F3\u30B9\u8A55\u4FA1\u306B\u304A\u3044\u3066\u3001ITIL\xAE\u3067\u5B9A\u7FA9\u3055\u308C\u3066\u3044\u308B\u30B5\u30FC\u30D3\u30B9\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8\u30B7\u30B9\u30C6\u30E0\u306E\u9069\u5207\u6027\u3001\u59A5\u5F53\u6027\u53CA\u3073\u6709\u52B9\u6027\u3092\u7D99\u7D9A\u7684\u306B\u6539\u5584\u3059\u308B\u305F\u3081\u306E\u8A55\u4FA1\u57FA\u6E96\u3068\u3057\u3066\u7528\u3044\u3089\u308C\u308B\u6307\u6A19\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "SLA",
+            "RTO",
+            "KPI",
+            "WBS"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 133,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 6,
+        sub_name: "\u30B5\u30FC\u30D3\u30B9\u306E\u904B\u7528"
+      },
+      question_text: "\u30C7\u30A3\u30B6\u30B9\u30BF\u30EA\u30AB\u30D0\u30EA\u3092\u8A08\u753B\u3059\u308B\u969B\u306E\u691C\u8A0E\u9805\u76EE\u306E\u4E00\u3064\u3067\u3042\u308BRPO\uFF08Recovery Point Objective\uFF09\u306F\u3001\u4F55\u3092\u610F\u5473\u3057\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u696D\u52D9\u306E\u7D99\u7D9A\u6027\u3092\u7DAD\u6301\u3059\u308B\u305F\u3081\u306B\u5FC5\u8981\u306A\u4EBA\u54E1\u8A08\u753B\u3068\u8981\u6C42\u3055\u308C\u308B\u4EA4\u4EE3\u8981\u54E1\u306E\u30B9\u30AD\u30EB\u3092\u793A\u3059\u6307\u6A19",
+            "\u707D\u5BB3\u767A\u751F\u6642\u304B\u3089\u3069\u306E\u304F\u3089\u3044\u306E\u6642\u9593\u4EE5\u5185\u306B\u30B7\u30B9\u30C6\u30E0\u3092\u518D\u7A3C\u50CD\u3057\u306A\u3051\u308C\u3070\u306A\u3089\u306A\u3044\u304B\u3092\u793A\u3059\u6307\u6A19",
+            "\u707D\u5BB3\u767A\u751F\u6642\u306B\u696D\u52D9\u3092\u4EE3\u66FF\u3059\u308B\u9060\u9694\u5730\u306E\u30B7\u30B9\u30C6\u30E0\u74B0\u5883\u3068\u3001\u901A\u5E38\u7A3C\u50CD\u3057\u3066\u3044\u308B\u30B7\u30B9\u30C6\u30E0\u74B0\u5883\u3068\u306E\u8A2D\u5099\u6295\u8CC7\u306E\u6BD4\u7387\u3092\u793A\u3059\u6307\u6A19",
+            "\u707D\u5BB3\u767A\u751F\u524D\u306E\u3069\u306E\u6642\u70B9\u306E\u72B6\u614B\u307E\u3067\u30C7\u30FC\u30BF\u3092\u5FA9\u65E7\u3057\u306A\u3051\u308C\u3070\u306A\u3089\u306A\u3044\u304B\u3092\u793A\u3059\u6307\u6A19"
+          ],
+          correct_answer_index: 3
+        }
+      }
+    },
+    {
+      id: 134,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 6,
+        sub_name: "\u30B5\u30FC\u30D3\u30B9\u306E\u904B\u7528"
+      },
+      question_text: "\u4E8B\u696D\u7D99\u7D9A\u8A08\u753B\uFF08BCP\uFF09\u306E\u76E3\u67FB\u7D50\u679C\u3068\u3057\u3066\u3001\u9069\u5207\u306A\u72B6\u6CC1\u3068\u5224\u65AD\u3055\u308C\u308B\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u5F93\u696D\u54E1\u306E\u7DCA\u6025\u9023\u7D61\u5148\u30EA\u30B9\u30C8\u3092\u4F5C\u6210\u3057\u3001\u6700\u65B0\u7248\u306B\u66F4\u65B0\u3057\u3066\u3044\u308B\u3002",
+            "\u91CD\u8981\u66F8\u985E\u306F\u8907\u88FD\u305B\u305A\u306B1\u304B\u6240\u3067\u96C6\u4E2D\u4FDD\u7BA1\u3057\u3066\u3044\u308B\u3002",
+            "\u5168\u3066\u306E\u696D\u52D9\u306B\u3064\u3044\u3066\u3001\u512A\u5148\u9806\u4F4D\u306A\u3057\u306B\u540C\u4E00\u6C34\u6E96\u306EBCP\u3092\u7B56\u5B9A\u3057\u3066\u3044\u308B\u3002",
+            "\u5E73\u6642\u306B\u306FBCP\u3092\u5F93\u696D\u54E1\u306B\u975E\u516C\u958B\u3068\u3057\u3066\u3044\u308B\u3002"
+          ],
+          correct_answer_index: 0
+        }
+      }
+    },
+    {
+      id: 135,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 6,
+        sub_name: "\u30B5\u30FC\u30D3\u30B9\u306E\u904B\u7528"
+      },
+      question_text: "\u30B5\u30FC\u30D3\u30B9\u30C7\u30B9\u30AF\u304C\u62C5\u3046\u4E3B\u8981\u306A\u5F79\u5272\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u6280\u8853\u7684\u306A\u554F\u984C\u89E3\u6C7A\u306E\u5C02\u9580\u5BB6\u30C1\u30FC\u30E0\u3068\u3057\u3066\u3001\u5168\u3066\u306E\u30A4\u30F3\u30B7\u30C7\u30F3\u30C8\u3092\u76F4\u63A5\u89E3\u6C7A\u3059\u308B\u3002",
+            "\u7D44\u7E54\u5185\u306E\u5168\u3066\u306EIT\u8CC7\u7523\u306E\u8CFC\u5165\u3068\u7BA1\u7406\u3092\u62C5\u5F53\u3059\u308B\u3002",
+            "\u5358\u4E00\u7A93\u53E3\uFF08SPOC\uFF09\u3068\u3057\u3066\u3001\u30E6\u30FC\u30B6\u30FC\u304B\u3089\u306E\u554F\u3044\u5408\u308F\u305B\u3092\u53D7\u3051\u4ED8\u3051\u3001\u4ED6\u306E\u90E8\u7F72\u306B\u30A8\u30B9\u30AB\u30EC\u30FC\u30B7\u30E7\u30F3\u3059\u308B\u3002",
+            "\u30B5\u30FC\u30D3\u30B9\u30EC\u30D9\u30EB\u5408\u610F\uFF08SLA\uFF09\u306E\u7B56\u5B9A\u3068\u76E3\u8996\u3092\u884C\u3046\u3002"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 136,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 7,
+        sub_name: "\u30D5\u30A1\u30B7\u30EA\u30C6\u30A3\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8"
+      },
+      question_text: "\u30D5\u30A1\u30B7\u30EA\u30C6\u30A3\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8\u306E\u4E3B\u306A\u7126\u70B9\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u30BD\u30D5\u30C8\u30A6\u30A7\u30A2\u306E\u958B\u767A\u3068\u4FDD\u5B88",
+            "IT\u30B5\u30FC\u30D3\u30B9\u306E\u54C1\u8CEA\u7BA1\u7406",
+            "\u8A2D\u5099\u306E\u7BA1\u7406\u3068\u6700\u9069\u5316",
+            "\u5F93\u696D\u54E1\u306E\u30D1\u30D5\u30A9\u30FC\u30DE\u30F3\u30B9\u8A55\u4FA1"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 137,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 7,
+        sub_name: "\u30D5\u30A1\u30B7\u30EA\u30C6\u30A3\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8"
+      },
+      question_text: "\u505C\u96FB\u6642\u306B\u6570\u5206\u9593\u96FB\u529B\u3092\u63D0\u4F9B\u3057\u3001\u305D\u306E\u5F8C\u306B\u81EA\u5BB6\u767A\u96FB\u88C5\u7F6E\u304C\u5FC5\u8981\u3068\u306A\u308B\u8A2D\u5099\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "PDU (Power Distribution Unit)",
+            "UPS (Uninterruptible Power Supply)",
+            "HVAC (Heating, Ventilation, and Air Conditioning)",
+            "RAID (Redundant Array of Independent Disks)"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 138,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 8,
+        sub_name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8"
+      },
+      question_text: "\u7D44\u7E54\u304C\u5B9F\u65BD\u3059\u308B\u4F5C\u696D\u3092\u300C\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u300D\u3068\u300C\u5B9A\u5E38\u696D\u52D9\u300D\u306E\u4E8C\u3064\u306B\u985E\u5225\u3059\u308B\u3068\u304D\u3001\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306B\u8A72\u5F53\u3059\u308B\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u4F01\u696D\u306E\u7D4C\u7406\u90E8\u9580\u304C\u884C\u3063\u3066\u3044\u308B\u3001\u6708\u6B21\u30FB\u534A\u671F\u30FB\u5E74\u6B21\u306E\u6C7A\u7B97\u51E6\u7406",
+            "\u91D1\u878D\u6A5F\u95A2\u306E\u5404\u652F\u5E97\u304C\u884C\u3063\u3066\u3044\u308B\u3001\u500B\u4EBA\u9867\u5BA2\u5411\u3051\u306E\u4F4F\u5B85\u30ED\u30FC\u30F3\u306E\u8CB8\u4ED8\u3051",
+            "\u7CBE\u5BC6\u6A5F\u5668\u306E\u88FD\u9020\u8CA9\u58F2\u4F01\u696D\u304C\u884C\u3063\u3066\u3044\u308B\u3001\u88FD\u54C1\u306E\u53D6\u6271\u65B9\u6CD5\u306B\u95A2\u3059\u308B\u554F\u5408\u305B\u3078\u306E\u5BFE\u5FDC",
+            "\u5730\u65B9\u81EA\u6CBB\u4F53\u304C\u884C\u3063\u3066\u3044\u308B\u3001\u8001\u673D\u5316\u3057\u305F\u5E81\u820E\u306E\u5EFA\u66FF\u3048"
+          ],
+          correct_answer_index: 3
+        }
+      }
+    },
+    {
+      id: 139,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 8,
+        sub_name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8"
+      },
+      question_text: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u30E9\u30A4\u30D5\u30B5\u30A4\u30AF\u30EB\u306B\u304A\u3044\u3066\u3001\u30B3\u30B9\u30C8\u3068\u8981\u54E1\u6570\u304C\u6700\u3082\u591A\u304F\u306A\u308B\u6642\u671F\u306F\u3044\u3064\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u958B\u59CB\u6642",
+            "\u7D44\u7E54\u7DE8\u6210\u3068\u6E96\u5099\u6BB5\u968E",
+            "\u4F5C\u696D\u5B9F\u65BD\u6642",
+            "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u7D42\u7D50\u6642"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 140,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 8,
+        sub_name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8"
+      },
+      question_text: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u30B9\u30C6\u30FC\u30AF\u30DB\u30EB\u30C0\u306E\u5F71\u97FF\u529B\u3001\u30EA\u30B9\u30AF\u3001\u4E0D\u78BA\u5B9F\u6027\u304C\u6700\u5927\u306B\u306A\u308B\u306E\u306F\u3044\u3064\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u958B\u59CB\u6642",
+            "\u4F5C\u696D\u5B9F\u65BD\u6642",
+            "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u7D42\u7D50\u6642",
+            "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u5909\u66F4\u30B3\u30B9\u30C8\u304C\u6700\u5927\u306B\u306A\u308B\u6642"
+          ],
+          correct_answer_index: 0
+        }
+      }
+    },
+    {
+      id: 141,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 9,
+        sub_name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u7D71\u5408"
+      },
+      question_text: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u304C\u6B63\u5F0F\u306B\u8A8D\u53EF\u3055\u308C\u308B\u305F\u3081\u306B\u767A\u884C\u3055\u308C\u308B\u6587\u66F8\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u8A08\u753B\u66F8",
+            "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u61B2\u7AE0",
+            "\u30B9\u30B3\u30FC\u30D7\u8A18\u8FF0\u66F8",
+            "WBS"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 142,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 10,
+        sub_name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u30B9\u30C6\u30FC\u30AF\u30DB\u30EB\u30C0"
+      },
+      question_text: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306B\u304A\u3051\u308B\u300C\u30B9\u30C6\u30FC\u30AF\u30DB\u30EB\u30C0\u300D\u3068\u306F\u3001\u3069\u306E\u3088\u3046\u306A\u500B\u4EBA\u3084\u7D44\u7E54\u3092\u6307\u3057\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u8CBB\u7528\u3092\u8CA0\u62C5\u3059\u308B\u30B9\u30DD\u30F3\u30B5\u30FC\u306E\u307F",
+            "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u5B9F\u884C\u3084\u5B8C\u4E86\u306B\u3088\u3063\u3066\u5229\u76CA\u306B\u30D7\u30E9\u30B9\u307E\u305F\u306F\u30DE\u30A4\u30CA\u30B9\u306E\u5F71\u97FF\u3092\u53D7\u3051\u308B\u500B\u4EBA\u3084\u7D44\u7E54",
+            "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u30C1\u30FC\u30E0\u306E\u30E1\u30F3\u30D0\u30FC\u306E\u307F",
+            "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306B\u7A4D\u6975\u7684\u306B\u95A2\u4E0E\u3057\u3066\u3044\u308B\u5916\u90E8\u30B3\u30F3\u30B5\u30EB\u30BF\u30F3\u30C8\u306E\u307F"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 143,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 10,
+        sub_name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u30B9\u30C6\u30FC\u30AF\u30DB\u30EB\u30C0"
+      },
+      question_text: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u30B9\u30C6\u30FC\u30AF\u30DB\u30EB\u30C0\u7BA1\u7406\u306B\u304A\u3044\u3066\u3001\u30B9\u30C6\u30FC\u30AF\u30DB\u30EB\u30C0\u306E\u5229\u5BB3\u3084\u74B0\u5883\u306B\u95A2\u3059\u308B\u60C5\u5831\u3092\u6587\u66F8\u5316\u3057\u3001\u9069\u5207\u306B\u7BA1\u7406\u3059\u308B\u305F\u3081\u306B\u4F5C\u6210\u3055\u308C\u308B\u3082\u306E\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u30B9\u30C6\u30FC\u30AF\u30DB\u30EB\u30C0\u8A08\u753B\u66F8",
+            "\u30EA\u30B9\u30AF\u767B\u9332\u7C3F",
+            "\u30B9\u30C6\u30FC\u30AF\u30DB\u30EB\u30C0\u767B\u9332\u7C3F",
+            "\u30B3\u30DF\u30E5\u30CB\u30B1\u30FC\u30B7\u30E7\u30F3\u8A08\u753B\u66F8"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 144,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 10,
+        sub_name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u30B9\u30C6\u30FC\u30AF\u30DB\u30EB\u30C0"
+      },
+      question_text: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u30B9\u30C6\u30FC\u30AF\u30DB\u30EB\u30C0\u306B\u95A2\u3059\u308B\u8A18\u8FF0\u3068\u3057\u3066\u9069\u5207\u306A\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u30B9\u30C6\u30FC\u30AF\u30DB\u30EB\u30C0\u306B\u306F\u3001\u9867\u5BA2\u3084\u30E1\u30F3\u30D0\u3001\u95A2\u4FC2\u7D44\u7E54\u306A\u3069\u3001\u69D8\u3005\u306A\u4EBA\u304C\u3044\u3066\u3001\u5229\u5BB3\u95A2\u4FC2\u304C\u5BFE\u7ACB\u3059\u308B\u3053\u3068\u304C\u3042\u308B\u3002",
+            "\u30B9\u30C6\u30FC\u30AF\u30DB\u30EB\u30C0\u306E\u5F71\u97FF\u529B\u306F\u3001\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u7D42\u4E86\u306B\u8FD1\u3065\u304F\u306B\u3064\u308C\u3066\u6700\u5927\u306B\u306A\u308B\u3002",
+            "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u30DE\u30CD\u30FC\u30B8\u30E3\u30FC\u306F\u3001\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u30B9\u30C6\u30FC\u30AF\u30DB\u30EB\u30C0\u3092\u9867\u5BA2\u306B\u9650\u5B9A\u3057\u3066\u7BA1\u7406\u3059\u3079\u304D\u3067\u3042\u308B\u3002",
+            "\u30B9\u30C6\u30FC\u30AF\u30DB\u30EB\u30C0\u3068\u306E\u95A2\u4FC2\u306F\u3001\u4E00\u5EA6\u8A2D\u5B9A\u3059\u308C\u3070\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u5B8C\u4E86\u307E\u3067\u5909\u66F4\u3059\u3079\u304D\u3067\u306F\u306A\u3044\u3002"
+          ],
+          correct_answer_index: 0
+        }
+      }
+    },
+    {
+      id: 145,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 11,
+        sub_name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u30B9\u30B3\u30FC\u30D7"
+      },
+      question_text: "WBS\uFF08Work Breakdown Structure\uFF09\u306E\u6700\u4E0B\u4F4D\u306E\u8981\u7D20\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u6210\u679C\u7269",
+            "\u30D5\u30A7\u30FC\u30BA",
+            "\u30EF\u30FC\u30AF\u30D1\u30C3\u30B1\u30FC\u30B8",
+            "\u30A2\u30AF\u30C6\u30A3\u30D3\u30C6\u30A3"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 146,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 11,
+        sub_name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u30B9\u30B3\u30FC\u30D7"
+      },
+      question_text: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u7BA1\u7406\u306B\u304A\u3044\u3066WBS\uFF08Work Breakdown Structure\uFF09\u3092\u4F7F\u7528\u3059\u308B\u4E3B\u306A\u76EE\u7684\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u8CBB\u7528\u3068\u671F\u9593\u3092\u6700\u9069\u5316\u3059\u308B\u305F\u3081",
+            "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u30AF\u30EA\u30C6\u30A3\u30AB\u30EB\u30D1\u30B9\u3092\u7279\u5B9A\u3059\u308B\u305F\u3081",
+            "\u4F5C\u696D\u306E\u9032\u6357\u72B6\u6CC1\u3092\u8996\u899A\u7684\u306B\u8868\u73FE\u3059\u308B\u305F\u3081",
+            "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u30B9\u30B3\u30FC\u30D7\u5168\u4F53\u3092\u7CFB\u7D71\u7ACB\u3066\u3066\u307E\u3068\u3081\u3066\u5B9A\u7FA9\u3057\u3001\u4F5C\u696D\u3092\u7BA1\u7406\u53EF\u80FD\u306A\u5927\u304D\u3055\u306B\u7D30\u5206\u5316\u3059\u308B\u305F\u3081"
+          ],
+          correct_answer_index: 3
+        }
+      }
+    },
+    {
+      id: 147,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 12,
+        sub_name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u8CC7\u6E90"
+      },
+      question_text: "\u65E5\u5E38\u696D\u52D9\u3067\u306E\u500B\u5225\u6307\u5C0E\u306B\u3088\u308B\u6559\u80B2\u3092\u6307\u3059\u7528\u8A9E\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "OJT (On-the-Job Training)",
+            "Off-JT (Off-the-Job Training)",
+            "e\u30E9\u30FC\u30CB\u30F3\u30B0",
+            "\u96C6\u5408\u7814\u4FEE"
+          ],
+          correct_answer_index: 0
+        }
+      }
+    },
+    {
+      id: 148,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 12,
+        sub_name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u8CC7\u6E90"
+      },
+      question_text: "\u4E00\u5B9A\u6642\u9593\u306B\u6570\u591A\u304F\u306E\u6848\u4EF6\u3092\u51E6\u7406\u3059\u308B\u3001\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8\u80FD\u529B\u3092\u8A55\u4FA1\u3059\u308B\u305F\u3081\u306E\u8A13\u7DF4\u65B9\u6CD5\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u30B0\u30EB\u30FC\u30D7\u30C7\u30A3\u30B9\u30AB\u30C3\u30B7\u30E7\u30F3",
+            "\u30ED\u30FC\u30EB\u30D7\u30EC\u30A4\u30F3\u30B0",
+            "\u30A4\u30F3\u30D0\u30B9\u30B1\u30C3\u30C8",
+            "\u30D7\u30EC\u30BC\u30F3\u30C6\u30FC\u30B7\u30E7\u30F3"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 149,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 13,
+        sub_name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u6642\u9593"
+      },
+      question_text: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u65E5\u7A0B\u8A08\u753B\u306B\u304A\u3044\u3066\u3001\u65E5\u7A0B\u306B\u4F59\u88D5\u306E\u306A\u3044\u7D4C\u8DEF\u3092\u6307\u3059\u7528\u8A9E\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u30D5\u30ED\u30FC\u30C6\u30A3\u30F3\u30B0\u30D1\u30B9",
+            "\u30AF\u30EA\u30C6\u30A3\u30AB\u30EB\u30D1\u30B9",
+            "\u30B7\u30E7\u30FC\u30C8\u30D1\u30B9",
+            "\u30D0\u30C3\u30AF\u30EF\u30FC\u30C9\u30D1\u30B9"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 150,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 13,
+        sub_name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u6642\u9593"
+      },
+      question_text: "\u5DE5\u7A0B\u7BA1\u7406\u56F3\u8868\u306B\u95A2\u3059\u308B\u8A18\u8FF0\u306E\u3046\u3061\u3001\u30AC\u30F3\u30C8\u30C1\u30E3\u30FC\u30C8\u306E\u7279\u5FB4\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u5DE5\u7A0B\u7BA1\u7406\u4E0A\u306E\u91CD\u8981\u30DD\u30A4\u30F3\u30C8\u3092\u671F\u65E5\u3068\u3057\u3066\u793A\u3057\u3066\u304A\u304D\u3001\u610F\u601D\u6C7A\u5B9A\u3057\u306A\u3051\u308C\u3070\u306A\u3089\u306A\u3044\u671F\u65E5\u304C\u7BA1\u7406\u3067\u304D\u308B\u3002",
+            "\u500B\u3005\u306E\u4F5C\u696D\u306E\u9806\u5E8F\u95A2\u4FC2\u3001\u6240\u8981\u65E5\u6570\u3001\u4F59\u88D5\u65E5\u6570\u306A\u3069\u304C\u628A\u63E1\u3067\u304D\u308B\u3002",
+            "\u4F5C\u696D\u958B\u59CB\u3068\u4F5C\u696D\u7D42\u4E86\u306E\u4E88\u5B9A\u3068\u5B9F\u7E3E\u3084\u3001\u4ED5\u639B\u304B\u308A\u4E2D\u306E\u4F5C\u696D\u306A\u3069\u304C\u628A\u63E1\u3067\u304D\u308B\u3002",
+            "\u4F5C\u696D\u306E\u51FA\u6765\u9AD8\u306E\u6642\u9593\u7684\u306A\u63A8\u79FB\u3092\u8868\u73FE\u3059\u308B\u306E\u306B\u9069\u3057\u3066\u304A\u308A\u3001\u8CBB\u7528\u7BA1\u7406\u3068\u9032\u6357\u7BA1\u7406\u304C\u540C\u6642\u306B\u884C\u3048\u308B\u3002"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 151,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 14,
+        sub_name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u30B3\u30B9\u30C8"
+      },
+      question_text: "\u30BD\u30D5\u30C8\u30A6\u30A7\u30A2\u958B\u767A\u306E\u30B3\u30B9\u30C8\u898B\u7A4D\u624B\u6CD5\u306E\u4E00\u3064\u3067\u3001\u5E33\u7968\u3084\u753B\u9762\u306A\u3069\u306E\u6A5F\u80FD\u3092\u57FA\u306B\u898B\u7A4D\u3082\u308B\u65B9\u6CD5\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "LOC (Lines Of Code) \u6CD5",
+            "\u30D5\u30A1\u30F3\u30AF\u30B7\u30E7\u30F3\u30DD\u30A4\u30F3\u30C8\u6CD5 (FP\u6CD5)",
+            "PERT\u6CD5",
+            "\u4E09\u70B9\u898B\u7A4D\u3082\u308A"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 152,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 14,
+        sub_name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u30B3\u30B9\u30C8"
+      },
+      question_text: "\u9032\u6357\u3068\u30B3\u30B9\u30C8\u306E\u4E21\u65B9\u3092\u5B9A\u91CF\u7684\u306B\u8A55\u4FA1\u3059\u308B\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8\u306E\u624B\u6CD5\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "ROI (Return On Investment)",
+            "EVM (Earned Value Management)",
+            "TCO (Total Cost of Ownership)",
+            "BSC (Balanced Scorecard)"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 153,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 15,
+        sub_name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u30EA\u30B9\u30AF"
+      },
+      question_text: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u30EA\u30B9\u30AF\u5BFE\u5FDC\u6226\u7565\u306E\u3046\u3061\u3001\u8105\u5A01\u306B\u3088\u308B\u30DE\u30A4\u30CA\u30B9\u306E\u5F71\u97FF\u3084\u8CAC\u4EFB\u306E\u4E00\u90E8\u307E\u305F\u306F\u5168\u90E8\u3092\u7B2C\u4E09\u8005\u306B\u79FB\u8EE2\u3059\u308B\u6226\u7565\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u56DE\u907F",
+            "\u8EE2\u5AC1",
+            "\u8EFD\u6E1B",
+            "\u53D7\u5BB9"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 154,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 15,
+        sub_name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u30EA\u30B9\u30AF"
+      },
+      question_text: "PMBOK\xAE\u30AC\u30A4\u30C9\u7B2C6\u7248\u306B\u3088\u308C\u3070\u3001\u30D7\u30E9\u30B9\u306E\u5F71\u97FF\u3092\u53CA\u307C\u3059\u30EA\u30B9\u30AF\uFF08\u597D\u6A5F\uFF09\u306B\u5BFE\u3059\u308B\u300C\u5F37\u5316\u300D\u306E\u6226\u7565\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u3044\u304B\u306A\u308B\u7A4D\u6975\u7684\u884C\u52D5\u3082\u53D6\u3089\u306A\u3044\u304C\u3001\u597D\u6A5F\u304C\u5B9F\u73FE\u3057\u305F\u3068\u304D\u306B\u305D\u306E\u30D9\u30CD\u30D5\u30A3\u30C3\u30C8\u3092\u4EAB\u53D7\u3059\u308B\u3002",
+            "\u597D\u6A5F\u304C\u78BA\u5B9F\u306B\u8D77\u3053\u308A\u3001\u767A\u751F\u78BA\u7387\u304C100\uFF05\u306B\u307E\u3067\u9AD8\u307E\u308B\u3068\u4FDD\u8A3C\u3059\u308B\u3053\u3068\u306B\u3088\u3063\u3066\u3001\u7279\u5225\u306E\u597D\u6A5F\u306B\u95A2\u9023\u3059\u308B\u30D9\u30CD\u30D5\u30A3\u30C3\u30C8\u3092\u6349\u3048\u3088\u3046\u3068\u3059\u308B\u3002",
+            "\u597D\u6A5F\u306E\u30AA\u30FC\u30CA\u30FC\u30B7\u30C3\u30D7\u3092\u7B2C\u4E09\u8005\u306B\u79FB\u8EE2\u3057\u3066\u3001\u597D\u6A5F\u304C\u767A\u751F\u3057\u305F\u5834\u5408\u306B\u305D\u308C\u304C\u30D9\u30CD\u30D5\u30A3\u30C3\u30C8\u306E\u4E00\u90E8\u3092\u5171\u6709\u3067\u304D\u308B\u3088\u3046\u306B\u3059\u308B\u3002",
+            "\u597D\u6A5F\u306E\u767A\u751F\u78BA\u7387\u3084\u5F71\u97FF\u5EA6\u3001\u53C8\u306F\u305D\u306E\u4E21\u8005\u3092\u5897\u5927\u3055\u305B\u308B\u3002"
+          ],
+          correct_answer_index: 3
+        }
+      }
+    },
+    {
+      id: 155,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 15,
+        sub_name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u30EA\u30B9\u30AF"
+      },
+      question_text: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u30EA\u30B9\u30AF\u5BFE\u5FDC\u6226\u7565\u3068\u3001\u305D\u306E\u8AAC\u660E\u3092\u5BFE\u5FDC\u4ED8\u3051\u306A\u3055\u3044\u3002",
+      question_interaction: {
+        type: "Association",
+        data: [
+          { id: 1, left: "\u56DE\u907F", right: "\u8105\u5A01\u3092\u5B8C\u5168\u306B\u53D6\u308A\u9664\u304F\u305F\u3081\u306B\u3001\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8\u8A08\u753B\u3092\u5909\u66F4\u3059\u308B\u3002" },
+          { id: 2, left: "\u8EE2\u5AC1", right: "\u8105\u5A01\u306B\u3088\u308B\u30DE\u30A4\u30CA\u30B9\u306E\u5F71\u97FF\u3084\u8CAC\u4EFB\u306E\u4E00\u90E8\u307E\u305F\u306F\u5168\u90E8\u3092\u7B2C\u4E09\u8005\u306B\u79FB\u8EE2\u3059\u308B\uFF08\u4F8B\uFF1A\u4FDD\u967A\uFF09\u3002" },
+          { id: 3, left: "\u8EFD\u6E1B", right: "\u30EA\u30B9\u30AF\u4E8B\u8C61\u306E\u767A\u751F\u78BA\u7387\u3084\u5F71\u97FF\u5EA6\u3092\u6E1B\u5C11\u3055\u305B\u308B\u3002" },
+          { id: 4, left: "\u53D7\u5BB9", right: "\u8105\u5A01\u306B\u5BFE\u3057\u3066\u7279\u5225\u306A\u5BFE\u5FDC\u3092\u3057\u306A\u3044\u304C\u3001\u72B6\u6CC1\u306B\u5FDC\u3058\u3066\u4E88\u5099\u3092\u8A2D\u3051\u308B\u306A\u3069\u306E\u5BFE\u7B56\u3092\u3068\u308B\u3002" }
+        ]
+      }
+    },
+    {
+      id: 156,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 16,
+        sub_name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u54C1\u8CEA"
+      },
+      question_text: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u54C1\u8CEA\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8\u306B\u304A\u3051\u308B\u300C\u54C1\u8CEA\u4FDD\u8A3C\u300D\u306E\u76EE\u7684\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u54C1\u8CEA\u8981\u6C42\u4E8B\u9805\u3084\u54C1\u8CEA\u6A19\u6E96\u3092\u5B9A\u3081\u3001\u6587\u66F8\u5316\u3059\u308B\u3053\u3068\u3002",
+            "\u9069\u5207\u306A\u54C1\u8CEA\u6A19\u6E96\u3068\u904B\u7528\u57FA\u6E96\u306E\u9069\u7528\u3092\u78BA\u5B9F\u306B\u884C\u3046\u305F\u3081\u306B\u3001\u54C1\u8CEA\u306E\u8981\u6C42\u4E8B\u9805\u3068\u54C1\u8CEA\u7BA1\u7406\u6E2C\u5B9A\u306E\u7D50\u679C\u3092\u76E3\u67FB\u3059\u308B\u3053\u3068\u3002",
+            "\u30D1\u30D5\u30A9\u30FC\u30DE\u30F3\u30B9\u3092\u67FB\u5B9A\u3057\u3001\u5FC5\u8981\u306A\u5909\u66F4\u3092\u63D0\u6848\u3059\u308B\u305F\u3081\u306B\u54C1\u8CEA\u3092\u76E3\u8996\u3059\u308B\u30B7\u30B9\u30C6\u30E0\u306A\u3069\u306E\u5B9F\u884C\u7D50\u679C\u3092\u76E3\u8996\u3057\u3001\u8A18\u9332\u3059\u308B\u3053\u3068\u3002",
+            "\u969C\u5BB3\u5831\u544A\u66F8\u3092\u4F5C\u6210\u3057\u3001\u969C\u5BB3\u304C\u8D77\u3053\u3063\u305F\u4E8B\u5B9F\u3068\u305D\u306E\u5185\u5BB9\u3092\u7BA1\u7406\u3059\u308B\u3053\u3068\u3002"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 157,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 16,
+        sub_name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u54C1\u8CEA"
+      },
+      question_text: "\u30D7\u30ED\u30BB\u30B9\u304C\u5B89\u5B9A\u3057\u3066\u3044\u308B\u304B\u3069\u3046\u304B\u3001\u307E\u305F\u306F\u30D1\u30D5\u30A9\u30FC\u30DE\u30F3\u30B9\u304C\u4E88\u6E2C\u3069\u304A\u308A\u3067\u3042\u308B\u304B\u3069\u3046\u304B\u3092\u5224\u65AD\u3059\u308B\u305F\u3081\u306B\u3001\u8A31\u5BB9\u3055\u308C\u308B\u4E0A\u65B9\u7BA1\u7406\u9650\u754C\u3068\u4E0B\u65B9\u7BA1\u7406\u9650\u754C\u3092\u8A2D\u5B9A\u3057\u3066\u4F7F\u7528\u3059\u308B\u56F3\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u30D1\u30EC\u30FC\u30C8\u56F3",
+            "\u30D2\u30B9\u30C8\u30B0\u30E9\u30E0",
+            "\u7BA1\u7406\u56F3",
+            "\u7279\u6027\u8981\u56E0\u56F3"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 158,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 17,
+        sub_name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u8ABF\u9054"
+      },
+      question_text: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u8ABF\u9054\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8\u306E\u4E3B\u306A\u76EE\u7684\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u30C1\u30FC\u30E0\u306E\u30E1\u30F3\u30D0\u30FC\u3092\u5897\u54E1\u3059\u308B\u3053\u3068",
+            "\u5FC5\u8981\u306A\u8CC7\u6E90\u3084\u30B5\u30FC\u30D3\u30B9\u3092\u5916\u90E8\u304B\u3089\u8CFC\u5165\u3001\u53D6\u5F97\u3059\u308B\u305F\u3081\u306B\u5FC5\u8981\u306A\u5951\u7D04\u3084\u305D\u306E\u7BA1\u7406\u3092\u9069\u5207\u306B\u884C\u3046\u3053\u3068",
+            "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u4E88\u7B97\u3092\u7B56\u5B9A\u3057\u3001\u30B3\u30B9\u30C8\u3092\u53B3\u5BC6\u306B\u7BA1\u7406\u3059\u308B\u3053\u3068",
+            "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u30EA\u30B9\u30AF\u3092\u7279\u5B9A\u3057\u3001\u30EA\u30B9\u30AF\u5BFE\u5FDC\u8A08\u753B\u3092\u7B56\u5B9A\u3059\u308B\u3053\u3068"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 159,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 17,
+        sub_name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u8ABF\u9054"
+      },
+      question_text: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u8ABF\u9054\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8\u306E\u30D7\u30ED\u30BB\u30B9\u306B\u304A\u3044\u3066\u3001\u7D0D\u5165\u5019\u88DC\u304B\u3089\u56DE\u7B54\u3092\u5F97\u3066\u3001\u7D0D\u5165\u8005\uFF08\u30B5\u30D7\u30E9\u30A4\u30E4\uFF09\u3092\u9078\u5B9A\u3057\u3001\u5951\u7D04\u3092\u7DE0\u7D50\u3059\u308B\u6BB5\u968E\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u8ABF\u9054\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8\u8A08\u753B",
+            "\u8ABF\u9054\u5B9F\u884C",
+            "\u8ABF\u9054\u30B3\u30F3\u30C8\u30ED\u30FC\u30EB",
+            "\u8ABF\u9054\u7D42\u7D50"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 160,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 18,
+        sub_name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u30B3\u30DF\u30E5\u30CB\u30B1\u30FC\u30B7\u30E7\u30F3"
+      },
+      question_text: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u30B3\u30DF\u30E5\u30CB\u30B1\u30FC\u30B7\u30E7\u30F3\u306B\u304A\u3044\u3066\u3001\u76F8\u624B\u306E\u884C\u52D5\u306B\u5FDC\u3058\u3066\u60C5\u5831\u3092\u63D0\u4F9B\u3059\u308B\u60C5\u5831\u914D\u5E03\u306E\u65B9\u6CD5\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u30D7\u30C3\u30B7\u30E5\u578B",
+            "\u30D7\u30EB\u578B",
+            "\u30D5\u30A3\u30FC\u30C9\u30D0\u30C3\u30AF\u578B",
+            "\u30D6\u30ED\u30FC\u30C9\u30AD\u30E3\u30B9\u30C8\u578B"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 161,
+      category: {
+        id: 6,
+        name: "\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8",
+        sub_id: 18,
+        sub_name: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u30B3\u30DF\u30E5\u30CB\u30B1\u30FC\u30B7\u30E7\u30F3"
+      },
+      question_text: "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u30B3\u30DF\u30E5\u30CB\u30B1\u30FC\u30B7\u30E7\u30F3\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8\u306E\u4E3B\u306A\u76EE\u7684\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u6280\u8853\u7684\u306A\u554F\u984C\u3092\u89E3\u6C7A\u3059\u308B\u3053\u3068",
+            "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u30EA\u30BD\u30FC\u30B9\u3092\u6700\u9069\u306B\u914D\u5206\u3059\u308B\u3053\u3068",
+            "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u60C5\u5831\u306E\u751F\u6210\u3001\u53CE\u96C6\u3001\u914D\u5E03\u3001\u4FDD\u7BA1\u3001\u691C\u7D22\u3001\u6700\u7D42\u7684\u306A\u5EC3\u68C4\u3092\u9069\u5B9C\u3001\u9069\u5207\u304B\u3064\u78BA\u5B9F\u306B\u884C\u3046\u3053\u3068",
+            "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u54C1\u8CEA\u57FA\u6E96\u3092\u7B56\u5B9A\u3057\u3001\u7DAD\u6301\u3059\u308B\u3053\u3068"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 162,
+      category: {
+        id: 7,
+        name: "\u30C6\u30AF\u30CE\u30ED\u30B8",
+        sub_id: 1,
+        sub_name: "\u30B7\u30B9\u30C6\u30E0\u306E\u69CB\u6210"
+      },
+      question_text: "2\u3064\u306E\u30B7\u30B9\u30C6\u30E0\u3092\u4E26\u5217\u306B\u7A3C\u50CD\u3055\u305B\u3001\u540C\u3058\u51E6\u7406\u3092\u5B9F\u884C\u3057\u3066\u7D50\u679C\u3092\u6BD4\u8F03\u3059\u308B\u3053\u3068\u3067\u9AD8\u3044\u4FE1\u983C\u6027\u3092\u5F97\u308B\u65B9\u5F0F\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30C7\u30E5\u30D7\u30EC\u30C3\u30AF\u30B9\u30B7\u30B9\u30C6\u30E0", "\u30C7\u30E5\u30A2\u30EB\u30B7\u30B9\u30C6\u30E0", "\u30B3\u30FC\u30EB\u30C9\u30B9\u30BF\u30F3\u30D0\u30A4", "\u30ED\u30FC\u30C9\u30B7\u30A7\u30A2\u30B7\u30B9\u30C6\u30E0"],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 163,
+      category: {
+        id: 7,
+        name: "\u30C6\u30AF\u30CE\u30ED\u30B8",
+        sub_id: 1,
+        sub_name: "\u30B7\u30B9\u30C6\u30E0\u306E\u69CB\u6210"
+      },
+      question_text: "\u30B7\u30B9\u30C6\u30E0\u306B\u969C\u5BB3\u304C\u767A\u751F\u3057\u305F\u3068\u304D\u3001\u5B89\u5168\u5074\u306B\u5236\u5FA1\u3059\u308B\u65B9\u6CD5\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30D5\u30A7\u30FC\u30EB\u30BD\u30D5\u30C8", "\u30D5\u30A9\u30FC\u30EB\u30C8\u30A2\u30DC\u30A4\u30C0\u30F3\u30B9", "\u30D5\u30A7\u30FC\u30EB\u30BB\u30FC\u30D5", "\u30D5\u30A9\u30FC\u30EB\u30C8\u30DE\u30B9\u30AD\u30F3\u30B0"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 164,
+      category: {
+        id: 7,
+        name: "\u30C6\u30AF\u30CE\u30ED\u30B8",
+        sub_id: 2,
+        sub_name: "\u30B7\u30B9\u30C6\u30E0\u306E\u8A55\u4FA1\u6307\u6A19"
+      },
+      question_text: "\u30B7\u30B9\u30C6\u30E0\u306E\u51E6\u7406\u6027\u80FD\u3092\u6E2C\u5B9A\u3059\u308B\u6307\u6A19\u3068\u3057\u3066\u6700\u3082\u9069\u5207\u306A\u3082\u306E\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30EC\u30B9\u30DD\u30F3\u30B9\u30BF\u30A4\u30E0", "\u7A3C\u50CD\u7387", "\u30B9\u30EB\u30FC\u30D7\u30C3\u30C8", "MTBF"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 165,
+      category: {
+        id: 7,
+        name: "\u30C6\u30AF\u30CE\u30ED\u30B8",
+        sub_id: 2,
+        sub_name: "\u30B7\u30B9\u30C6\u30E0\u306E\u8A55\u4FA1\u6307\u6A19"
+      },
+      question_text: "\u30B7\u30B9\u30C6\u30E0\u306E\u53EF\u7528\u6027\u306E\u6307\u6A19\u3067\u3042\u308B\u7A3C\u50CD\u7387\u3092\u5411\u4E0A\u3055\u305B\u308B\u305F\u3081\u306E\u8981\u7D20\u3068\u3057\u3066\u3001\u300C\u5E73\u5747\u6545\u969C\u9593\u9694\u300D\uFF08MTBF\uFF09\u3068\u300C\u5E73\u5747\u5FA9\u65E7\u6642\u9593\u300D\uFF08MTTR\uFF09\u306E\u95A2\u4FC2\u3067\u6B63\u3057\u3044\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      "question_interaction": {
+        "type": "MultipleChoice",
+        "data": {
+          "texts": ["MTTR\u3092\u9577\u304F\u3057\u3001MTBF\u3092\u77ED\u304F\u3059\u308B", "MTBF\u3092\u77ED\u304F\u3057\u3001MTTR\u3092\u9577\u304F\u3059\u308B", "MTBF\u3092\u9577\u304F\u3057\u3001MTTR\u3092\u77ED\u304F\u3059\u308B", "MTBF\u3068MTTR\u306F\u53EF\u7528\u6027\u3068\u306F\u95A2\u4FC2\u306A\u3044"],
+          "correct_answer_index": 2
+        }
+      }
+    },
+    {
+      id: 166,
+      category: {
+        id: 7,
+        name: "\u30C6\u30AF\u30CE\u30ED\u30B8",
+        sub_id: 3,
+        sub_name: "\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9\u65B9\u5F0F"
+      },
+      question_text: "\u73FE\u5728\u306E\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9\u306E\u4E3B\u6D41\u3067\u3042\u308A\u3001\u30C6\u30FC\u30D6\u30EB\u3068\u30C6\u30FC\u30D6\u30EB\u9593\u306E\u95A2\u9023\u3067\u30C7\u30FC\u30BF\u3092\u8868\u73FE\u3059\u308B\u65B9\u5F0F\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u968E\u5C64\u578B\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9", "\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u578B\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9", "\u30AA\u30D6\u30B8\u30A7\u30AF\u30C8\u6307\u5411\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9", "\u95A2\u4FC2\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9"],
+          correct_answer_index: 3
+        }
+      }
+    },
+    {
+      id: 167,
+      category: {
+        id: 7,
+        name: "\u30C6\u30AF\u30CE\u30ED\u30B8",
+        sub_id: 3,
+        sub_name: "\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9\u65B9\u5F0F"
+      },
+      question_text: "DBMS\uFF08\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9\u7BA1\u7406\u30B7\u30B9\u30C6\u30E0\uFF09\u304C\u30C7\u30FC\u30BF\u3092\u5B89\u5168\u306B\u4FDD\u7BA1\u3059\u308B\u305F\u3081\u306B\u5099\u3048\u3066\u3044\u308B\u6A5F\u80FD\u306E\u3046\u3061\u3001\u30C7\u30FC\u30BF\u304C\u5931\u308F\u308C\u306A\u3044\u3088\u3046\u306B\u3059\u308B\u6A5F\u80FD\u306F\u4F55\u3068\u547C\u3070\u308C\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30C7\u30FC\u30BF\u6A5F\u5BC6\u4FDD\u8B77\u6A5F\u80FD", "\u4FDD\u5168\u6A5F\u80FD", "\u30A2\u30AF\u30BB\u30B9\u5236\u9650\u6A5F\u80FD", "\u30E1\u30BF\u30C7\u30FC\u30BF\u7BA1\u7406"],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 168,
+      category: {
+        id: 7,
+        name: "\u30C6\u30AF\u30CE\u30ED\u30B8",
+        sub_id: 4,
+        sub_name: "\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9\u8A2D\u8A08"
+      },
+      question_text: "\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9\u8A2D\u8A08\u306B\u304A\u3044\u3066\u3001\u30C7\u30FC\u30BF\u306E\u91CD\u8907\u3092\u6392\u9664\u3057\u3001\u30C7\u30FC\u30BF\u306E\u6574\u5408\u6027\u3092\u4FDD\u3064\u3053\u3068\u3092\u76EE\u7684\u3068\u3057\u3066\u30C6\u30FC\u30D6\u30EB\u3092\u5206\u5272\u3059\u308B\u624B\u6CD5\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["E-R\u56F3\u4F5C\u6210", "\u30C7\u30FC\u30BF\u5206\u6790", "\u6B63\u898F\u5316", "\u30C8\u30E9\u30F3\u30B6\u30AF\u30B7\u30E7\u30F3\u7BA1\u7406"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 169,
+      category: {
+        id: 7,
+        name: "\u30C6\u30AF\u30CE\u30ED\u30B8",
+        sub_id: 4,
+        sub_name: "\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9\u8A2D\u8A08"
+      },
+      question_text: "E-R\u56F3\u306B\u304A\u3051\u308B\u300C\u30A8\u30F3\u30C6\u30A3\u30C6\u30A3\u300D\u3068\u300C\u30EA\u30EC\u30FC\u30B7\u30E7\u30F3\u30B7\u30C3\u30D7\u300D\u306E\u8AAC\u660E\u3068\u3057\u3066\u3001\u9069\u5207\u306A\u7D44\u307F\u5408\u308F\u305B\u3092\u9078\u3073\u306A\u3055\u3044\u3002",
+      question_interaction: {
+        type: "Association",
+        data: [
+          { id: 1, left: "\u30A8\u30F3\u30C6\u30A3\u30C6\u30A3", right: "\u7BA1\u7406\u5BFE\u8C61\u306E\u5B9F\u4F53\uFF08\u4F8B: \u9867\u5BA2\u3001\u5546\u54C1\uFF09" },
+          { id: 2, left: "\u30EA\u30EC\u30FC\u30B7\u30E7\u30F3\u30B7\u30C3\u30D7", right: "\u30A8\u30F3\u30C6\u30A3\u30C6\u30A3\u9593\u306E\u95A2\u9023\uFF08\u4F8B: \u6CE8\u6587\u3068\u9867\u5BA2\u306E\u95A2\u4FC2\uFF09" }
+        ]
+      }
+    },
+    {
+      id: 170,
+      category: {
+        id: 7,
+        name: "\u30C6\u30AF\u30CE\u30ED\u30B8",
+        sub_id: 5,
+        sub_name: "\u30C7\u30FC\u30BF\u64CD\u4F5C"
+      },
+      question_text: "\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9\u306E\u69CB\u9020\u3092\u5B9A\u7FA9\u3057\u305F\u308A\u3001\u65B0\u305F\u306A\u30C6\u30FC\u30D6\u30EB\u3084\u30D3\u30E5\u30FC\u3092\u4F5C\u6210\u3057\u305F\u308A\u3059\u308BSQL\u306E\u547D\u4EE4\u7FA4\u306F\u4F55\u306B\u5206\u985E\u3055\u308C\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30C7\u30FC\u30BF\u64CD\u4F5C\u8A00\u8A9E\uFF08SQL-DML\uFF09", "\u30C7\u30FC\u30BF\u5236\u5FA1\u8A00\u8A9E\uFF08SQL-DCL\uFF09", "\u30C7\u30FC\u30BF\u5B9A\u7FA9\u8A00\u8A9E\uFF08SQL-DDL\uFF09", "\u30C8\u30E9\u30F3\u30B6\u30AF\u30B7\u30E7\u30F3\u5236\u5FA1\u8A00\u8A9E"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 171,
+      category: {
+        id: 7,
+        name: "\u30C6\u30AF\u30CE\u30ED\u30B8",
+        sub_id: 5,
+        sub_name: "\u30C7\u30FC\u30BF\u64CD\u4F5C"
+      },
+      question_text: "\u30E6\u30FC\u30B6\u30FC\u306B\u7279\u5B9A\u306E\u8868\u3084\u30D3\u30E5\u30FC\u3078\u306E\u30A2\u30AF\u30BB\u30B9\u6A29\u9650\u3092\u8A2D\u5B9A\u3059\u308B\u305F\u3081\u306B\u4F7F\u7528\u3055\u308C\u308BSQL\u306E\u547D\u4EE4\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["SELECT", "INSERT", "CREATE", "GRANT"],
+          correct_answer_index: 3
+        }
+      }
+    },
+    {
+      id: 172,
+      category: {
+        id: 7,
+        name: "\u30C6\u30AF\u30CE\u30ED\u30B8",
+        sub_id: 6,
+        sub_name: "\u30C8\u30E9\u30F3\u30B6\u30AF\u30B7\u30E7\u30F3\u51E6\u7406"
+      },
+      question_text: "\u8907\u6570\u306E\u30C8\u30E9\u30F3\u30B6\u30AF\u30B7\u30E7\u30F3\u304C\u540C\u6642\u306B\u30C7\u30FC\u30BF\u306B\u30A2\u30AF\u30BB\u30B9\u3059\u308B\u969B\u306B\u3001\u30C7\u30FC\u30BF\u306E\u6574\u5408\u6027\u3092\u4FDD\u3064\u305F\u3081\u306B\u7528\u3044\u3089\u308C\u308B\u5236\u5FA1\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30ED\u30FC\u30EB\u30D0\u30C3\u30AF", "\u30ED\u30FC\u30EB\u30D5\u30A9\u30EF\u30FC\u30C9", "\u6392\u4ED6\u5236\u5FA1", "\u30D0\u30C3\u30AF\u30A2\u30C3\u30D7"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 173,
+      category: {
+        id: 7,
+        name: "\u30C6\u30AF\u30CE\u30ED\u30B8",
+        sub_id: 6,
+        sub_name: "\u30C8\u30E9\u30F3\u30B6\u30AF\u30B7\u30E7\u30F3\u51E6\u7406"
+      },
+      question_text: "\u30C8\u30E9\u30F3\u30B6\u30AF\u30B7\u30E7\u30F3\u969C\u5BB3\u304C\u767A\u751F\u3057\u305F\u5834\u5408\u306B\u3001\u66F4\u65B0\u524D\u30ED\u30B0\u3092\u4F7F\u7528\u3057\u3066\u30B7\u30B9\u30C6\u30E0\u3092\u969C\u5BB3\u767A\u751F\u524D\u306E\u72B6\u614B\u306B\u623B\u3059\u51E6\u7406\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30ED\u30FC\u30EB\u30D5\u30A9\u30EF\u30FC\u30C9", "\u30B3\u30DF\u30C3\u30C8", "\u30ED\u30FC\u30EB\u30D0\u30C3\u30AF", "\u30C1\u30A7\u30C3\u30AF\u30DD\u30A4\u30F3\u30C8"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 174,
+      category: {
+        id: 7,
+        name: "\u30C6\u30AF\u30CE\u30ED\u30B8",
+        sub_id: 7,
+        sub_name: "\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9\u5FDC\u7528"
+      },
+      question_text: "\u30C7\u30FC\u30BF\u30A6\u30A7\u30A2\u30CF\u30A6\u30B9\u306E\u57FA\u672C\u64CD\u4F5C\u306E\u3046\u3061\u3001\u30C7\u30FC\u30BF\u306E\u5206\u6790\u8EF8\u3092\u5909\u66F4\u3057\u3001\u8996\u70B9\u3092\u5909\u3048\u308B\u64CD\u4F5C\u306F\u4F55\u3068\u547C\u3070\u308C\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30B9\u30E9\u30A4\u30B7\u30F3\u30B0", "\u30C9\u30EA\u30EA\u30F3\u30B0", "\u30C0\u30A4\u30B7\u30F3\u30B0", "\u30ED\u30FC\u30EB\u30A2\u30C3\u30D7"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 175,
+      category: {
+        id: 7,
+        name: "\u30C6\u30AF\u30CE\u30ED\u30B8",
+        sub_id: 7,
+        sub_name: "\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9\u5FDC\u7528"
+      },
+      question_text: "\u30C7\u30FC\u30BF\u30A6\u30A7\u30A2\u30CF\u30A6\u30B9\u306A\u3069\u306B\u683C\u7D0D\u3055\u308C\u305F\u30C7\u30FC\u30BF\u306B\u5BFE\u3057\u3001\u7D71\u8A08\u5B66\u3001\u30D1\u30BF\u30FC\u30F3\u8A8D\u8B58\u3001\u4EBA\u5DE5\u77E5\u80FD\u306A\u3069\u306E\u30C7\u30FC\u30BF\u89E3\u6790\u624B\u6CD5\u3092\u9069\u7528\u3057\u3066\u65B0\u3057\u3044\u77E5\u898B\u3092\u53D6\u308A\u51FA\u3059\u6280\u8853\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30C7\u30FC\u30BF\u30A6\u30A7\u30A2\u30CF\u30A6\u30B9", "\u30C7\u30FC\u30BF\u30DE\u30A4\u30CB\u30F3\u30B0", "NoSQL", "\u30D3\u30C3\u30B0\u30C7\u30FC\u30BF"],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 176,
+      category: {
+        id: 7,
+        name: "\u30C6\u30AF\u30CE\u30ED\u30B8",
+        sub_id: 7,
+        sub_name: "\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9\u5FDC\u7528"
+      },
+      question_text: "Volume\uFF08\u91CF\uFF09\u3001Variety\uFF08\u591A\u69D8\u6027\uFF09\u3001Velocity\uFF08\u901F\u5EA6\uFF09\u306E3\u3064\u306EV\u304C\u7279\u5FB4\u3068\u3055\u308C\u308B\u3001\u901A\u5E38\u306EDBMS\u3067\u6271\u3046\u3053\u3068\u304C\u56F0\u96E3\u306A\u5927\u304D\u3055\u306E\u30C7\u30FC\u30BF\u306E\u96C6\u307E\u308A\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30C7\u30FC\u30BF\u30A6\u30A7\u30A2\u30CF\u30A6\u30B9", "\u30EA\u30EC\u30FC\u30B7\u30E7\u30CA\u30EB\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9", "\u30D3\u30C3\u30B0\u30C7\u30FC\u30BF", "NoSQL"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 177,
+      category: {
+        id: 7,
+        name: "\u30C6\u30AF\u30CE\u30ED\u30B8",
+        sub_id: 8,
+        sub_name: "\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u65B9\u5F0F"
+      },
+      question_text: "\u7279\u5B9A\u306E\u65BD\u8A2D\u5185\u306B\u81EA\u5206\u3067\u8A2D\u7F6E\u3057\u3001\u72ED\u3044\u7BC4\u56F2\u306E\u30B3\u30F3\u30D4\u30E5\u30FC\u30BF\u3092\u63A5\u7D9A\u3059\u308B\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["WAN", "LAN", "VPN", "FTTH"],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 178,
+      category: {
+        id: 7,
+        name: "\u30C6\u30AF\u30CE\u30ED\u30B8",
+        sub_id: 8,
+        sub_name: "\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u65B9\u5F0F"
+      },
+      question_text: "\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u306B\u304A\u3044\u3066\u3001IT\u30B5\u30FC\u30D3\u30B9\u3092\u5229\u7528\u3059\u308B\u5074\u306E\u30B3\u30F3\u30D4\u30E5\u30FC\u30BF\u3084\u30C7\u30D0\u30A4\u30B9\u3092\u6307\u3059\u8A00\u8449\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["\u30B5\u30FC\u30D0\u30FC", "\u30EB\u30FC\u30BF", "\u30AF\u30E9\u30A4\u30A2\u30F3\u30C8", "\u30D6\u30EA\u30C3\u30B8"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 179,
+      category: {
+        id: 7,
+        name: "\u30C6\u30AF\u30CE\u30ED\u30B8",
+        sub_id: 9,
+        sub_name: "\u30C7\u30FC\u30BF\u901A\u4FE1\u3068\u5236\u5FA1"
+      },
+      question_text: "OSI\u57FA\u672C\u53C2\u7167\u30E2\u30C7\u30EB\u306E7\u3064\u306E\u968E\u5C64\u306B\u3064\u3044\u3066\u3001\u305D\u308C\u305E\u308C\u306E\u6A5F\u80FD\u306E\u8AAC\u660E\u3068\u3057\u3066\u9069\u5207\u306A\u7D44\u307F\u5408\u308F\u305B\u3092\u9078\u3073\u306A\u3055\u3044\u3002",
+      question_interaction: {
+        type: "Association",
+        data: [
+          { id: 1, left: "\u30A2\u30D7\u30EA\u30B1\u30FC\u30B7\u30E7\u30F3\u5C64", right: "\u901A\u4FE1\u306B\u4F7F\u3046\u30A2\u30D7\u30EA\u30B1\u30FC\u30B7\u30E7\u30F3\u305D\u306E\u3082\u306E" },
+          { id: 2, left: "\u30D7\u30EC\u30BC\u30F3\u30C6\u30FC\u30B7\u30E7\u30F3\u5C64", right: "\u30C7\u30FC\u30BF\u306E\u8868\u73FE\u65B9\u6CD5\u3092\u5909\u63DB" },
+          { id: 3, left: "\u30BB\u30B7\u30E7\u30F3\u5C64", right: "\u901A\u4FE1\u3059\u308B\u30D7\u30ED\u30B0\u30E9\u30E0\u9593\u3067\u4F1A\u8A71\u3092\u7BA1\u7406" },
+          { id: 4, left: "\u30C8\u30E9\u30F3\u30B9\u30DD\u30FC\u30C8\u5C64", right: "\u30B3\u30F3\u30D4\u30E5\u30FC\u30BF\u5185\u3067\u3069\u306E\u901A\u4FE1\u30D7\u30ED\u30B0\u30E9\u30E0\u3068\u901A\u4FE1\u3059\u308B\u304B\u3092\u7BA1\u7406\u3057\u3001\u4FE1\u983C\u6027\u3092\u78BA\u4FDD" },
+          { id: 5, left: "\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u5C64", right: "\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u4E0A\u3067\u30C7\u30FC\u30BF\u304C\u59CB\u70B9\u304B\u3089\u7D42\u70B9\u307E\u3067\u914D\u9001\u3055\u308C\u308B\u3088\u3046\u306B\u7BA1\u7406" },
+          { id: 6, left: "\u30C7\u30FC\u30BF\u30EA\u30F3\u30AF\u5C64", right: "\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u4E0A\u3067\u30C7\u30FC\u30BF\u304C\u96A3\u306E\u901A\u4FE1\u6A5F\u5668\u307E\u3067\u914D\u9001\u3055\u308C\u308B\u3088\u3046\u306B\u7BA1\u7406" },
+          { id: 7, left: "\u7269\u7406\u5C64", "right": "\u7269\u7406\u7684\u306A\u63A5\u7D9A\u3092\u7BA1\u7406\u3057\u3001\u96FB\u6C17\u4FE1\u53F7\u3092\u5909\u63DB" }
+        ]
+      }
+    },
+    {
+      id: 180,
+      category: {
+        id: 7,
+        name: "\u30C6\u30AF\u30CE\u30ED\u30B8",
+        sub_id: 9,
+        sub_name: "\u30C7\u30FC\u30BF\u901A\u4FE1\u3068\u5236\u5FA1"
+      },
+      "question_text": "OSI\u57FA\u672C\u53C2\u7167\u30E2\u30C7\u30EB\u306E\u7B2C3\u5C64\uFF08\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u5C64\uFF09\u306B\u4F4D\u7F6E\u3057\u3001\u7570\u306A\u308B\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u9593\u306E\u30C7\u30FC\u30BF\u8EE2\u9001\u7D4C\u8DEF\u3092\u6C7A\u5B9A\u3059\u308B\u88C5\u7F6E\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      "question_interaction": {
+        "type": "MultipleChoice",
+        "data": {
+          "texts": ["\u30EA\u30D4\u30FC\u30BF", "\u30D6\u30EA\u30C3\u30B8", "\u30EB\u30FC\u30BF", "\u30CF\u30D6"],
+          "correct_answer_index": 2
+        }
+      }
+    },
+    {
+      id: 181,
+      category: {
+        id: 7,
+        name: "\u30C6\u30AF\u30CE\u30ED\u30B8",
+        sub_id: 10,
+        sub_name: "\u901A\u4FE1\u30D7\u30ED\u30C8\u30B3\u30EB"
+      },
+      question_text: "Web\u30B5\u30A4\u30C8\u306E\u95B2\u89A7\u306B\u4F7F\u7528\u3055\u308C\u308BHTTP\u30D7\u30ED\u30C8\u30B3\u30EB\u304C\u901A\u5E38\u4F7F\u7528\u3059\u308BTCP\u30DD\u30FC\u30C8\u756A\u53F7\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["21", "25", "80", "443"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 182,
+      category: {
+        id: 7,
+        name: "\u30C6\u30AF\u30CE\u30ED\u30B8",
+        sub_id: 10,
+        sub_name: "\u901A\u4FE1\u30D7\u30ED\u30C8\u30B3\u30EB"
+      },
+      question_text: "\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u4E0A\u306E\u6A5F\u5668\u3092\u6B63\u3057\u3044\u6642\u523B\u306B\u540C\u671F\u3055\u305B\u308B\u305F\u3081\u306E\u30D7\u30ED\u30C8\u30B3\u30EB\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["DNS", "DHCP", "NTP", "SMTP"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 183,
+      category: {
+        id: 7,
+        name: "\u30C6\u30AF\u30CE\u30ED\u30B8",
+        sub_id: 10,
+        sub_name: "\u901A\u4FE1\u30D7\u30ED\u30C8\u30B3\u30EB"
+      },
+      question_text: "\u7121\u7DDALAN\u3067\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u3092\u8B58\u5225\u3059\u308BID\u3067\u3042\u308A\u3001\u8907\u6570\u306E\u30A2\u30AF\u30BB\u30B9\u30DD\u30A4\u30F3\u30C8\u306B\u540C\u3058\u8A2D\u5B9A\u3092\u3059\u308B\u3053\u3068\u3067\u30ED\u30FC\u30DF\u30F3\u30B0\u3092\u53EF\u80FD\u306B\u3059\u308B\u6A5F\u80FD\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["MAC\u30A2\u30C9\u30EC\u30B9", "SSID", "WPA3", "ESSID\u30B9\u30C6\u30EB\u30B9"],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 184,
+      category: {
+        id: 7,
+        name: "\u30C6\u30AF\u30CE\u30ED\u30B8",
+        sub_id: 12,
+        sub_name: "\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u5FDC\u7528"
+      },
+      question_text: "\u30A4\u30F3\u30BF\u30FC\u30CD\u30C3\u30C8\u3084IP-VPN\u7DB2\u306A\u3069\u306E\u5171\u6709\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u3092\u5229\u7528\u3057\u3066\u3001\u4EEE\u60F3\u7684\u306A\u5C02\u7528\u7DDA\u3092\u69CB\u7BC9\u3059\u308B\u6280\u8853\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["LAN", "WAN", "VPN", "FTTH"],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 185,
+      category: {
+        id: 7,
+        name: "\u30C6\u30AF\u30CE\u30ED\u30B8",
+        sub_id: 12,
+        sub_name: "\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u5FDC\u7528"
+      },
+      question_text: "\u9AD8\u901F\u306E\u5149\u30D5\u30A1\u30A4\u30D0\u3092\u5EFA\u7269\u5185\u306B\u76F4\u63A5\u5F15\u304D\u8FBC\u307F\u3001\u56DE\u7DDA\u306E\u7D42\u7AEF\u306BONU\u3092\u7528\u3044\u3066\u5149\u3068\u96FB\u6C17\u4FE1\u53F7\u3092\u5909\u63DB\u3059\u308B\u30B5\u30FC\u30D3\u30B9\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["ADSL", "FTTH", "ISDN", "\u30C0\u30A4\u30E4\u30EB\u30A2\u30C3\u30D7"],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 186,
+      category: {
+        id: 7,
+        name: "\u30C6\u30AF\u30CE\u30ED\u30B8",
+        sub_id: 12,
+        sub_name: "\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u5FDC\u7528"
+      },
+      question_text: "\u30B9\u30DE\u30FC\u30C8\u30D5\u30A9\u30F3\u306A\u3069\u3092\u30CD\u30C3\u30C8\u30EF\u30FC\u30AF\u306E\u4E2D\u7D99\u6A5F\u5668\u306E\u3088\u3046\u306B\u7528\u3044\u3066\u3001\u4ED6\u306E\u30B3\u30F3\u30D4\u30E5\u30FC\u30BF\u306A\u3069\u3092\u30A4\u30F3\u30BF\u30FC\u30CD\u30C3\u30C8\u306B\u63A5\u7D9A\u3055\u305B\u308B\u6A5F\u80FD\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: ["VoLTE", "\u30C6\u30B6\u30EA\u30F3\u30B0", "5G", "\u30ED\u30FC\u30DF\u30F3\u30B0"],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 187,
+      category: {
+        id: 8,
+        name: "\u30B9\u30C8\u30E9\u30C6\u30B8",
+        sub_id: 1,
+        sub_name: "\u7D4C\u55B6\u30FB\u7D44\u7E54\u8AD6"
+      },
+      question_text: "\u4F01\u696D\u7D4C\u55B6\u306B\u304A\u3044\u3066\u3001\u7D4C\u55B6\u306E\u900F\u660E\u6027\u3092\u9AD8\u3081\u3001\u5229\u5BB3\u95A2\u4FC2\u8005\u304B\u3089\u306E\u4FE1\u983C\u3092\u78BA\u4FDD\u3059\u308B\u305F\u3081\u306E\u4ED5\u7D44\u307F\u3092\u4F55\u3068\u547C\u3073\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u30B5\u30D7\u30E9\u30A4\u30C1\u30A7\u30FC\u30F3\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8\uFF08SCM\uFF09",
+            "\u9867\u5BA2\u95A2\u4FC2\u7BA1\u7406\uFF08CRM\uFF09",
+            "\u30B3\u30FC\u30DD\u30EC\u30FC\u30C8\u30AC\u30D0\u30CA\u30F3\u30B9",
+            "\u4E8B\u696D\u7D99\u7D9A\u8A08\u753B\uFF08BCP\uFF09"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 188,
+      category: {
+        id: 8,
+        name: "\u30B9\u30C8\u30E9\u30C6\u30B8",
+        sub_id: 1,
+        sub_name: "\u7D4C\u55B6\u30FB\u7D44\u7E54\u8AD6"
+      },
+      question_text: "\u4F01\u696D\u304C\u7D4C\u55B6\u6D3B\u52D5\u3092\u884C\u3046\u4E0A\u3067\u91CD\u8981\u3068\u306A\u308B\u7D4C\u55B6\u8CC7\u6E90\u300C\u30D2\u30C8\u30FB\u30E2\u30CE\u30FB\u30AB\u30CD\u30FB\u60C5\u5831\u300D\u306E\u3046\u3061\u3001\u60C5\u5831\u306B\u8A72\u5F53\u3059\u308B\u5177\u4F53\u7684\u306A\u4F8B\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u5F93\u696D\u54E1\u306E\u30B9\u30AD\u30EB\u3068\u7D4C\u9A13",
+            "\u81EA\u793E\u5DE5\u5834\u3068\u8A2D\u5099",
+            "\u9867\u5BA2\u30C7\u30FC\u30BF\u3068\u7279\u8A31\u60C5\u5831",
+            "\u73FE\u91D1\u3068\u9810\u91D1"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 189,
+      category: {
+        id: 8,
+        name: "\u30B9\u30C8\u30E9\u30C6\u30B8",
+        sub_id: 2,
+        sub_name: "\u696D\u52D9\u5206\u6790\u30FB\u30C7\u30FC\u30BF\u5229\u6D3B\u7528"
+      },
+      question_text: "\u54C1\u8CEA\u7BA1\u7406\u624B\u6CD5\u306E\u300CQC\u4E03\u3064\u9053\u5177\u300D\u306E\u3046\u3061\u3001\u9805\u76EE\u5225\u306B\u5C64\u5225\u3057\u3066\u51FA\u73FE\u983B\u5EA6\u306E\u9AD8\u3044\u9806\u306B\u4E26\u3079\u3001\u7D2F\u7A4D\u548C\u3092\u6298\u308C\u7DDA\u30B0\u30E9\u30D5\u3067\u8868\u3059\u56F3\u3092\u4F55\u3068\u547C\u3073\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u30D2\u30B9\u30C8\u30B0\u30E9\u30E0",
+            "\u30D1\u30EC\u30FC\u30C8\u56F3",
+            "\u7BA1\u7406\u56F3",
+            "\u7279\u6027\u8981\u56E0\u56F3"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 190,
+      category: {
+        id: 8,
+        name: "\u30B9\u30C8\u30E9\u30C6\u30B8",
+        sub_id: 2,
+        sub_name: "\u696D\u52D9\u5206\u6790\u30FB\u30C7\u30FC\u30BF\u5229\u6D3B\u7528"
+      },
+      question_text: "\u591A\u304F\u306E\u6563\u4E71\u3057\u305F\u60C5\u5831\u304B\u3089\u3001\u8A00\u8449\u306E\u610F\u5473\u5408\u3044\u3092\u6574\u7406\u3057\u3066\u554F\u984C\u3092\u78BA\u5B9A\u3059\u308B\u300C\u65B0QC\u4E03\u3064\u9053\u5177\u300D\u306E\u624B\u6CD5\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u89AA\u548C\u56F3\u6CD5",
+            "\u9023\u95A2\u56F3\u6CD5",
+            "\u7CFB\u7D71\u56F3\u6CD5",
+            "\u30DE\u30C8\u30EA\u30C3\u30AF\u30B9\u56F3\u6CD5"
+          ],
+          correct_answer_index: 0
+        }
+      }
+    },
+    {
+      id: 191,
+      category: {
+        id: 8,
+        name: "\u30B9\u30C8\u30E9\u30C6\u30B8",
+        sub_id: 3,
+        sub_name: "\u4F1A\u8A08\u30FB\u8CA1\u52D9"
+      },
+      question_text: "\u4F01\u696D\u306E\u8CA1\u653F\u72B6\u614B\u3092\u4E00\u5B9A\u6642\u70B9\uFF08\u671F\u672B\u306A\u3069\uFF09\u3067\u793A\u3059\u8CA1\u52D9\u8AF8\u8868\u3067\u3001\u300C\u8CC7\u7523\u300D\u300C\u8CA0\u50B5\u300D\u300C\u7D14\u8CC7\u7523\u300D\u3067\u69CB\u6210\u3055\u308C\u308B\u3082\u306E\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u640D\u76CA\u8A08\u7B97\u66F8",
+            "\u30AD\u30E3\u30C3\u30B7\u30E5\u30D5\u30ED\u30FC\u8A08\u7B97\u66F8",
+            "\u8CB8\u501F\u5BFE\u7167\u8868",
+            "\u88FD\u9020\u539F\u4FA1\u660E\u7D30\u66F8"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 192,
+      category: {
+        id: 8,
+        name: "\u30B9\u30C8\u30E9\u30C6\u30B8",
+        sub_id: 3,
+        sub_name: "\u4F1A\u8A08\u30FB\u8CA1\u52D9"
+      },
+      question_text: "\u8A2D\u5099\u306A\u3069\u306E\u56FA\u5B9A\u8CC7\u7523\u306E\u53D6\u5F97\u8CBB\u7528\u3092\u3001\u5229\u7528\u3059\u308B\u671F\u9593\u306B\u308F\u305F\u3063\u3066\u8CBB\u7528\u3068\u3057\u3066\u914D\u5206\u3059\u308B\u4F1A\u8A08\u51E6\u7406\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u68DA\u5378\u8CC7\u7523\u8A55\u4FA1",
+            "\u6E1B\u4FA1\u511F\u5374",
+            "\u5F15\u5F53\u91D1\u8A2D\u5B9A",
+            "\u53CE\u76CA\u8A8D\u8B58"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 193,
+      category: {
+        id: 8,
+        name: "\u30B9\u30C8\u30E9\u30C6\u30B8",
+        sub_id: 4,
+        sub_name: "\u60C5\u5831\u30B7\u30B9\u30C6\u30E0\u6226\u7565"
+      },
+      question_text: "\u539F\u6750\u6599\u306E\u8ABF\u9054\u304B\u3089\u6700\u7D42\u6D88\u8CBB\u8005\u3078\u306E\u8CA9\u58F2\u306B\u81F3\u308B\u307E\u3067\u306E\u4E00\u9023\u306E\u30D7\u30ED\u30BB\u30B9\u3092\u3001\u4F01\u696D\u306E\u67A0\u3092\u8D85\u3048\u3066\u7D71\u5408\u7684\u306B\u30DE\u30CD\u30B8\u30E1\u30F3\u30C8\u3059\u308B\u30B7\u30B9\u30C6\u30E0\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "CRM\uFF08Customer Relationship Management\uFF09",
+            "ERP\uFF08Enterprise Resource Planning\uFF09",
+            "SCM\uFF08Supply Chain Management\uFF09",
+            "KMS\uFF08Knowledge Management System\uFF09"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 194,
+      category: {
+        id: 8,
+        name: "\u30B9\u30C8\u30E9\u30C6\u30B8",
+        sub_id: 4,
+        sub_name: "\u60C5\u5831\u30B7\u30B9\u30C6\u30E0\u6226\u7565"
+      },
+      question_text: "\u4F01\u696D\u306E\u7D4C\u55B6\u6226\u7565\u3092IT\u3067\u5B9F\u73FE\u3059\u308B\u305F\u3081\u306B\u3001\u5168\u4F53\u30B7\u30B9\u30C6\u30E0\u5316\u8A08\u753B\u3084\u60C5\u5831\u5316\u6295\u8CC7\u8A08\u753B\u3092\u7B56\u5B9A\u3059\u308B\u6D3B\u52D5\u306F\u3001\u4E3B\u306B\u8AB0\u304C\u4E2D\u5FC3\u3068\u306A\u3063\u3066\u884C\u3044\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u30B7\u30B9\u30C6\u30E0\u76E3\u67FB\u4EBA",
+            "CIO\uFF08Chief Information Officer\uFF09",
+            "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u30DE\u30CD\u30FC\u30B8\u30E3",
+            "IT\u30B3\u30F3\u30B5\u30EB\u30BF\u30F3\u30C8"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 195,
+      category: {
+        id: 8,
+        name: "\u30B9\u30C8\u30E9\u30C6\u30B8",
+        sub_id: 5,
+        sub_name: "\u696D\u52D9\u30D7\u30ED\u30BB\u30B9"
+      },
+      question_text: "\u696D\u52D9\u30D7\u30ED\u30BB\u30B9\u306E\u53EF\u8996\u5316\u306B\u7528\u3044\u3089\u308C\u308B\u624B\u6CD5\u3068\u3001\u305D\u306E\u4E3B\u306A\u76EE\u7684\u306E\u7D44\u307F\u5408\u308F\u305B\u3068\u3057\u3066\u3001\u9069\u5207\u306A\u3082\u306E\u3092\u9078\u3073\u306A\u3055\u3044\u3002",
+      question_interaction: {
+        type: "Association",
+        data: [
+          { id: 1, left: "DFD\uFF08Data Flow Diagram\uFF09", right: "\u30C7\u30FC\u30BF\u306E\u6D41\u308C\u3092\u8A18\u8FF0\u3059\u308B" },
+          { id: 2, left: "E-R\u56F3\uFF08Entity-Relationship Diagram\uFF09", right: "\u30C7\u30FC\u30BF\u9593\u306E\u95A2\u9023\u3092\u8868\u73FE\u3059\u308B" }
+        ]
+      }
+    },
+    {
+      id: 196,
+      category: {
+        id: 8,
+        name: "\u30B9\u30C8\u30E9\u30C6\u30B8",
+        sub_id: 6,
+        sub_name: "\u30BD\u30EA\u30E5\u30FC\u30B7\u30E7\u30F3\u30D3\u30B8\u30CD\u30B9"
+      },
+      question_text: "\u30AF\u30E9\u30A6\u30C9\u30B3\u30F3\u30D4\u30E5\u30FC\u30C6\u30A3\u30F3\u30B0\u306E\u30B5\u30FC\u30D3\u30B9\u5F62\u614B\u3067\u3001\u30A2\u30D7\u30EA\u30B1\u30FC\u30B7\u30E7\u30F3\u3092\u958B\u767A\u30FB\u5B9F\u884C\u3059\u308B\u305F\u3081\u306E\u30D7\u30E9\u30C3\u30C8\u30D5\u30A9\u30FC\u30E0\u3092\u30A4\u30F3\u30BF\u30FC\u30CD\u30C3\u30C8\u7D4C\u7531\u3067\u63D0\u4F9B\u3059\u308B\u30E2\u30C7\u30EB\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "IaaS\uFF08Infrastructure as a Service\uFF09",
+            "SaaS\uFF08Software as a Service\uFF09",
+            "PaaS\uFF08Platform as a Service\uFF09",
+            "DaaS\uFF08Desktop as a Service\uFF09"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 197,
+      category: {
+        id: 8,
+        name: "\u30B9\u30C8\u30E9\u30C6\u30B8",
+        sub_id: 6,
+        sub_name: "\u30BD\u30EA\u30E5\u30FC\u30B7\u30E7\u30F3\u30D3\u30B8\u30CD\u30B9"
+      },
+      question_text: "\u9867\u5BA2\u306E\u7D4C\u55B6\u8AB2\u984C\u3092IT\u3068\u4ED8\u52A0\u30B5\u30FC\u30D3\u30B9\u3092\u901A\u3057\u3066\u89E3\u6C7A\u3059\u308B\u30D3\u30B8\u30CD\u30B9\u30E2\u30C7\u30EB\u3092\u4F55\u3068\u547C\u3073\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u30D7\u30ED\u30C0\u30AF\u30C8\u30A2\u30A6\u30C8\u30D3\u30B8\u30CD\u30B9",
+            "\u30E9\u30A4\u30BB\u30F3\u30B9\u30D3\u30B8\u30CD\u30B9",
+            "\u30BD\u30EA\u30E5\u30FC\u30B7\u30E7\u30F3\u30D3\u30B8\u30CD\u30B9",
+            "\u30B3\u30F3\u30B5\u30EB\u30C6\u30A3\u30F3\u30B0\u30B5\u30FC\u30D3\u30B9"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 198,
+      category: {
+        id: 8,
+        name: "\u30B9\u30C8\u30E9\u30C6\u30B8",
+        sub_id: 7,
+        sub_name: "\u30B7\u30B9\u30C6\u30E0\u6D3B\u7528\u4FC3\u9032\u30FB\u8A55\u4FA1"
+      },
+      question_text: "IT\u30B7\u30B9\u30C6\u30E0\u306E\u5C0E\u5165\u52B9\u679C\u3092\u8A55\u4FA1\u3059\u308B\u6307\u6A19\u306E\u4E00\u3064\u3067\u3001\u6295\u8CC7\u984D\u306B\u5BFE\u3057\u3066\u3069\u308C\u3060\u3051\u306E\u5229\u76CA\u304C\u5F97\u3089\u308C\u305F\u304B\u3092\u793A\u3059\u3082\u306E\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "TCO\uFF08Total Cost of Ownership\uFF09",
+            "ROI\uFF08Return On Investment\uFF09",
+            "KPI\uFF08Key Performance Indicator\uFF09",
+            "CSF\uFF08Critical Success Factor\uFF09"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 199,
+      category: {
+        id: 8,
+        name: "\u30B9\u30C8\u30E9\u30C6\u30B8",
+        sub_id: 7,
+        sub_name: "\u30B7\u30B9\u30C6\u30E0\u6D3B\u7528\u4FC3\u9032\u30FB\u8A55\u4FA1"
+      },
+      question_text: "\u60C5\u5831\u30B7\u30B9\u30C6\u30E0\u306E\u5229\u7528\u3092\u4FC3\u9032\u3057\u3001\u305D\u306E\u52B9\u679C\u3092\u6E2C\u5B9A\u30FB\u8A55\u4FA1\u3059\u308B\u6D3B\u52D5\u306B\u95A2\u9023\u3059\u308B\u7528\u8A9E\u3068\u8AAC\u660E\u306E\u7D44\u307F\u5408\u308F\u305B\u3068\u3057\u3066\u3001\u9069\u5207\u306A\u3082\u306E\u3092\u9078\u3073\u306A\u3055\u3044\u3002",
+      question_interaction: {
+        type: "Association",
+        data: [
+          { id: 1, left: "DX\uFF08\u30C7\u30B8\u30BF\u30EB\u30C8\u30E9\u30F3\u30B9\u30D5\u30A9\u30FC\u30E1\u30FC\u30B7\u30E7\u30F3\uFF09", right: "\u30C7\u30B8\u30BF\u30EB\u6280\u8853\u3092\u6D3B\u7528\u3057\u3066\u30D3\u30B8\u30CD\u30B9\u30E2\u30C7\u30EB\u3092\u5909\u9769\u3059\u308B" },
+          { id: 2, left: "\u30C7\u30FC\u30BF\u30B5\u30A4\u30A8\u30F3\u30B9", right: "\u30C7\u30FC\u30BF\u304B\u3089\u65B0\u305F\u306A\u77E5\u898B\u3092\u5F97\u3066\u8AB2\u984C\u89E3\u6C7A\u3092\u652F\u63F4\u3059\u308B" }
+        ]
+      }
+    },
+    {
+      id: 200,
+      category: {
+        id: 8,
+        name: "\u30B9\u30C8\u30E9\u30C6\u30B8",
+        sub_id: 8,
+        sub_name: "\u30B7\u30B9\u30C6\u30E0\u5316\u8A08\u753B"
+      },
+      question_text: "\u60C5\u5831\u30B7\u30B9\u30C6\u30E0\u306E\u5C0E\u5165\u306B\u304A\u3044\u3066\u3001\u591A\u65B9\u9762\u304B\u3089\u5206\u6790\u3057\u3066\u8981\u6C42\u4E8B\u9805\u3092\u96C6\u3081\u308B\u521D\u671F\u6BB5\u968E\u306E\u30D7\u30ED\u30BB\u30B9\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u30B7\u30B9\u30C6\u30E0\u5316\u8A08\u753B",
+            "\u8981\u4EF6\u5B9A\u7FA9",
+            "\u30B7\u30B9\u30C6\u30E0\u5316\u69CB\u60F3",
+            "\u958B\u767A\u30D7\u30ED\u30BB\u30B9"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 201,
+      category: {
+        id: 8,
+        name: "\u30B9\u30C8\u30E9\u30C6\u30B8",
+        sub_id: 9,
+        sub_name: "\u8981\u4EF6\u5B9A\u7FA9"
+      },
+      question_text: "\u30B7\u30B9\u30C6\u30E0\u306B\u6C42\u3081\u3089\u308C\u308B\u300C\u3007\u3007\u3092\u691C\u7D22\u3067\u304D\u308B\u300D\u300C\u3007\u3007\u3092\u767B\u9332\u3067\u304D\u308B\u300D\u3068\u3044\u3063\u305F\u3001\u5177\u4F53\u7684\u306A\u6A5F\u80FD\u306B\u95A2\u3059\u308B\u8981\u6C42\u3092\u4F55\u3068\u547C\u3073\u307E\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u975E\u6A5F\u80FD\u8981\u4EF6",
+            "\u6A5F\u80FD\u8981\u4EF6",
+            "\u696D\u52D9\u8981\u4EF6",
+            "\u79FB\u884C\u8981\u4EF6"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 202,
+      category: {
+        id: 8,
+        name: "\u30B9\u30C8\u30E9\u30C6\u30B8",
+        sub_id: 9,
+        sub_name: "\u8981\u4EF6\u5B9A\u7FA9"
+      },
+      question_text: "\u30B7\u30B9\u30C6\u30E0\u958B\u767A\u30D7\u30ED\u30BB\u30B9\u306E\u3046\u3061\u3001\u5229\u5BB3\u95A2\u4FC2\u8005\u306E\u8981\u6C42\u3092\u307E\u3068\u3081\u3001\u30B7\u30B9\u30C6\u30E0\u3084\u696D\u52D9\u5168\u4F53\u306E\u67A0\u7D44\u307F\u3068\u6A5F\u80FD\u3092\u660E\u78BA\u306B\u3059\u308B\u6D3B\u52D5\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "\u8981\u6C42\u5206\u6790",
+            "\u8981\u4EF6\u5B9A\u7FA9",
+            "\u30B7\u30B9\u30C6\u30E0\u8A2D\u8A08",
+            "\u53D7\u5165\u30C6\u30B9\u30C8"
+          ],
+          correct_answer_index: 1
+        }
+      }
+    },
+    {
+      id: 203,
+      category: {
+        id: 8,
+        name: "\u30B9\u30C8\u30E9\u30C6\u30B8",
+        sub_id: 10,
+        sub_name: "\u8ABF\u9054\u8A08\u753B\u30FB\u5B9F\u65BD"
+      },
+      question_text: "\u30B7\u30B9\u30C6\u30E0\u8ABF\u9054\u306B\u304A\u3044\u3066\u3001\u767A\u6CE8\u8005\u304C\u30D9\u30F3\u30C0\u4F01\u696D\u306B\u5BFE\u3057\u3001\u30B7\u30B9\u30C6\u30E0\u5316\u306E\u76EE\u7684\u3084\u696D\u52D9\u5185\u5BB9\u3092\u793A\u3057\u3001\u81EA\u793E\u306E\u8981\u4EF6\u5B9A\u7FA9\u66F8\u4F5C\u6210\u306E\u305F\u3081\u306B\u60C5\u5831\u63D0\u4F9B\u3092\u4F9D\u983C\u3059\u308B\u6587\u66F8\u306F\u4F55\u3067\u3059\u304B\uFF1F",
+      question_interaction: {
+        type: "MultipleChoice",
+        data: {
+          texts: [
+            "RFP\uFF08Request For Proposal\uFF09",
+            "SLA\uFF08Service Level Agreement\uFF09",
+            "RFI\uFF08Request For Information\uFF09",
+            "NDA\uFF08Non-Disclosure Agreement\uFF09"
+          ],
+          correct_answer_index: 2
+        }
+      }
+    },
+    {
+      id: 204,
+      category: {
+        id: 8,
+        name: "\u30B9\u30C8\u30E9\u30C6\u30B8",
+        sub_id: 10,
+        sub_name: "\u8ABF\u9054\u8A08\u753B\u30FB\u5B9F\u65BD"
+      },
+      question_text: "\u8ABF\u9054\u5951\u7D04\u306E\u7A2E\u985E\u3068\u305D\u306E\u7279\u5FB4\u306E\u7D44\u307F\u5408\u308F\u305B\u3068\u3057\u3066\u3001\u9069\u5207\u306A\u3082\u306E\u3092\u9078\u3073\u306A\u3055\u3044\u3002",
+      question_interaction: {
+        type: "Association",
+        data: [
+          { id: 1, left: "\u8ACB\u8CA0\u5951\u7D04", right: "\u5951\u7D04\u3057\u305F\u4ED5\u4E8B\u3092\u5B8C\u6210\u3055\u305B\u308B\u8CAC\u4EFB\u3092\u8CA0\u3046" },
+          { id: 2, left: "\u6E96\u59D4\u4EFB\u5951\u7D04", right: "\u5584\u7BA1\u6CE8\u610F\u7FA9\u52D9\u3092\u8CA0\u3046\u304C\u3001\u5B8C\u6210\u8CAC\u4EFB\u306F\u8CA0\u308F\u306A\u3044" }
+        ]
       }
     }
   ]
@@ -6687,10 +10628,17 @@ function setup(dbName, version) {
         }
       });
       const transaction = event4.target.transaction;
+      transaction.onerror = (e) => {
+        console.log("setup Error", event4.target.error);
+        reject(db);
+      };
+      transaction.oncomplete = (_) => {
+        console.log("Quiz history saved successfully");
+        resolve2(db);
+      };
       if (data_default.categories) {
         const categoryStore = transaction.objectStore(CATEGORY_STORE);
         data_default.categories.forEach((category) => {
-          console.log("category:", category);
           categoryStore.add(category);
         });
       }
@@ -6805,7 +10753,7 @@ function getQuizHistory(db) {
 
 // build/dev/javascript/study_app/interface/indexed_db.mjs
 function get_categories_decode(dynamic2) {
-  return run(dynamic2, list2(decoder2()));
+  return run(dynamic2, list2(decoder()));
 }
 function get_question_by_ids_decode(dynamic2) {
   return run(dynamic2, list2(decoder5()));
@@ -6817,7 +10765,7 @@ function decode_question_id_and_category_list(dynamic2) {
     (id) => {
       return field(
         "category",
-        decoder2(),
+        decoder(),
         (category) => {
           return success(new IdAndCategory(id, category));
         }
@@ -6830,7 +10778,7 @@ function decode_quiz_historys(dynamic2) {
   return run(dynamic2, decoder6());
 }
 
-// build/dev/javascript/study_app/utils/list_ex.mjs
+// build/dev/javascript/study_app/extra/list_.mjs
 function get_at(list4, at) {
   let _pipe = drop(list4, at);
   return ((xs) => {
@@ -6869,37 +10817,608 @@ function update_if(list4, prefix, fun) {
   );
 }
 
-// build/dev/javascript/study_app/utils/promise_ex.mjs
-function to_effect(promise, decoder7, to_success_msg, to_err_msg) {
-  return from(
-    (dispatch) => {
-      let _pipe = promise;
-      let _pipe$1 = map_promise(
-        _pipe,
-        (dynamic2) => {
-          let result = decoder7(dynamic2);
-          if (result instanceof Ok) {
-            let a = result[0];
-            return to_success_msg(a);
-          } else {
-            let err = result[0];
-            return to_err_msg(err);
-          }
-        }
-      );
-      tap(_pipe$1, dispatch);
-      return void 0;
+// build/dev/javascript/study_app/pages/quiz_home.mjs
+var Model4 = class extends CustomType {
+  constructor(db, categories, question_id_categories, shuffle_or_not, selected_category, selected_count, selected_question_ids, loading, error, history, show_history) {
+    super();
+    this.db = db;
+    this.categories = categories;
+    this.question_id_categories = question_id_categories;
+    this.shuffle_or_not = shuffle_or_not;
+    this.selected_category = selected_category;
+    this.selected_count = selected_count;
+    this.selected_question_ids = selected_question_ids;
+    this.loading = loading;
+    this.error = error;
+    this.history = history;
+    this.show_history = show_history;
+  }
+};
+var SelectedCategory = class extends CustomType {
+  constructor(is_selected, category) {
+    super();
+    this.is_selected = is_selected;
+    this.category = category;
+  }
+};
+var Limit = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var Full = class extends CustomType {
+};
+var SelectCategory = class extends CustomType {
+  constructor($0, $1) {
+    super();
+    this[0] = $0;
+    this[1] = $1;
+  }
+};
+var SelectCount = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var SwitchShuffle = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var ViewHistory = class extends CustomType {
+};
+var GetCategories = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var GetQuestionIdAndCategoryList = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var GetQuizHistory = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var StartQuiz = class extends CustomType {
+};
+var OutCome = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var ErrScreen = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+function init(db) {
+  let get_categories = to_effect(
+    getCategories(db),
+    get_categories_decode,
+    (var0) => {
+      return new GetCategories(var0);
+    },
+    (var0) => {
+      return new ErrScreen(var0);
     }
   );
-}
-function to_effect_no_decode(promise, to_msg) {
-  return from(
-    (dispatch) => {
-      let _pipe = map_promise(promise, to_msg);
-      let _pipe$1 = tap(_pipe, dispatch);
-      echo(_pipe$1, "src/utils/promise_ex.gleam", 32);
-      return void 0;
+  let get_question_id_and_category_list = to_effect(
+    getQuestionIdAndCategoryList(db),
+    decode_question_id_and_category_list,
+    (var0) => {
+      return new GetQuestionIdAndCategoryList(var0);
+    },
+    (var0) => {
+      return new ErrScreen(var0);
     }
+  );
+  let get_history = to_effect(
+    getQuizHistory(db),
+    decode_quiz_historys,
+    (var0) => {
+      return new GetQuizHistory(var0);
+    },
+    (var0) => {
+      return new ErrScreen(var0);
+    }
+  );
+  return [
+    new Model4(
+      db,
+      toList([]),
+      toList([]),
+      true,
+      toList([]),
+      new Full(),
+      toList([]),
+      false,
+      new None(),
+      toList([]),
+      false
+    ),
+    batch(
+      toList([get_categories, get_question_id_and_category_list, get_history])
+    )
+  ];
+}
+function filtering_question_id(id_categorie_list, selected_category_ids, selected_count, do_shuffle) {
+  let _block;
+  let _pipe = selected_category_ids;
+  let _pipe$1 = filter(_pipe, (c) => {
+    return c.is_selected;
+  });
+  _block = map(_pipe$1, (c) => {
+    return c.category.id;
+  });
+  let filtered_category_ids = _block;
+  let _block$1;
+  let _pipe$2 = id_categorie_list;
+  let _pipe$3 = filter(
+    _pipe$2,
+    (q) => {
+      return contains(filtered_category_ids, q.category.id);
+    }
+  );
+  _block$1 = map(_pipe$3, (c) => {
+    return c.category.id;
+  });
+  let filtered_questions = _block$1;
+  let _block$2;
+  if (selected_count instanceof Limit) {
+    let count = selected_count[0];
+    _block$2 = count;
+  } else {
+    _block$2 = length(filtered_questions);
+  }
+  let limit_count = _block$2;
+  let _block$3;
+  if (do_shuffle) {
+    _block$3 = shuffle(filtered_questions);
+  } else {
+    _block$3 = filtered_questions;
+  }
+  let _pipe$4 = _block$3;
+  return take(_pipe$4, limit_count);
+}
+function update5(model, msg) {
+  if (msg instanceof SelectCategory) {
+    let id = msg[0];
+    let is_selected = msg[1];
+    let new_select_category = update_if(
+      model.selected_category,
+      (c) => {
+        return c.category.id === id;
+      },
+      (c) => {
+        return new SelectedCategory(is_selected, c.category);
+      }
+    );
+    let new_question_ids = filtering_question_id(
+      model.question_id_categories,
+      new_select_category,
+      model.selected_count,
+      model.shuffle_or_not
+    );
+    return [
+      (() => {
+        let _record = model;
+        return new Model4(
+          _record.db,
+          _record.categories,
+          _record.question_id_categories,
+          _record.shuffle_or_not,
+          new_select_category,
+          _record.selected_count,
+          new_question_ids,
+          _record.loading,
+          _record.error,
+          _record.history,
+          _record.show_history
+        );
+      })(),
+      none2()
+    ];
+  } else if (msg instanceof SelectCount) {
+    let quest_count = msg[0];
+    let new_question_ids = filtering_question_id(
+      model.question_id_categories,
+      model.selected_category,
+      quest_count,
+      model.shuffle_or_not
+    );
+    return [
+      (() => {
+        let _record = model;
+        return new Model4(
+          _record.db,
+          _record.categories,
+          _record.question_id_categories,
+          _record.shuffle_or_not,
+          _record.selected_category,
+          quest_count,
+          new_question_ids,
+          _record.loading,
+          _record.error,
+          _record.history,
+          _record.show_history
+        );
+      })(),
+      none2()
+    ];
+  } else if (msg instanceof SwitchShuffle) {
+    let is_shuffle = msg[0];
+    return [
+      (() => {
+        let _record = model;
+        return new Model4(
+          _record.db,
+          _record.categories,
+          _record.question_id_categories,
+          is_shuffle,
+          _record.selected_category,
+          _record.selected_count,
+          _record.selected_question_ids,
+          _record.loading,
+          _record.error,
+          _record.history,
+          _record.show_history
+        );
+      })(),
+      none2()
+    ];
+  } else if (msg instanceof ViewHistory) {
+    echo("View History", "src/pages/quiz_home.gleam", 189);
+    return [
+      (() => {
+        let _record = model;
+        return new Model4(
+          _record.db,
+          _record.categories,
+          _record.question_id_categories,
+          _record.shuffle_or_not,
+          _record.selected_category,
+          _record.selected_count,
+          _record.selected_question_ids,
+          _record.loading,
+          _record.error,
+          _record.history,
+          negate(model.show_history)
+        );
+      })(),
+      none2()
+    ];
+  } else if (msg instanceof GetCategories) {
+    let categories = msg[0];
+    echo("GetCategories", "src/pages/quiz_home.gleam", 196);
+    let new_selected_category = map(
+      categories,
+      (_capture) => {
+        return new SelectedCategory(true, _capture);
+      }
+    );
+    return [
+      (() => {
+        let _record = model;
+        return new Model4(
+          _record.db,
+          categories,
+          _record.question_id_categories,
+          _record.shuffle_or_not,
+          new_selected_category,
+          _record.selected_count,
+          _record.selected_question_ids,
+          _record.loading,
+          _record.error,
+          _record.history,
+          _record.show_history
+        );
+      })(),
+      none2()
+    ];
+  } else if (msg instanceof GetQuestionIdAndCategoryList) {
+    let id_and_category_list = msg[0];
+    echo("GetQuestionIdAndCategoryList", "src/pages/quiz_home.gleam", 211);
+    return [
+      (() => {
+        let _record = model;
+        return new Model4(
+          _record.db,
+          _record.categories,
+          id_and_category_list,
+          _record.shuffle_or_not,
+          _record.selected_category,
+          _record.selected_count,
+          map(id_and_category_list, (x) => {
+            return x.id;
+          }),
+          _record.loading,
+          _record.error,
+          _record.history,
+          _record.show_history
+        );
+      })(),
+      none2()
+    ];
+  } else if (msg instanceof GetQuizHistory) {
+    let history = msg[0];
+    echo("GetQuizHistory", "src/pages/quiz_home.gleam", 223);
+    return [
+      (() => {
+        let _record = model;
+        return new Model4(
+          _record.db,
+          _record.categories,
+          _record.question_id_categories,
+          _record.shuffle_or_not,
+          _record.selected_category,
+          _record.selected_count,
+          _record.selected_question_ids,
+          false,
+          _record.error,
+          history,
+          _record.show_history
+        );
+      })(),
+      none2()
+    ];
+  } else if (msg instanceof StartQuiz) {
+    echo("Start Quiz", "src/pages/quiz_home.gleam", 178);
+    let eff = to_effect(
+      getQuestionByIds(model.db, model.selected_question_ids),
+      get_question_by_ids_decode,
+      (var0) => {
+        return new OutCome(var0);
+      },
+      (var0) => {
+        return new ErrScreen(var0);
+      }
+    );
+    return [model, eff];
+  } else if (msg instanceof OutCome) {
+    let questions = msg[0];
+    console_log(
+      "Fetched " + to_string(length(questions)) + " questions."
+    );
+    return [model, none2()];
+  } else {
+    let json_err = msg[0];
+    echo("err screen", "src/pages/quiz_home.gleam", 228);
+    return [
+      (() => {
+        let _record = model;
+        return new Model4(
+          _record.db,
+          _record.categories,
+          _record.question_id_categories,
+          _record.shuffle_or_not,
+          _record.selected_category,
+          _record.selected_count,
+          _record.selected_question_ids,
+          _record.loading,
+          new Some(json_err),
+          _record.history,
+          _record.show_history
+        );
+      })(),
+      none2()
+    ];
+  }
+}
+function view_error(error) {
+  if (error instanceof Some) {
+    return p(toList([class$("Loading error")]), toList([]));
+  } else {
+    return text3("");
+  }
+}
+function view_shuffle(shuffle2) {
+  return div(
+    toList([]),
+    toList([
+      label(
+        toList([]),
+        toList([
+          input(
+            toList([
+              type_("checkbox"),
+              checked(shuffle2),
+              on_check(
+                (checked2) => {
+                  return new SwitchShuffle(checked2);
+                }
+              )
+            ])
+          )
+        ])
+      )
+    ])
+  );
+}
+function view_category_selection(selected_categories) {
+  return div(
+    toList([styles(toList([]))]),
+    map(
+      selected_categories,
+      (c) => {
+        return div(
+          toList([styles(toList([["margin-right", "1rem"]]))]),
+          toList([
+            input(
+              toList([
+                type_("checkbox"),
+                checked(c.is_selected),
+                on_check(
+                  (checked2) => {
+                    return new SelectCategory(c.category.id, checked2);
+                  }
+                )
+              ])
+            ),
+            label(toList([]), toList([text3(c.category.name)]))
+          ])
+        );
+      }
+    )
+  );
+}
+function view_count_selection(quest_count) {
+  let counts = toList([
+    new Full(),
+    new Limit(1),
+    new Limit(5),
+    new Limit(10),
+    new Limit(30),
+    new Limit(50)
+  ]);
+  let to_s = (count) => {
+    if (count instanceof Limit) {
+      let i = count[0];
+      return to_string(i) + "\u554F";
+    } else {
+      return "all";
+    }
+  };
+  return div(
+    toList([]),
+    map(
+      counts,
+      (count) => {
+        let is_selected = isEqual(quest_count, count);
+        return label(
+          toList([]),
+          toList([
+            input(
+              toList([
+                on_check((_) => {
+                  return new SelectCount(count);
+                }),
+                type_("radio"),
+                name("count"),
+                value(to_s(count)),
+                checked(is_selected)
+              ])
+            ),
+            text3(to_s(count))
+          ])
+        );
+      }
+    )
+  );
+}
+function view_loading(loading) {
+  if (loading) {
+    return p(toList([]), toList([text3("Loading...")]));
+  } else {
+    return text3("");
+  }
+}
+function view_history(history) {
+  return table(
+    toList([class$("history-table")]),
+    toList([
+      thead(
+        toList([]),
+        toList([
+          tr(
+            toList([]),
+            toList([
+              th(toList([]), toList([text3("ID")])),
+              th(toList([]), toList([text3("Category")])),
+              th(toList([]), toList([text3("Result")]))
+            ])
+          )
+        ])
+      ),
+      tbody(
+        toList([]),
+        map(
+          history,
+          (h) => {
+            return tr(
+              toList([]),
+              toList([
+                td(toList([]), toList([text3(to_string(h.id))])),
+                td(toList([]), toList([text3(h.category.name)])),
+                td(
+                  toList([]),
+                  toList([
+                    (() => {
+                      let $ = h.answer;
+                      if ($ instanceof Correct) {
+                        return text3("\u25CB");
+                      } else if ($ instanceof Incorrect) {
+                        return text3("\u2716");
+                      } else {
+                        return text3("-");
+                      }
+                    })()
+                  ])
+                )
+              ])
+            );
+          }
+        )
+      )
+    ])
+  );
+}
+function view_actions(is_start_quiz_enabled, show_history, history) {
+  return div(
+    toList([]),
+    toList([
+      button(
+        toList([
+          on_click(new StartQuiz()),
+          disabled(negate(is_start_quiz_enabled))
+        ]),
+        toList([text3("\u30AF\u30A4\u30BA\u958B\u59CB")])
+      ),
+      button(
+        toList([on_click(new ViewHistory())]),
+        toList([text3("\u5B66\u7FD2\u5C65\u6B74")])
+      ),
+      (() => {
+        if (show_history) {
+          return view_history(history);
+        } else {
+          return text3("");
+        }
+      })()
+    ])
+  );
+}
+function view4(model) {
+  let is_start_quiz_enabled = length(model.selected_question_ids) > 0;
+  let qty = length(model.selected_question_ids);
+  return div(
+    toList([]),
+    toList([
+      h1(toList([]), toList([text3("Quiz App")])),
+      view_error(model.error),
+      h2(toList([]), toList([text3("\u30AB\u30C6\u30B4\u30EA")])),
+      view_category_selection(model.selected_category),
+      h2(toList([]), toList([text3("shuffle")])),
+      view_shuffle(model.shuffle_or_not),
+      h2(toList([]), toList([text3("\u51FA\u984C\u6570\u9078\u629E")])),
+      view_count_selection(model.selected_count),
+      div(
+        toList([]),
+        toList([text3("Loaded questions:" + to_string(qty))])
+      ),
+      view_actions(is_start_quiz_enabled, model.show_history, model.history),
+      view_loading(model.loading)
+    ])
   );
 }
 function echo(value2, file, line) {
@@ -7039,602 +11558,7 @@ function echo$isDict(value2) {
   }
 }
 
-// build/dev/javascript/study_app/pages/quiz_home.mjs
-var Model4 = class extends CustomType {
-  constructor(db, categories, question_id_categories, outcome, selected_category, selected_count, loading, error, history, show_history) {
-    super();
-    this.db = db;
-    this.categories = categories;
-    this.question_id_categories = question_id_categories;
-    this.outcome = outcome;
-    this.selected_category = selected_category;
-    this.selected_count = selected_count;
-    this.loading = loading;
-    this.error = error;
-    this.history = history;
-    this.show_history = show_history;
-  }
-};
-var SelectCategory = class extends CustomType {
-  constructor($0, $1) {
-    super();
-    this[0] = $0;
-    this[1] = $1;
-  }
-};
-var SelectCount = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var ViewHistory = class extends CustomType {
-};
-var GetCategories = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var GetQuestionIdAndCategoryList = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var GetQuizHistory = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var StartQuiz = class extends CustomType {
-};
-var OutCome = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var ErrScreen = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-function init(db) {
-  let get_categories = to_effect(
-    getCategories(db),
-    get_categories_decode,
-    (var0) => {
-      return new GetCategories(var0);
-    },
-    (var0) => {
-      return new ErrScreen(var0);
-    }
-  );
-  let get_question_id_and_category_list = to_effect(
-    getQuestionIdAndCategoryList(db),
-    decode_question_id_and_category_list,
-    (var0) => {
-      return new GetQuestionIdAndCategoryList(var0);
-    },
-    (var0) => {
-      return new ErrScreen(var0);
-    }
-  );
-  let get_history = to_effect(
-    getQuizHistory(db),
-    decode_quiz_historys,
-    (var0) => {
-      return new GetQuizHistory(var0);
-    },
-    (var0) => {
-      return new ErrScreen(var0);
-    }
-  );
-  return [
-    new Model4(
-      db,
-      toList([]),
-      toList([]),
-      toList([]),
-      new None(),
-      1,
-      false,
-      new None(),
-      toList([]),
-      false
-    ),
-    batch(
-      toList([get_categories, get_question_id_and_category_list, get_history])
-    )
-  ];
-}
-function update5(model, msg) {
-  if (msg instanceof SelectCategory) {
-    let ind = msg[0];
-    let is_selected = msg[1];
-    let _block;
-    if (is_selected) {
-      _block = get_at(model.categories, ind);
-    } else {
-      _block = new None();
-    }
-    let new_selected_category = _block;
-    return [
-      (() => {
-        let _record = model;
-        return new Model4(
-          _record.db,
-          _record.categories,
-          _record.question_id_categories,
-          _record.outcome,
-          new_selected_category,
-          _record.selected_count,
-          _record.loading,
-          _record.error,
-          _record.history,
-          _record.show_history
-        );
-      })(),
-      none2()
-    ];
-  } else if (msg instanceof SelectCount) {
-    let count = msg[0];
-    return [
-      (() => {
-        let _record = model;
-        return new Model4(
-          _record.db,
-          _record.categories,
-          _record.question_id_categories,
-          _record.outcome,
-          _record.selected_category,
-          count,
-          _record.loading,
-          _record.error,
-          _record.history,
-          _record.show_history
-        );
-      })(),
-      none2()
-    ];
-  } else if (msg instanceof ViewHistory) {
-    echo2("View History", "src/pages/quiz_home.gleam", 159);
-    return [
-      (() => {
-        let _record = model;
-        return new Model4(
-          _record.db,
-          _record.categories,
-          _record.question_id_categories,
-          _record.outcome,
-          _record.selected_category,
-          _record.selected_count,
-          _record.loading,
-          _record.error,
-          _record.history,
-          negate(model.show_history)
-        );
-      })(),
-      none2()
-    ];
-  } else if (msg instanceof GetCategories) {
-    let categories = msg[0];
-    echo2("GetCategories", "src/pages/quiz_home.gleam", 166);
-    return [
-      (() => {
-        let _record = model;
-        return new Model4(
-          _record.db,
-          categories,
-          _record.question_id_categories,
-          _record.outcome,
-          _record.selected_category,
-          _record.selected_count,
-          _record.loading,
-          _record.error,
-          _record.history,
-          _record.show_history
-        );
-      })(),
-      none2()
-    ];
-  } else if (msg instanceof GetQuestionIdAndCategoryList) {
-    let id_and_category_list = msg[0];
-    echo2("GetQuestionIdAndCategoryList", "src/pages/quiz_home.gleam", 176);
-    return [
-      (() => {
-        let _record = model;
-        return new Model4(
-          _record.db,
-          _record.categories,
-          id_and_category_list,
-          _record.outcome,
-          _record.selected_category,
-          _record.selected_count,
-          _record.loading,
-          _record.error,
-          _record.history,
-          _record.show_history
-        );
-      })(),
-      none2()
-    ];
-  } else if (msg instanceof GetQuizHistory) {
-    let history = msg[0];
-    echo2("GetQuizHistory", "src/pages/quiz_home.gleam", 183);
-    return [
-      (() => {
-        let _record = model;
-        return new Model4(
-          _record.db,
-          _record.categories,
-          _record.question_id_categories,
-          _record.outcome,
-          _record.selected_category,
-          _record.selected_count,
-          _record.loading,
-          _record.error,
-          history,
-          _record.show_history
-        );
-      })(),
-      none2()
-    ];
-  } else if (msg instanceof StartQuiz) {
-    echo2("Start Quiz", "src/pages/quiz_home.gleam", 130);
-    let _block;
-    let _pipe = model.question_id_categories;
-    _block = map(_pipe, (item) => {
-      return item.id;
-    });
-    let all_question_ids = _block;
-    let _block$1;
-    let _pipe$1 = all_question_ids;
-    let _pipe$2 = shuffle(_pipe$1);
-    _block$1 = take(_pipe$2, model.selected_count);
-    let selected_ids = _block$1;
-    let eff = to_effect(
-      getQuestionByIds(model.db, selected_ids),
-      get_question_by_ids_decode,
-      (var0) => {
-        return new OutCome(var0);
-      },
-      (var0) => {
-        return new ErrScreen(var0);
-      }
-    );
-    return [model, eff];
-  } else if (msg instanceof OutCome) {
-    let questions = msg[0];
-    console_log(
-      "Fetched " + to_string(length(questions)) + " questions."
-    );
-    return [model, none2()];
-  } else {
-    let json_err = msg[0];
-    echo2("err screen", "src/pages/quiz_home.gleam", 188);
-    return [
-      (() => {
-        let _record = model;
-        return new Model4(
-          _record.db,
-          _record.categories,
-          _record.question_id_categories,
-          _record.outcome,
-          _record.selected_category,
-          _record.selected_count,
-          _record.loading,
-          new Some(json_err),
-          _record.history,
-          _record.show_history
-        );
-      })(),
-      none2()
-    ];
-  }
-}
-function view_error(error) {
-  if (error instanceof Some) {
-    return p(toList([class$("Loading error")]), toList([]));
-  } else {
-    return text3("");
-  }
-}
-function view_category_selection(categories, selected_category) {
-  return div(
-    toList([styles(toList([["display", "flex"]]))]),
-    index_map(
-      categories,
-      (category, ind) => {
-        let _block;
-        if (selected_category instanceof Some) {
-          let sc = selected_category[0];
-          _block = sc.id === category.id;
-        } else {
-          _block = false;
-        }
-        let is_selected = _block;
-        return div(
-          toList([styles(toList([["margin-right", "1rem"]]))]),
-          toList([
-            input(toList([type_("checkbox"), checked(true)])),
-            label(toList([]), toList([text3(category.name)]))
-          ])
-        );
-      }
-    )
-  );
-}
-function view_count_selection(selected_count) {
-  let counts = toList([1, 10, 20, 30]);
-  return div(
-    toList([]),
-    map(
-      counts,
-      (count) => {
-        let is_selected = selected_count === count;
-        return label(
-          toList([]),
-          toList([
-            input(
-              toList([
-                on_check((_) => {
-                  return new SelectCount(count);
-                }),
-                type_("radio"),
-                name("count"),
-                value(to_string(count)),
-                checked(is_selected)
-              ])
-            ),
-            text3(to_string(count) + "\u554F")
-          ])
-        );
-      }
-    )
-  );
-}
-function view_loading(loading) {
-  if (loading) {
-    return p(toList([]), toList([text3("Loading...")]));
-  } else {
-    return text3("");
-  }
-}
-function view_history(history) {
-  return table(
-    toList([class$("history-table")]),
-    toList([
-      thead(
-        toList([]),
-        toList([
-          tr(
-            toList([]),
-            toList([
-              th(toList([]), toList([text3("ID")])),
-              th(toList([]), toList([text3("Category")])),
-              th(toList([]), toList([text3("Result")]))
-            ])
-          )
-        ])
-      ),
-      tbody(
-        toList([]),
-        map(
-          history,
-          (h) => {
-            return tr(
-              toList([]),
-              toList([
-                td(toList([]), toList([text3(to_string(h.id))])),
-                td(toList([]), toList([text3(h.category.name)])),
-                td(
-                  toList([]),
-                  toList([
-                    (() => {
-                      let $ = h.answer;
-                      if ($ instanceof Correct) {
-                        return text3("\u25CB");
-                      } else if ($ instanceof Incorrect) {
-                        return text3("\u2716");
-                      } else {
-                        return text3("-");
-                      }
-                    })()
-                  ])
-                )
-              ])
-            );
-          }
-        )
-      )
-    ])
-  );
-}
-function view_actions(is_start_quiz_enabled, show_history, history) {
-  return div(
-    toList([]),
-    toList([
-      button(
-        toList([
-          on_click(new StartQuiz()),
-          disabled(negate(is_start_quiz_enabled))
-        ]),
-        toList([text3("\u30AF\u30A4\u30BA\u958B\u59CB")])
-      ),
-      button(
-        toList([on_click(new ViewHistory())]),
-        toList([text3("\u5B66\u7FD2\u5C65\u6B74")])
-      ),
-      (() => {
-        if (show_history) {
-          return view_history(history);
-        } else {
-          return text3("");
-        }
-      })()
-    ])
-  );
-}
-function view4(model) {
-  let is_start_quiz_enabled = length(model.categories) > 0 && length(
-    model.question_id_categories
-  ) > 0;
-  return div(
-    toList([]),
-    toList([
-      h1(toList([]), toList([text3("Quiz App")])),
-      view_error(model.error),
-      h2(toList([]), toList([text3("\u30AB\u30C6\u30B4\u30EA")])),
-      view_category_selection(model.categories, model.selected_category),
-      h2(toList([]), toList([text3("\u51FA\u984C\u6570\u9078\u629E")])),
-      view_count_selection(model.selected_count),
-      view_actions(is_start_quiz_enabled, model.show_history, model.history),
-      view_loading(model.loading)
-    ])
-  );
-}
-function echo2(value2, file, line) {
-  const grey = "\x1B[90m";
-  const reset_color = "\x1B[39m";
-  const file_line = `${file}:${line}`;
-  const string_value = echo$inspect2(value2);
-  if (globalThis.process?.stderr?.write) {
-    const string5 = `${grey}${file_line}${reset_color}
-${string_value}
-`;
-    process.stderr.write(string5);
-  } else if (globalThis.Deno) {
-    const string5 = `${grey}${file_line}${reset_color}
-${string_value}
-`;
-    globalThis.Deno.stderr.writeSync(new TextEncoder().encode(string5));
-  } else {
-    const string5 = `${file_line}
-${string_value}`;
-    globalThis.console.log(string5);
-  }
-  return value2;
-}
-function echo$inspectString2(str) {
-  let new_str = '"';
-  for (let i = 0; i < str.length; i++) {
-    let char = str[i];
-    if (char == "\n") new_str += "\\n";
-    else if (char == "\r") new_str += "\\r";
-    else if (char == "	") new_str += "\\t";
-    else if (char == "\f") new_str += "\\f";
-    else if (char == "\\") new_str += "\\\\";
-    else if (char == '"') new_str += '\\"';
-    else if (char < " " || char > "~" && char < "\xA0") {
-      new_str += "\\u{" + char.charCodeAt(0).toString(16).toUpperCase().padStart(4, "0") + "}";
-    } else {
-      new_str += char;
-    }
-  }
-  new_str += '"';
-  return new_str;
-}
-function echo$inspectDict2(map7) {
-  let body = "dict.from_list([";
-  let first = true;
-  let key_value_pairs = [];
-  map7.forEach((value2, key) => {
-    key_value_pairs.push([key, value2]);
-  });
-  key_value_pairs.sort();
-  key_value_pairs.forEach(([key, value2]) => {
-    if (!first) body = body + ", ";
-    body = body + "#(" + echo$inspect2(key) + ", " + echo$inspect2(value2) + ")";
-    first = false;
-  });
-  return body + "])";
-}
-function echo$inspectCustomType2(record) {
-  const props = globalThis.Object.keys(record).map((label2) => {
-    const value2 = echo$inspect2(record[label2]);
-    return isNaN(parseInt(label2)) ? `${label2}: ${value2}` : value2;
-  }).join(", ");
-  return props ? `${record.constructor.name}(${props})` : record.constructor.name;
-}
-function echo$inspectObject2(v) {
-  const name2 = Object.getPrototypeOf(v)?.constructor?.name || "Object";
-  const props = [];
-  for (const k of Object.keys(v)) {
-    props.push(`${echo$inspect2(k)}: ${echo$inspect2(v[k])}`);
-  }
-  const body = props.length ? " " + props.join(", ") + " " : "";
-  const head = name2 === "Object" ? "" : name2 + " ";
-  return `//js(${head}{${body}})`;
-}
-function echo$inspect2(v) {
-  const t = typeof v;
-  if (v === true) return "True";
-  if (v === false) return "False";
-  if (v === null) return "//js(null)";
-  if (v === void 0) return "Nil";
-  if (t === "string") return echo$inspectString2(v);
-  if (t === "bigint" || t === "number") return v.toString();
-  if (globalThis.Array.isArray(v))
-    return `#(${v.map(echo$inspect2).join(", ")})`;
-  if (v instanceof List)
-    return `[${v.toArray().map(echo$inspect2).join(", ")}]`;
-  if (v instanceof UtfCodepoint)
-    return `//utfcodepoint(${String.fromCodePoint(v.value)})`;
-  if (v instanceof BitArray) return echo$inspectBitArray2(v);
-  if (v instanceof CustomType) return echo$inspectCustomType2(v);
-  if (echo$isDict2(v)) return echo$inspectDict2(v);
-  if (v instanceof Set)
-    return `//js(Set(${[...v].map(echo$inspect2).join(", ")}))`;
-  if (v instanceof RegExp) return `//js(${v})`;
-  if (v instanceof Date) return `//js(Date("${v.toISOString()}"))`;
-  if (v instanceof Function) {
-    const args = [];
-    for (const i of Array(v.length).keys())
-      args.push(String.fromCharCode(i + 97));
-    return `//fn(${args.join(", ")}) { ... }`;
-  }
-  return echo$inspectObject2(v);
-}
-function echo$inspectBitArray2(bitArray) {
-  let endOfAlignedBytes = bitArray.bitOffset + 8 * Math.trunc(bitArray.bitSize / 8);
-  let alignedBytes = bitArraySlice(
-    bitArray,
-    bitArray.bitOffset,
-    endOfAlignedBytes
-  );
-  let remainingUnalignedBits = bitArray.bitSize % 8;
-  if (remainingUnalignedBits > 0) {
-    let remainingBits = bitArraySliceToInt(
-      bitArray,
-      endOfAlignedBytes,
-      bitArray.bitSize,
-      false,
-      false
-    );
-    let alignedBytesArray = Array.from(alignedBytes.rawBuffer);
-    let suffix = `${remainingBits}:size(${remainingUnalignedBits})`;
-    if (alignedBytesArray.length === 0) {
-      return `<<${suffix}>>`;
-    } else {
-      return `<<${Array.from(alignedBytes.rawBuffer).join(", ")}, ${suffix}>>`;
-    }
-  } else {
-    return `<<${Array.from(alignedBytes.rawBuffer).join(", ")}>>`;
-  }
-}
-function echo$isDict2(value2) {
-  try {
-    return value2 instanceof Dict;
-  } catch {
-    return false;
-  }
-}
-
-// build/dev/javascript/study_app/utils/effect_.mjs
+// build/dev/javascript/study_app/extra/effect_.mjs
 function perform(msg) {
   return from(
     (dispatch) => {
@@ -7906,7 +11830,7 @@ function init3(db, score, total_questions, quiz_result) {
 function update7(model, msg) {
   if (msg instanceof GetHistory) {
     let history = msg[0];
-    echo3("GetHistory", "src/pages/result_screen.gleam", 66);
+    echo2("GetHistory", "src/pages/result_screen.gleam", 63);
     let new_history = update_from_quiz_results(
       history,
       model.quiz_result
@@ -7926,14 +11850,14 @@ function update7(model, msg) {
     ];
   } else if (msg instanceof Err) {
     let json_err = msg[0];
-    echo3("err screen", "src/pages/result_screen.gleam", 72);
-    echo3(json_err, "src/pages/result_screen.gleam", 73);
+    echo2("err screen", "src/pages/result_screen.gleam", 69);
+    echo2(json_err, "src/pages/result_screen.gleam", 70);
     return [model, none2()];
   } else if (msg instanceof SaveHistory) {
-    echo3("SaveHistory", "src/pages/result_screen.gleam", 77);
+    echo2("SaveHistory", "src/pages/result_screen.gleam", 74);
     return [model, none2()];
   } else if (msg instanceof GoToHome) {
-    echo3("GoToHome", "src/pages/result_screen.gleam", 81);
+    echo2("GoToHome", "src/pages/result_screen.gleam", 78);
     let _block;
     let _pipe = model.history;
     let _pipe$1 = to_json7(_pipe);
@@ -7943,14 +11867,13 @@ function update7(model, msg) {
     _block = to_effect_no_decode(
       _pipe$2,
       (a) => {
-        echo3(a, "src/pages/result_screen.gleam", 88);
         return new OutCome3();
       }
     );
     let eff = _block;
     return [model, eff];
   } else {
-    echo3("result -> home", "src/pages/result_screen.gleam", 94);
+    echo2("result -> home", "src/pages/result_screen.gleam", 88);
     return [model, none2()];
   }
 }
@@ -8002,11 +11925,11 @@ function view6(model) {
     ])
   );
 }
-function echo3(value2, file, line) {
+function echo2(value2, file, line) {
   const grey = "\x1B[90m";
   const reset_color = "\x1B[39m";
   const file_line = `${file}:${line}`;
-  const string_value = echo$inspect3(value2);
+  const string_value = echo$inspect2(value2);
   if (globalThis.process?.stderr?.write) {
     const string5 = `${grey}${file_line}${reset_color}
 ${string_value}
@@ -8024,7 +11947,7 @@ ${string_value}`;
   }
   return value2;
 }
-function echo$inspectString3(str) {
+function echo$inspectString2(str) {
   let new_str = '"';
   for (let i = 0; i < str.length; i++) {
     let char = str[i];
@@ -8043,7 +11966,7 @@ function echo$inspectString3(str) {
   new_str += '"';
   return new_str;
 }
-function echo$inspectDict3(map7) {
+function echo$inspectDict2(map7) {
   let body = "dict.from_list([";
   let first = true;
   let key_value_pairs = [];
@@ -8053,47 +11976,47 @@ function echo$inspectDict3(map7) {
   key_value_pairs.sort();
   key_value_pairs.forEach(([key, value2]) => {
     if (!first) body = body + ", ";
-    body = body + "#(" + echo$inspect3(key) + ", " + echo$inspect3(value2) + ")";
+    body = body + "#(" + echo$inspect2(key) + ", " + echo$inspect2(value2) + ")";
     first = false;
   });
   return body + "])";
 }
-function echo$inspectCustomType3(record) {
+function echo$inspectCustomType2(record) {
   const props = globalThis.Object.keys(record).map((label2) => {
-    const value2 = echo$inspect3(record[label2]);
+    const value2 = echo$inspect2(record[label2]);
     return isNaN(parseInt(label2)) ? `${label2}: ${value2}` : value2;
   }).join(", ");
   return props ? `${record.constructor.name}(${props})` : record.constructor.name;
 }
-function echo$inspectObject3(v) {
+function echo$inspectObject2(v) {
   const name2 = Object.getPrototypeOf(v)?.constructor?.name || "Object";
   const props = [];
   for (const k of Object.keys(v)) {
-    props.push(`${echo$inspect3(k)}: ${echo$inspect3(v[k])}`);
+    props.push(`${echo$inspect2(k)}: ${echo$inspect2(v[k])}`);
   }
   const body = props.length ? " " + props.join(", ") + " " : "";
   const head = name2 === "Object" ? "" : name2 + " ";
   return `//js(${head}{${body}})`;
 }
-function echo$inspect3(v) {
+function echo$inspect2(v) {
   const t = typeof v;
   if (v === true) return "True";
   if (v === false) return "False";
   if (v === null) return "//js(null)";
   if (v === void 0) return "Nil";
-  if (t === "string") return echo$inspectString3(v);
+  if (t === "string") return echo$inspectString2(v);
   if (t === "bigint" || t === "number") return v.toString();
   if (globalThis.Array.isArray(v))
-    return `#(${v.map(echo$inspect3).join(", ")})`;
+    return `#(${v.map(echo$inspect2).join(", ")})`;
   if (v instanceof List)
-    return `[${v.toArray().map(echo$inspect3).join(", ")}]`;
+    return `[${v.toArray().map(echo$inspect2).join(", ")}]`;
   if (v instanceof UtfCodepoint)
     return `//utfcodepoint(${String.fromCodePoint(v.value)})`;
-  if (v instanceof BitArray) return echo$inspectBitArray3(v);
-  if (v instanceof CustomType) return echo$inspectCustomType3(v);
-  if (echo$isDict3(v)) return echo$inspectDict3(v);
+  if (v instanceof BitArray) return echo$inspectBitArray2(v);
+  if (v instanceof CustomType) return echo$inspectCustomType2(v);
+  if (echo$isDict2(v)) return echo$inspectDict2(v);
   if (v instanceof Set)
-    return `//js(Set(${[...v].map(echo$inspect3).join(", ")}))`;
+    return `//js(Set(${[...v].map(echo$inspect2).join(", ")}))`;
   if (v instanceof RegExp) return `//js(${v})`;
   if (v instanceof Date) return `//js(Date("${v.toISOString()}"))`;
   if (v instanceof Function) {
@@ -8102,9 +12025,9 @@ function echo$inspect3(v) {
       args.push(String.fromCharCode(i + 97));
     return `//fn(${args.join(", ")}) { ... }`;
   }
-  return echo$inspectObject3(v);
+  return echo$inspectObject2(v);
 }
-function echo$inspectBitArray3(bitArray) {
+function echo$inspectBitArray2(bitArray) {
   let endOfAlignedBytes = bitArray.bitOffset + 8 * Math.trunc(bitArray.bitSize / 8);
   let alignedBytes = bitArraySlice(
     bitArray,
@@ -8131,7 +12054,7 @@ function echo$inspectBitArray3(bitArray) {
     return `<<${Array.from(alignedBytes.rawBuffer).join(", ")}>>`;
   }
 }
-function echo$isDict3(value2) {
+function echo$isDict2(value2) {
   try {
     return value2 instanceof Dict;
   } catch {
@@ -8191,6 +12114,7 @@ function update8(model, msg) {
   if (model instanceof Loading) {
     if (msg instanceof DataInitialized) {
       let db = msg[0];
+      echo3("DataInitialized", "src/study_app.gleam", 48);
       let $ = init(db);
       let home_model = $[0];
       let home_effect = $[1];
@@ -8212,7 +12136,7 @@ function update8(model, msg) {
       let home_effect = $[1];
       if (home_msg instanceof OutCome) {
         let questions = home_msg[0];
-        echo4("Home -> QuizScreen", "src/study_app.gleam", 64);
+        echo3("Home -> QuizScreen", "src/study_app.gleam", 64);
         let screen_ini = init2(new_home.db, questions);
         if (screen_ini instanceof Ok) {
           let quiz_model = screen_ini[0];
@@ -8350,20 +12274,20 @@ function main() {
       "Pattern match failed, no pattern matched the value.",
       {
         value: $,
-        start: 4098,
-        end: 4147,
-        pattern_start: 4109,
-        pattern_end: 4114
+        start: 4108,
+        end: 4157,
+        pattern_start: 4119,
+        pattern_end: 4124
       }
     );
   }
   return void 0;
 }
-function echo4(value2, file, line) {
+function echo3(value2, file, line) {
   const grey = "\x1B[90m";
   const reset_color = "\x1B[39m";
   const file_line = `${file}:${line}`;
-  const string_value = echo$inspect4(value2);
+  const string_value = echo$inspect3(value2);
   if (globalThis.process?.stderr?.write) {
     const string5 = `${grey}${file_line}${reset_color}
 ${string_value}
@@ -8381,7 +12305,7 @@ ${string_value}`;
   }
   return value2;
 }
-function echo$inspectString4(str) {
+function echo$inspectString3(str) {
   let new_str = '"';
   for (let i = 0; i < str.length; i++) {
     let char = str[i];
@@ -8400,7 +12324,7 @@ function echo$inspectString4(str) {
   new_str += '"';
   return new_str;
 }
-function echo$inspectDict4(map7) {
+function echo$inspectDict3(map7) {
   let body = "dict.from_list([";
   let first = true;
   let key_value_pairs = [];
@@ -8410,47 +12334,47 @@ function echo$inspectDict4(map7) {
   key_value_pairs.sort();
   key_value_pairs.forEach(([key, value2]) => {
     if (!first) body = body + ", ";
-    body = body + "#(" + echo$inspect4(key) + ", " + echo$inspect4(value2) + ")";
+    body = body + "#(" + echo$inspect3(key) + ", " + echo$inspect3(value2) + ")";
     first = false;
   });
   return body + "])";
 }
-function echo$inspectCustomType4(record) {
+function echo$inspectCustomType3(record) {
   const props = globalThis.Object.keys(record).map((label2) => {
-    const value2 = echo$inspect4(record[label2]);
+    const value2 = echo$inspect3(record[label2]);
     return isNaN(parseInt(label2)) ? `${label2}: ${value2}` : value2;
   }).join(", ");
   return props ? `${record.constructor.name}(${props})` : record.constructor.name;
 }
-function echo$inspectObject4(v) {
+function echo$inspectObject3(v) {
   const name2 = Object.getPrototypeOf(v)?.constructor?.name || "Object";
   const props = [];
   for (const k of Object.keys(v)) {
-    props.push(`${echo$inspect4(k)}: ${echo$inspect4(v[k])}`);
+    props.push(`${echo$inspect3(k)}: ${echo$inspect3(v[k])}`);
   }
   const body = props.length ? " " + props.join(", ") + " " : "";
   const head = name2 === "Object" ? "" : name2 + " ";
   return `//js(${head}{${body}})`;
 }
-function echo$inspect4(v) {
+function echo$inspect3(v) {
   const t = typeof v;
   if (v === true) return "True";
   if (v === false) return "False";
   if (v === null) return "//js(null)";
   if (v === void 0) return "Nil";
-  if (t === "string") return echo$inspectString4(v);
+  if (t === "string") return echo$inspectString3(v);
   if (t === "bigint" || t === "number") return v.toString();
   if (globalThis.Array.isArray(v))
-    return `#(${v.map(echo$inspect4).join(", ")})`;
+    return `#(${v.map(echo$inspect3).join(", ")})`;
   if (v instanceof List)
-    return `[${v.toArray().map(echo$inspect4).join(", ")}]`;
+    return `[${v.toArray().map(echo$inspect3).join(", ")}]`;
   if (v instanceof UtfCodepoint)
     return `//utfcodepoint(${String.fromCodePoint(v.value)})`;
-  if (v instanceof BitArray) return echo$inspectBitArray4(v);
-  if (v instanceof CustomType) return echo$inspectCustomType4(v);
-  if (echo$isDict4(v)) return echo$inspectDict4(v);
+  if (v instanceof BitArray) return echo$inspectBitArray3(v);
+  if (v instanceof CustomType) return echo$inspectCustomType3(v);
+  if (echo$isDict3(v)) return echo$inspectDict3(v);
   if (v instanceof Set)
-    return `//js(Set(${[...v].map(echo$inspect4).join(", ")}))`;
+    return `//js(Set(${[...v].map(echo$inspect3).join(", ")}))`;
   if (v instanceof RegExp) return `//js(${v})`;
   if (v instanceof Date) return `//js(Date("${v.toISOString()}"))`;
   if (v instanceof Function) {
@@ -8459,9 +12383,9 @@ function echo$inspect4(v) {
       args.push(String.fromCharCode(i + 97));
     return `//fn(${args.join(", ")}) { ... }`;
   }
-  return echo$inspectObject4(v);
+  return echo$inspectObject3(v);
 }
-function echo$inspectBitArray4(bitArray) {
+function echo$inspectBitArray3(bitArray) {
   let endOfAlignedBytes = bitArray.bitOffset + 8 * Math.trunc(bitArray.bitSize / 8);
   let alignedBytes = bitArraySlice(
     bitArray,
@@ -8488,7 +12412,7 @@ function echo$inspectBitArray4(bitArray) {
     return `<<${Array.from(alignedBytes.rawBuffer).join(", ")}>>`;
   }
 }
-function echo$isDict4(value2) {
+function echo$isDict3(value2) {
   try {
     return value2 instanceof Dict;
   } catch {

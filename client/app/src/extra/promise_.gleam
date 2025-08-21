@@ -29,6 +29,6 @@ pub fn to_effect_no_decode(
   use dispatch <- effect.from
   promise.map(promise, to_msg)
   |> promise.tap(dispatch)
-  |> echo
+  // |> echo
   Nil
 }

@@ -1,6 +1,3 @@
-import core/association_question
-import core/category
-import core/multiple_choice_question
 import core/question
 import gleam/dynamic
 import gleam/dynamic/decode
