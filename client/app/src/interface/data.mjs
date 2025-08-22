@@ -434,7 +434,7 @@ export default {
         sub_id: 1,
         sub_name: "パスワードに関する攻撃",
       },
-      question_text: "同じパスワードを使って様々な利用者IDに対してログインを試行する攻撃の名称は何ですか？ [8]",
+      question_text: "同じパスワードを使って様々な利用者IDに対してログインを試行する攻撃の名称は何ですか？",
       question_interaction: {
         type: "MultipleChoice",
         data: {
@@ -451,7 +451,7 @@ export default {
         sub_id: 1,
         sub_name: "パスワードに関する攻撃",
       },
-      question_text: "複数のWebサイトで使い回されている利用者IDとパスワードのリストを不正に利用してログインを試行する攻撃はどれですか？ [9]",
+      question_text: "複数のWebサイトで使い回されている利用者IDとパスワードのリストを不正に利用してログインを試行する攻撃はどれですか？",
       question_interaction: {
         type: "MultipleChoice",
         data: {
@@ -468,7 +468,7 @@ export default {
         sub_id: 1,
         sub_name: "パスワードに関する攻撃",
       },
-      question_text: "パスワードがハッシュ値で保管されているシステムにおいて、あらかじめパスワードとハッシュ値の組み合わせリストを用意しておき、それを突き合わせてパスワードを推測する攻撃は何ですか？ [9]",
+      question_text: "パスワードがハッシュ値で保管されているシステムにおいて、あらかじめパスワードとハッシュ値の組み合わせリストを用意しておき、それを突き合わせてパスワードを推測する攻撃は何ですか？",
       question_interaction: {
         type: "MultipleChoice",
         data: {
@@ -504,7 +504,7 @@ export default {
         sub_id: 2,
         sub_name: "Webサイトに関する攻撃",
       },
-      question_text: "悪意のあるスクリプトをWebサイトに埋め込み、そのWebサイトにアクセスしたユーザーのブラウザ上でスクリプトを実行させることで、Cookie情報などを盗み出す攻撃は何ですか？ [12]",
+      question_text: "悪意のあるスクリプトをWebサイトに埋め込み、そのWebサイトにアクセスしたユーザーのブラウザ上でスクリプトを実行させることで、Cookie情報などを盗み出す攻撃は何ですか？",
       question_interaction: {
         type: "MultipleChoice",
         data: {
@@ -521,7 +521,7 @@ export default {
         sub_id: 2,
         sub_name: "Webサイトに関する攻撃",
       },
-      question_text: "ログイン中のユーザーのブラウザを利用して、ユーザーの意図しない処理をWebサーバ上で実行させる攻撃で、XSS（クロスサイトスクリプティング）とは異なり、主にサーバ側で不正な書き込みなどを行うものは何ですか？ [12]",
+      question_text: "ログイン中のユーザーのブラウザを利用して、ユーザーの意図しない処理をWebサーバ上で実行させる攻撃で、XSS（クロスサイトスクリプティング）とは異なり、主にサーバ側で不正な書き込みなどを行うものは何ですか？",
       question_interaction: {
         type: "MultipleChoice",
         data: {
@@ -540,7 +540,7 @@ export default {
         sub_id: 3,
         sub_name: "通信に関する攻撃",
       },
-      question_text: "DNSサーバのキャッシュに不正な情報を注入し、利用者を偽のWebサイトへ誘導する攻撃の名称は何ですか？ [13]",
+      question_text: "DNSサーバのキャッシュに不正な情報を注入し、利用者を偽のWebサイトへ誘導する攻撃の名称は何ですか？",
       question_interaction: {
         type: "MultipleChoice",
         data: {
@@ -557,7 +557,7 @@ export default {
         sub_id: 3,
         sub_name: "通信に関する攻撃",
       },
-      question_text: "攻撃者が、関係のない第三者のメールサーバやDNSサーバなどを不正に利用し、他の攻撃の中継点として悪用する攻撃の総称は何ですか？ [14]",
+      question_text: "攻撃者が、関係のない第三者のメールサーバやDNSサーバなどを不正に利用し、他の攻撃の中継点として悪用する攻撃の総称は何ですか？",
       question_interaction: {
         type: "MultipleChoice",
         data: {
@@ -574,7 +574,7 @@ export default {
         sub_id: 3,
         sub_name: "通信に関する攻撃",
       },
-      question_text: "クラウドサービスの利用者を標的とし、サービス利用費の増大などを目的として、過剰なアクセスを発生させて経済的損失を与える攻撃は何ですか？ [15]",
+      question_text: "クラウドサービスの利用者を標的とし、サービス利用費の増大などを目的として、過剰なアクセスを発生させて経済的損失を与える攻撃は何ですか？",
       question_interaction: {
         type: "MultipleChoice",
         data: {
@@ -593,7 +593,7 @@ export default {
         sub_id: 4,
         sub_name: "標的型攻撃・その他",
       },
-      question_text: "ソフトウェアにセキュリティ上の脆弱性が発見されてから、その脆弱性に対処するための修正プログラムや情報が提供されるまでの期間に、その脆弱性を悪用して行われる攻撃は何ですか？ [16]",
+      question_text: "ソフトウェアにセキュリティ上の脆弱性が発見されてから、その脆弱性に対処するための修正プログラムや情報が提供されるまでの期間に、その脆弱性を悪用して行われる攻撃は何ですか？",
       question_interaction: {
         type: "MultipleChoice",
         data: {
@@ -629,7 +629,7 @@ export default {
         sub_id: 4,
         sub_name: "標的型攻撃・その他",
       },
-      question_text: "攻撃者が攻撃の準備として、攻撃対象のネットワーク、システム、サーバ、PCなどに関する公開情報を収集する行為は何ですか？ [16]",
+      question_text: "攻撃者が攻撃の準備として、攻撃対象のネットワーク、システム、サーバ、PCなどに関する公開情報を収集する行為は何ですか？",
       question_interaction: {
         type: "MultipleChoice",
         data: {
@@ -648,7 +648,7 @@ export default {
         sub_id: 5,
         sub_name: "暗号化技術",
       },
-      question_text: "暗号化と復号に同じ鍵を使用し、鍵の種類が一つしかないため、鍵を秘密にしておく必要がある暗号方式は何ですか？ [19]",
+      question_text: "暗号化と復号に同じ鍵を使用し、鍵の種類が一つしかないため、鍵を秘密にしておく必要がある暗号方式は何ですか？",
       question_interaction: {
         type: "MultipleChoice",
         data: {
@@ -682,7 +682,7 @@ export default {
         sub_id: 5,
         sub_name: "暗号化技術",
       },
-      question_text: "送信されたデータの内容が改ざんされていないか、また正しい送信者から送られたものかを確認するために、元のメッセージに共通鍵を加えて生成されるコードは何ですか？ [22]",
+      question_text: "送信されたデータの内容が改ざんされていないか、また正しい送信者から送られたものかを確認するために、元のメッセージに共通鍵を加えて生成されるコードは何ですか？",
       question_interaction: {
         type: "MultipleChoice",
         data: {
@@ -701,7 +701,7 @@ export default {
         sub_id: 6,
         sub_name: "認証技術",
       },
-      question_text: "情報セキュリティにおける認証の3要素を対応付けなさい。 [23]",
+      question_text: "情報セキュリティにおける認証の3要素を対応付けなさい。",
       question_interaction: {
         type: "Association",
         data: [
@@ -736,7 +736,7 @@ export default {
         sub_id: 6,
         sub_name: "認証技術",
       },
-      question_text: "JIS Q 27000:2019で定義されている情報セキュリティの特性に関する記述のうち、否認防止の特性に関するものはどれですか？ [26]",
+      question_text: "JIS Q 27000:2019で定義されている情報セキュリティの特性に関する記述のうち、否認防止の特性に関するものはどれですか？",
       question_interaction: {
         type: "MultipleChoice",
         data: {
@@ -755,7 +755,7 @@ export default {
         sub_id: 7,
         sub_name: "利用者認証・生体認証",
       },
-      question_text: "パスワードを使用せずに、生体認証（指紋、顔認証など）や公開鍵暗号方式などを利用して本人確認を行う認証方式の総称は何ですか？ [27]",
+      question_text: "パスワードを使用せずに、生体認証（指紋、顔認証など）や公開鍵暗号方式などを利用して本人確認を行う認証方式の総称は何ですか？",
       question_interaction: {
         type: "MultipleChoice",
         data: {
@@ -772,7 +772,7 @@ export default {
         sub_id: 7,
         sub_name: "利用者認証・生体認証",
       },
-      question_text: "一度の認証で複数のサーバやアプリケーションにログインし、それらを利用できる仕組みを何と呼びますか？ [28]",
+      question_text: "一度の認証で複数のサーバやアプリケーションにログインし、それらを利用できる仕組みを何と呼びますか？",
       question_interaction: {
         type: "MultipleChoice",
         data: {
@@ -789,7 +789,7 @@ export default {
         sub_id: 7,
         sub_name: "利用者認証・生体認証",
       },
-      question_text: "利用者のIPアドレスやWebブラウザなどの環境を分析し、通常とは異なるアクセスパターンが検出された場合にのみ追加の認証（例: ワンタイムパスワード）を要求する認証方式は何ですか？ [29]",
+      question_text: "利用者のIPアドレスやWebブラウザなどの環境を分析し、通常とは異なるアクセスパターンが検出された場合にのみ追加の認証（例: ワンタイムパスワード）を要求する認証方式は何ですか？",
       question_interaction: {
         type: "MultipleChoice",
         data: {
@@ -806,7 +806,7 @@ export default {
         sub_id: 7,
         sub_name: "利用者認証・生体認証",
       },
-      question_text: "バイオメトリクス認証における認証精度に関する指標を対応付けなさい。 [30]",
+      question_text: "バイオメトリクス認証における認証精度に関する指標を対応付けなさい。",
       question_interaction: {
         type: "Association",
         data: [
@@ -826,7 +826,7 @@ export default {
         sub_id: 8,
         sub_name: "公開鍵基盤",
       },
-      question_text: "公開鍵暗号方式を利用し、信頼できる第三者機関である認証局（CA）がデジタル証明書を発行することで、個人や組織の信頼を確保する社会基盤（インフラ）の総称は何ですか？ [31]",
+      question_text: "公開鍵暗号方式を利用し、信頼できる第三者機関である認証局（CA）がデジタル証明書を発行することで、個人や組織の信頼を確保する社会基盤（インフラ）の総称は何ですか？",
       question_interaction: {
         type: "MultipleChoice",
         data: {
@@ -860,7 +860,7 @@ export default {
         sub_id: 8,
         sub_name: "公開鍵基盤",
       },
-      question_text: "デジタル証明書が有効期限内に失効しているかどうかを、オンラインで確認するためのプロトコルは何ですか？ [33]",
+      question_text: "デジタル証明書が有効期限内に失効しているかどうかを、オンラインで確認するためのプロトコルは何ですか？",
       question_interaction: {
         type: "MultipleChoice",
         data: {
