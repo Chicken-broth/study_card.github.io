@@ -7,6 +7,7 @@ import gleam/bool
 import gleam/function
 import gleam/int
 import gleam/io
+import gleam/javascript/promise
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import interface/indexed_db.{type DB} as db
@@ -23,6 +24,8 @@ type ID =
 pub type Model {
   Model(
     db: DB,
+    data_set_name: String,
+    data_set_list: List(String),
     /// 利用可能なすべてのカテゴリのリスト。
     categories: List(Category),
     /// データベースから取得したすべての問題IDとカテゴリのリスト。
@@ -56,6 +59,8 @@ pub type QuestionCount {
 
 /// アプリケーションのモデルを更新するためにディスパッチされるメッセージ。
 pub type Msg {
+  SelectDb(String)
+  DbChanged(DB)
   /// ユーザーがカテゴリのチェックボックスを操作した際に送信される。
   SelectCategory(ID, Bool)
   /// ユーザーが問題数を選択した際に送信される。
@@ -80,36 +85,33 @@ pub type Msg {
   ErrScreen(db.Err)
 }
 
+fn get_initial_data_effects(db: DB) -> Effect(Msg) {
+  let get_categories =
+    db.get_categories(db)
+    |> promise.map(db.get_categories_decode)
+    |> promise_.to_effect(GetCategories, ErrScreen)
+
+  let get_question_id_and_category_list =
+    db.get_question_id_and_category_list(db)
+    |> promise.map(db.decode_question_id_and_category_list)
+    |> promise_.to_effect(GetQuestionIdAndCategoryList, ErrScreen)
+
+  let get_history =
+    db.get_quiz_historys(db)
+    |> promise.map(db.decode_quiz_historys)
+    |> promise_.to_effect(GetQuizHistory, ErrScreen)
+
+  effect.batch([get_categories, get_question_id_and_category_list, get_history])
+}
+
 /// アプリケーションの初期状態を生成する。
 /// データベースからカテゴリと問題IDのリストを非同期で取得する。
 pub fn init(db: DB) -> #(Model, Effect(Msg)) {
-  let get_categories =
-    promise_.to_effect(
-      db.get_categories(db),
-      db.get_categories_decode,
-      GetCategories,
-      ErrScreen,
-    )
-
-  let get_question_id_and_category_list =
-    promise_.to_effect(
-      db.get_question_id_and_category_list(db),
-      db.decode_question_id_and_category_list,
-      GetQuestionIdAndCategoryList,
-      ErrScreen,
-    )
-
-  let get_history =
-    promise_.to_effect(
-      db.get_quiz_historys(db),
-      db.decode_quiz_historys,
-      GetQuizHistory,
-      ErrScreen,
-    )
-
   #(
     Model(
       db: db,
+      data_set_name: db.default_data_set,
+      data_set_list: db.data_set_list,
       categories: [],
       question_id_categories: [],
       shuffle_or_not: False,
@@ -121,17 +123,39 @@ pub fn init(db: DB) -> #(Model, Effect(Msg)) {
       quiz_result: [],
       show_history: False,
     ),
-    effect.batch([
-      get_categories,
-      get_question_id_and_category_list,
-      get_history,
-    ]),
+    get_initial_data_effects(db),
   )
+}
+
+fn db_setup(data_set: String) -> promise.Promise(DB) {
+  let data_set_name = case data_set {
+    d if db.extra_data_set == d -> {
+      "extra"
+    }
+    _ -> "default"
+  }
+  db.setup(data_set_name, 1, data_set)
 }
 
 /// 受信したメッセージに基づいてモデルを更新し、新しい状態と副作用（Effect）を返す。
 pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
+    SelectDb(data_set_name) -> {
+      let setup_db_effect =
+        db_setup(data_set_name)
+        |> promise_.to_effect_no_decode(DbChanged)
+
+      #(
+        Model(..model, data_set_name: data_set_name, loading: True),
+        setup_db_effect,
+      )
+    }
+    DbChanged(new_db) -> {
+      #(
+        Model(..model, db: new_db, loading: False),
+        get_initial_data_effects(new_db),
+      )
+    }
     SelectCategory(id, is_selected) -> {
       let new_select_category: List(SelectedCategory) =
         list_.update_if(
@@ -253,12 +277,9 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     StartQuiz -> {
       echo "Start Quiz"
       let eff =
-        promise_.to_effect(
-          db.get_question_by_ids(model.db, model.selected_question_ids),
-          db.get_question_by_ids_decode,
-          OutCome,
-          ErrScreen,
-        )
+        db.get_question_by_ids(model.db, model.selected_question_ids)
+        |> promise.map(db.get_question_by_ids_decode)
+        |> promise_.to_effect(OutCome, ErrScreen)
       #(model, eff)
     }
     OutCome(questions) -> {
@@ -449,34 +470,26 @@ fn view_loading(loading: Bool) -> Element(Msg) {
   }
 }
 
-// /// ユーザーの学習履歴を表示するテーブルをレンダリングする。
-// fn view_history(quiz_result: QuizResults) -> Element(Msg) {
-//   html.table([attr.class("quiz_result-table")], [
-//     html.thead([], [
-//       html.tr([], [
-//         html.th([], [html.text("ID")]),
-//         html.th([], [html.text("Category")]),
-//         html.th([], [html.text("Result")]),
-//       ]),
-//     ]),
-//     html.tbody(
-//       [],
-//       list.map(quiz_result, fn(h) {
-//         html.tr([], [
-//           html.td([], [html.text(int.to_string(h.id))]),
-//           html.td([], [html.text(h.category.name)]),
-//           html.td([], [
-//             case h.answer {
-//               Correct -> html.text("○")
-//               Incorrect -> html.text("✖")
-//               NotAnswered -> html.text("-")
-//             },
-//           ]),
-//         ])
-//       }),
-//     ),
-//   ])
-// }
+fn view_db_selection(
+  data_set_list: List(String),
+  selected_db: String,
+) -> Element(Msg) {
+  html.div([], [
+    html.label([], [html.text("問題集選択")]),
+    html.select(
+      [event.on_change(SelectDb)],
+      list.map(data_set_list, fn(data_set_name) {
+        html.option(
+          [
+            attr.value(data_set_name),
+            attr.selected(data_set_name == selected_db),
+          ],
+          data_set_name,
+        )
+      }),
+    ),
+  ])
+}
 
 /// アプリケーションのメインビューをレンダリングする。
 pub fn view(model: Model) -> Element(Msg) {
@@ -491,6 +504,7 @@ pub fn view(model: Model) -> Element(Msg) {
   html.div([], [
     html.h1([], [html.text("Quiz App")]),
     view_error(model.error),
+    view_db_selection(model.data_set_list, model.data_set_name),
     html.h2([], [html.text("カテゴリ")]),
     view_all_category_selection(checked),
     view_category_selection(model.selected_category),

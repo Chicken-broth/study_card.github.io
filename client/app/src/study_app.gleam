@@ -1,5 +1,5 @@
 import extra/promise_
-import interface/indexed_db.{type DB, setup}
+import interface/indexed_db.{type DB}
 import lustre
 import lustre/effect.{type Effect, none}
 import lustre/element.{type Element}
@@ -34,7 +34,8 @@ pub type Msg {
 pub fn init(_) -> #(Model, Effect(Msg)) {
   #(
     Loading,
-    promise_.to_effect_no_decode(setup(db_name, db_version), DataInitialized),
+    indexed_db.setup("default", 1, indexed_db.default_data_set)
+      |> promise_.to_effect_no_decode(DataInitialized),
   )
 }
 

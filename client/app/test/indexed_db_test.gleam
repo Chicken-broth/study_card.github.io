@@ -4,15 +4,17 @@ import gleam/javascript/promise
 import gleam/list
 import gleeunit
 import gleeunit/should
-import interface/indexed_db
+import interface/indexed_db as db
 
 pub fn main() {
   gleeunit.main()
 }
 
+const data_set = db.default_data_set
+
 /// `setup`が正常に完了することをテストします
 pub fn setup_test() {
-  use db <- promise.tap(indexed_db.setup("db_setup", 1))
+  use db <- promise.tap(db.setup("db_setup", 1, data_set))
   // Note: このテストではdbが取得できればOKとします
   // 本来はより詳細な検証が望ましいです
   should.be_ok(Ok(db))
@@ -21,8 +23,8 @@ pub fn setup_test() {
 
 /// `get_category`がすべてのカテゴリを正しく取得できることをテストします
 pub fn get_category_test() {
-  use db <- promise.await(indexed_db.setup("db_get_category", 1))
-  use dynamic <- promise.tap(indexed_db.get_categories(db))
+  use db <- promise.await(db.setup("db_get_category", 1, data_set))
+  use dynamic <- promise.tap(db.get_categories(db))
 
   // let expected_categories = [
   //   category.Category(id: 1, name: "Gleam基礎"),
@@ -36,35 +38,35 @@ pub fn get_category_test() {
 
 /// `get_question_id_list`がすべての問題IDを正しく取得できることをテストします
 pub fn get_question_id_list_test() {
-  use db <- promise.map(indexed_db.setup("db_get_id_list", 1))
-  use dynamic <- promise.tap(indexed_db.get_question_id_list(db))
-  indexed_db.get_question_id_list_decode(dynamic)
+  use db <- promise.map(db.setup("db_get_id_list", 1, data_set))
+  use dynamic <- promise.tap(db.get_question_id_list(db))
+  db.get_question_id_list_decode(dynamic)
   |> should.be_ok
   Nil
 }
 
 /// `get_question_by_ids`が指定したIDのすべての問題を正しく取得できることをテストします
 pub fn get_question_by_ids_test() {
-  use db <- promise.await(indexed_db.setup("db_get_questions", 1))
-  use dynamic <- promise.await(indexed_db.get_question_id_list(db))
-  let assert Ok(ids) = indexed_db.get_question_id_list_decode(dynamic)
+  use db <- promise.await(db.setup("db_get_questions", 1, data_set))
+  use dynamic <- promise.await(db.get_question_id_list(db))
+  let assert Ok(ids) = db.get_question_id_list_decode(dynamic)
 
-  use dynamic <- promise.tap(indexed_db.get_question_by_ids(db, ids))
-  let assert Ok(questions) = indexed_db.get_question_by_ids_decode(dynamic)
+  use dynamic <- promise.tap(db.get_question_by_ids(db, ids))
+  let assert Ok(questions) = db.get_question_by_ids_decode(dynamic)
   echo "get_question_by_ids_test:length::"
     <> int.to_string(list.length(questions))
   should.be_ok(Ok(questions))
   // echo dynamic
-  // indexed_db.get_question_by_ids_decode(dynamic) |> should.be_ok
+  // db.get_question_by_ids_decode(dynamic) |> should.be_ok
   // should.equal(list.length(ids), list.length(questions))
   Nil
 }
 
 pub fn get_question_by_id_test() {
-  use db <- promise.await(indexed_db.setup("db_get_question", 1))
-  use dynamic <- promise.tap(indexed_db.get_question_by_id(db, 1))
+  use db <- promise.await(db.setup("db_get_question", 1, data_set))
+  use dynamic <- promise.tap(db.get_question_by_id(db, 1))
   // echo dynamic
-  indexed_db.get_question_by_id_decode(dynamic)
+  db.get_question_by_id_decode(dynamic)
   |> should.be_ok
   Nil
 }
@@ -78,20 +80,45 @@ pub fn save_and_get_quiz_history_test() {
   // ]
   // let json_history = history.to_json(quiz_history)
 
-  use db <- promise.await(indexed_db.setup("db_save_quiz_history", 1))
-  // use _ <- promise.await(indexed_db.save_quiz_history(db, json_history))
-  use dynamic <- promise.tap(indexed_db.get_quiz_historys(db))
+  use db <- promise.await(db.setup("db_save_quiz_history", 1, data_set))
+  // use _ <- promise.await(db.save_quiz_history(db, json_history))
+  use dynamic <- promise.tap(db.get_quiz_historys(db))
   // echo dynamic
-  let assert Ok(quiz_history_result) = indexed_db.decode_quiz_historys(dynamic)
+  let assert Ok(quiz_history_result) = db.decode_quiz_historys(dynamic)
   should.be_ok(Ok(quiz_history_result))
   Nil
 }
 
 //decode_question_id_and_category_listpub 
 pub fn get_question_id_and_category_list_test() {
-  use db <- promise.await(indexed_db.setup("db_get_id_and_category_list", 1))
-  use dynamic <- promise.tap(indexed_db.get_question_id_and_category_list(db))
-  indexed_db.decode_question_id_and_category_list(dynamic)
+  use db <- promise.await(db.setup("db_get_id_and_category_list", 1, data_set))
+  use dynamic <- promise.tap(db.get_question_id_and_category_list(db))
+  db.decode_question_id_and_category_list(dynamic)
   |> should.be_ok
+  Nil
+}
+
+pub fn db_switching_test() {
+  // Test with "default_db"
+  use default_db <- promise.await(db.setup("default_db", 1, data_set))
+  use default_categories_dynamic <- promise.tap(db.get_categories(default_db))
+  let assert Ok(default_categories) =
+    db.get_categories_decode(default_categories_dynamic)
+
+  let expected_default_categories = [
+    category.Category(id: 1, name: "Gleam基礎"),
+    category.Category(id: 2, name: "Lustre基礎"),
+  ]
+  default_categories |> should.equal(expected_default_categories)
+
+  // Test with "extra_db"
+  use extra_db <- promise.await(db.setup("extra_db", 1, data_set))
+  use extra_categories_dynamic <- promise.tap(db.get_categories(extra_db))
+  let assert Ok(extra_categories) =
+    db.get_categories_decode(extra_categories_dynamic)
+
+  let expected_extra_categories = [category.Category(id: 101, name: "英単語の語源")]
+  extra_categories |> should.equal(expected_extra_categories)
+
   Nil
 }

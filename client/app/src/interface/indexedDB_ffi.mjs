@@ -1,24 +1,24 @@
 // import "fake-indexeddb/auto";
-import data from './data.mjs'
+// import "fake-indexeddb/auto";
+import default_data from './data.mjs'
+import extra_data from './extra_data.mjs';
 import { Ok, Error } from "../gleam.mjs";
 
 const CATEGORY_STORE = "categories";
 const QUESTION_STORE = "questions";
 const HISTORY_STORE = "history";
 
-export function get_data() {
-  return data;
-}
+
 /**
  * @typedef {Object} StoreConfig
  * @property {string} storeName オブジェクトストア名。
  * @property {IDBObjectStoreParameters} [keyPath] オブジェクトストアのキーパス（例: { keyPath: "id" }）。
- */
+*/
 
 /**
  * データベースのストア設定。
  * @type {Array<StoreConfig>}
- */
+*/
 
 const STORE_CONFIGS = [
   {
@@ -35,17 +35,24 @@ const STORE_CONFIGS = [
   }
 ];
 
+export function setupDefaultDB(dbName, version) {
+  return setup(dbName, version, default_data);
+}
+export function setupExtraDB(dbName, version) {
+  return setup(dbName, version, extra_data);
+}
+
 /**
  * IndexedDBデータベースを初期化し、接続を確立します。
  * @param {string} dbName データベース名。
  * @param {number} version データベースのバージョン。
  * @returns {Promise<IDBDatabase>} 成功時にはデータベース接続オブジェクト、失敗時にはエラーでrejectされるPromise。
- */
-export function setup(dbName, version) {
+*/
+function setup(dbName, version, data) {
   // console.log("data",data);
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(dbName, version);
-
+    
     request.onerror = (event) => {
       console.error("Database error:", event.target.error);
       reject(event.target.error);

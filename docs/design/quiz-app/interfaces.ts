@@ -1,11 +1,29 @@
+export interface Data {
+  categories: Category[];
+  questions: Question[];
+}
 /**
  * クイズのカテゴリ
  */
 export interface Category {
   id: number;
   name: string;
+  sub: SubCategory[];
 }
 
+/**
+ * サブカテゴリ
+ */
+export interface SubCategory {
+  id: number;
+  name: string;
+}
+export interface QusetionCategory {
+  id: number;
+  name: string;
+  sub_id: number;
+  sub_name: string;
+}
 /**
  * 四択問題
  */
@@ -35,7 +53,7 @@ export type QuestionInteraction =
  */
 export interface Question {
   id: number;
-  category: Category;
+  category: QusetionCategory;
   question_text: string;
   question_interaction: QuestionInteraction;
 }

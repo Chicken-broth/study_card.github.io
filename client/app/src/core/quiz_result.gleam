@@ -1,5 +1,4 @@
 import core/answer.{type Answer}
-import core/category.{type Category}
 import core/question.{type QusetionCategory}
 import gleam/dynamic/decode
 import gleam/int

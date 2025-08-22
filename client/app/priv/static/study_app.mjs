@@ -2704,6 +2704,9 @@ function disabled(is_disabled) {
 function name(element_name) {
   return attribute2("name", element_name);
 }
+function selected(is_selected) {
+  return boolean_attribute("selected", is_selected);
+}
 function type_(control_type) {
   return attribute2("type", control_type);
 }
@@ -2721,11 +2724,11 @@ var Effect = class extends CustomType {
   }
 };
 var Actions = class extends CustomType {
-  constructor(dispatch, emit, select, root3, provide) {
+  constructor(dispatch, emit, select2, root3, provide) {
     super();
     this.dispatch = dispatch;
     this.emit = emit;
-    this.select = select;
+    this.select = select2;
     this.root = root3;
     this.provide = provide;
   }
@@ -3473,6 +3476,12 @@ function input(attrs) {
 }
 function label(attrs, children) {
   return element2("label", attrs, children);
+}
+function option(attrs, label2) {
+  return element2("option", attrs, toList([text2(label2)]));
+}
+function select(attrs, children) {
+  return element2("select", attrs, children);
 }
 
 // build/dev/javascript/lustre/lustre/vdom/patch.mjs
@@ -5387,8 +5396,8 @@ function new$6(options) {
   return fold(
     options,
     init5,
-    (config, option) => {
-      return option.apply(config);
+    (config, option2) => {
+      return option2.apply(config);
     }
   );
 }
@@ -5489,14 +5498,13 @@ function tap(promise, callback) {
 }
 
 // build/dev/javascript/study_app/extra/promise_.mjs
-function to_effect(promise, decoder7, to_success_msg, to_err_msg) {
+function to_effect(promise, to_success_msg, to_err_msg) {
   return from(
     (dispatch) => {
       let _pipe = promise;
       let _pipe$1 = map_promise(
         _pipe,
-        (dynamic2) => {
-          let result = decoder7(dynamic2);
+        (result) => {
           if (result instanceof Ok) {
             let a = result[0];
             return to_success_msg(a);
@@ -5638,6 +5646,18 @@ function on(name2, handler) {
 }
 function on_click(msg) {
   return on("click", success(msg));
+}
+function on_change(msg) {
+  return on(
+    "change",
+    subfield(
+      toList(["target", "value"]),
+      string2,
+      (value2) => {
+        return success(msg(value2));
+      }
+    )
+  );
 }
 function on_check(msg) {
   return on(
@@ -6041,8 +6061,8 @@ function update3(model, msg) {
   let index5 = msg[0];
   let $ = model.selected_index;
   if ($ instanceof Some) {
-    let selected = $[0];
-    if (selected === index5) {
+    let selected2 = $[0];
+    if (selected2 === index5) {
       let _record = model;
       return new Model2(_record.question, new None(), new NotAnswered());
     } else {
@@ -6482,9 +6502,9 @@ function to_json7(qr) {
     }
   );
 }
-function from_questions(questions) {
+function from_questions(questions2) {
   return map(
-    questions,
+    questions2,
     (q) => {
       return new Record(q.id, q.category, toList([]));
     }
@@ -6503,7 +6523,7 @@ function view_answers(answers) {
   );
 }
 function view5(quiz_result) {
-  echo(quiz_result, "src/core/quiz_result.gleam", 93);
+  echo(quiz_result, "src/core/quiz_result.gleam", 92);
   return table(
     toList([]),
     toList([
@@ -10801,6 +10821,74 @@ var data_default = {
   ]
 };
 
+// build/dev/javascript/study_app/interface/extra_data.mjs
+var questionCategory1 = {
+  id: 1,
+  name: "\u8A9E\u6E90",
+  sub_id: 1,
+  sub_name: "-"
+};
+var categories = [{ id: 1, name: "\u8A9E\u6E90", sub: [{ id: 1, name: "-" }] }];
+var questions = [
+  {
+    id: 1,
+    category: questionCategory1,
+    question_text: "\u8A9E\u6839\u3068\u3001\u610F\u5473/\u7528\u4F8B\u306E\u7D44\u307F\u5408\u308F\u305B\u3092\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044",
+    question_interaction: {
+      type: "Association",
+      data: [
+        { id: 1, left: "-aud- / -audi-", right: "\u805E\u304F	/ audience, audible, audition" },
+        { id: 2, left: "-auto-", right: "\u81EA\u5DF1	/ automatic, autobiography, automobile" },
+        { id: 3, left: "-bene-", right: "\u826F\u3044\u3001\u3046\u307E\u304F	/ benefit, benevolent, benign" },
+        { id: 4, left: "-bio-", right: "\u751F\u547D	/ biology, biography, biodegradable" }
+      ]
+    }
+  },
+  {
+    id: 1,
+    category: questionCategory1,
+    question_text: "\u8A9E\u6839\u3068\u3001\u610F\u5473/\u7528\u4F8B\u306E\u7D44\u307F\u5408\u308F\u305B\u3092\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044",
+    question_interaction: {
+      type: "Association",
+      data: [
+        { id: 5, left: "-chron-", right: "\u6642\u9593	/ chronological, synchronize, chronic" },
+        { id: 6, left: "-dict-", right: "\u8A00\u3046\u3001\u8A71\u3059	/ dictionary, predict, dictate" },
+        { id: 7, left: "-duc- / -duct-", right: "\u5C0E\u304F	/ educate, conduct, introduce" },
+        { id: 8, left: "-gen-", right: "\u751F\u3080\u3001\u751F\u7523\u3059\u308B\u3001\u7A2E\u985E	/ generate, genetic, genus" }
+      ]
+    }
+  },
+  {
+    id: 1,
+    category: questionCategory1,
+    question_text: "\u8A9E\u6839\u3068\u3001\u610F\u5473/\u7528\u4F8B\u306E\u7D44\u307F\u5408\u308F\u305B\u3092\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044",
+    question_interaction: {
+      type: "Association",
+      data: [
+        { id: 9, left: "-geo-", right: "\u5730\u7403	/ geography, geology, geometric" },
+        { id: 10, left: "-graph- / -gram-", right: "\u66F8\u304F\u3001\u63CF\u304F\u3001\u8A18\u9332\u3059\u308B	/ photograph, telegram, graphic" },
+        { id: 11, left: "-hydr-", right: "\u6C34	/ hydrate, hydraulic, hydroplane" },
+        { id: 12, left: "-log- / -logy-", right: "\u8A00\u8449\u3001\u7814\u7A76	/ dialogue, biology, psychology" }
+      ]
+    }
+  },
+  {
+    id: 1,
+    category: questionCategory1,
+    question_text: "\u8A9E\u6839\u3068\u3001\u610F\u5473/\u7528\u4F8B\u306E\u7D44\u307F\u5408\u308F\u305B\u3092\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044",
+    question_interaction: {
+      type: "Association",
+      data: [
+        { id: 9, left: "-geo-", right: "\u5730\u7403	/ geography, geology, geometric" },
+        { id: 10, left: "-graph- / -gram-", right: "\u66F8\u304F\u3001\u63CF\u304F\u3001\u8A18\u9332\u3059\u308B	/ photograph, telegram, graphic" },
+        { id: 11, left: "-hydr-", right: "\u6C34	/ hydrate, hydraulic, hydroplane" },
+        { id: 12, left: "-log- / -logy-", right: "\u8A00\u8449\u3001\u7814\u7A76	/ dialogue, biology, psychology" }
+      ]
+    }
+  }
+];
+var extra_data_default = { categories, questions };
+
 // build/dev/javascript/study_app/interface/indexedDB_ffi.mjs
 var CATEGORY_STORE = "categories";
 var QUESTION_STORE = "questions";
@@ -10819,7 +10907,13 @@ var STORE_CONFIGS = [
     keyPath: { keyPath: "id" }
   }
 ];
-function setup(dbName, version) {
+function setupDefaultDB(dbName, version) {
+  return setup(dbName, version, data_default);
+}
+function setupExtraDB(dbName, version) {
+  return setup(dbName, version, extra_data_default);
+}
+function setup(dbName, version, data) {
   return new Promise((resolve2, reject) => {
     const request = indexedDB.open(dbName, version);
     request.onerror = (event4) => {
@@ -10847,19 +10941,19 @@ function setup(dbName, version) {
         console.log("Quiz history saved successfully");
         resolve2(db);
       };
-      if (data_default.categories) {
+      if (data.categories) {
         const categoryStore = transaction.objectStore(CATEGORY_STORE);
-        data_default.categories.forEach((category) => {
+        data.categories.forEach((category) => {
           categoryStore.add(category);
         });
       }
-      if (data_default.questions) {
+      if (data.questions) {
         const questionStore = transaction.objectStore(QUESTION_STORE);
-        data_default.questions.forEach((question) => {
+        data.questions.forEach((question) => {
           questionStore.add(question);
         });
         const historyStore = transaction.objectStore(HISTORY_STORE);
-        data_default.questions.forEach((q) => {
+        data.questions.forEach((q) => {
           historyStore.add({
             id: q.id,
             category: q.category,
@@ -10893,8 +10987,8 @@ function getQuestionIdAndCategoryList(db) {
       reject(event4.target.error);
     };
     request.onsuccess = (event4) => {
-      const questions = event4.target.result;
-      const idAndCategoryList = questions.map((q) => ({
+      const questions2 = event4.target.result;
+      const idAndCategoryList = questions2.map((q) => ({
         id: q.id,
         category: q.category
         // categoryオブジェクト全体を渡す
@@ -10988,6 +11082,20 @@ function decode_question_id_and_category_list(dynamic2) {
 function decode_quiz_historys(dynamic2) {
   return run(dynamic2, decoder6());
 }
+var default_data_set = "default_db";
+var extra_data_set = "extra_db";
+function setup2(db_name, version, data_set) {
+  let d = data_set;
+  if ("extra_db" === d) {
+    return setupExtraDB(db_name, version);
+  } else {
+    return setupDefaultDB(db_name, version);
+  }
+}
+var data_set_list = /* @__PURE__ */ toList([
+  default_data_set,
+  extra_data_set
+]);
 
 // build/dev/javascript/study_app/extra/list_.mjs
 function get_at(list4, at) {
@@ -11030,10 +11138,12 @@ function update_if(list4, prefix, fun) {
 
 // build/dev/javascript/study_app/pages/quiz_home.mjs
 var Model4 = class extends CustomType {
-  constructor(db, categories, question_id_categories, shuffle_or_not, selected_category, selected_count, selected_question_ids, loading, error, quiz_result, show_history) {
+  constructor(db, data_set_name, data_set_list2, categories2, question_id_categories, shuffle_or_not, selected_category, selected_count, selected_question_ids, loading, error, quiz_result, show_history) {
     super();
     this.db = db;
-    this.categories = categories;
+    this.data_set_name = data_set_name;
+    this.data_set_list = data_set_list2;
+    this.categories = categories2;
     this.question_id_categories = question_id_categories;
     this.shuffle_or_not = shuffle_or_not;
     this.selected_category = selected_category;
@@ -11059,6 +11169,18 @@ var Limit = class extends CustomType {
   }
 };
 var Full = class extends CustomType {
+};
+var SelectDb = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var DbChanged = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
 };
 var SelectCategory = class extends CustomType {
   constructor($0, $1) {
@@ -11119,10 +11241,12 @@ var ErrScreen = class extends CustomType {
     this[0] = $0;
   }
 };
-function init(db) {
-  let get_categories = to_effect(
-    getCategories(db),
-    get_categories_decode,
+function get_initial_data_effects(db) {
+  let _block;
+  let _pipe = getCategories(db);
+  let _pipe$1 = map_promise(_pipe, get_categories_decode);
+  _block = to_effect(
+    _pipe$1,
     (var0) => {
       return new GetCategories(var0);
     },
@@ -11130,9 +11254,12 @@ function init(db) {
       return new ErrScreen(var0);
     }
   );
-  let get_question_id_and_category_list = to_effect(
-    getQuestionIdAndCategoryList(db),
-    decode_question_id_and_category_list,
+  let get_categories = _block;
+  let _block$1;
+  let _pipe$2 = getQuestionIdAndCategoryList(db);
+  let _pipe$3 = map_promise(_pipe$2, decode_question_id_and_category_list);
+  _block$1 = to_effect(
+    _pipe$3,
     (var0) => {
       return new GetQuestionIdAndCategoryList(var0);
     },
@@ -11140,9 +11267,12 @@ function init(db) {
       return new ErrScreen(var0);
     }
   );
-  let get_history = to_effect(
-    getQuizHistory(db),
-    decode_quiz_historys,
+  let get_question_id_and_category_list = _block$1;
+  let _block$2;
+  let _pipe$4 = getQuizHistory(db);
+  let _pipe$5 = map_promise(_pipe$4, decode_quiz_historys);
+  _block$2 = to_effect(
+    _pipe$5,
     (var0) => {
       return new GetQuizHistory(var0);
     },
@@ -11150,9 +11280,17 @@ function init(db) {
       return new ErrScreen(var0);
     }
   );
+  let get_history = _block$2;
+  return batch(
+    toList([get_categories, get_question_id_and_category_list, get_history])
+  );
+}
+function init(db) {
   return [
     new Model4(
       db,
+      default_data_set,
+      data_set_list,
       toList([]),
       toList([]),
       false,
@@ -11164,10 +11302,19 @@ function init(db) {
       toList([]),
       false
     ),
-    batch(
-      toList([get_categories, get_question_id_and_category_list, get_history])
-    )
+    get_initial_data_effects(db)
   ];
+}
+function db_setup(data_set) {
+  let _block;
+  let d = data_set;
+  if (extra_data_set === d) {
+    _block = "extra";
+  } else {
+    _block = "default";
+  }
+  let data_set_name = _block;
+  return setup2(data_set_name, 1, data_set);
 }
 function shuffle2(xs, is_shuffle) {
   if (is_shuffle) {
@@ -11210,7 +11357,62 @@ function filtering_question_id(id_categorie_list, selected_category_ids, selecte
   return take(_pipe$4, limit_count);
 }
 function update5(model, msg) {
-  if (msg instanceof SelectCategory) {
+  if (msg instanceof SelectDb) {
+    let data_set_name = msg[0];
+    let _block;
+    let _pipe = db_setup(data_set_name);
+    _block = to_effect_no_decode(
+      _pipe,
+      (var0) => {
+        return new DbChanged(var0);
+      }
+    );
+    let setup_db_effect = _block;
+    return [
+      (() => {
+        let _record = model;
+        return new Model4(
+          _record.db,
+          data_set_name,
+          _record.data_set_list,
+          _record.categories,
+          _record.question_id_categories,
+          _record.shuffle_or_not,
+          _record.selected_category,
+          _record.selected_count,
+          _record.selected_question_ids,
+          true,
+          _record.error,
+          _record.quiz_result,
+          _record.show_history
+        );
+      })(),
+      setup_db_effect
+    ];
+  } else if (msg instanceof DbChanged) {
+    let new_db = msg[0];
+    return [
+      (() => {
+        let _record = model;
+        return new Model4(
+          new_db,
+          _record.data_set_name,
+          _record.data_set_list,
+          _record.categories,
+          _record.question_id_categories,
+          _record.shuffle_or_not,
+          _record.selected_category,
+          _record.selected_count,
+          _record.selected_question_ids,
+          false,
+          _record.error,
+          _record.quiz_result,
+          _record.show_history
+        );
+      })(),
+      get_initial_data_effects(new_db)
+    ];
+  } else if (msg instanceof SelectCategory) {
     let id = msg[0];
     let is_selected = msg[1];
     let new_select_category = update_if(
@@ -11233,6 +11435,8 @@ function update5(model, msg) {
         let _record = model;
         return new Model4(
           _record.db,
+          _record.data_set_name,
+          _record.data_set_list,
           _record.categories,
           _record.question_id_categories,
           _record.shuffle_or_not,
@@ -11260,6 +11464,8 @@ function update5(model, msg) {
         let _record = model;
         return new Model4(
           _record.db,
+          _record.data_set_name,
+          _record.data_set_list,
           _record.categories,
           _record.question_id_categories,
           _record.shuffle_or_not,
@@ -11282,6 +11488,8 @@ function update5(model, msg) {
         let _record = model;
         return new Model4(
           _record.db,
+          _record.data_set_name,
+          _record.data_set_list,
           _record.categories,
           _record.question_id_categories,
           is_shuffle,
@@ -11298,7 +11506,7 @@ function update5(model, msg) {
     ];
   } else if (msg instanceof SWitchAllCategory) {
     let is_selected = msg[0];
-    echo2("SWitchAllCategory", "src/pages/quiz_home.gleam", 189);
+    echo2("SWitchAllCategory", "src/pages/quiz_home.gleam", 213);
     let new_select_category = map(
       model.selected_category,
       (c) => {
@@ -11316,6 +11524,8 @@ function update5(model, msg) {
         let _record = model;
         return new Model4(
           _record.db,
+          _record.data_set_name,
+          _record.data_set_list,
           _record.categories,
           _record.question_id_categories,
           _record.shuffle_or_not,
@@ -11331,12 +11541,14 @@ function update5(model, msg) {
       none2()
     ];
   } else if (msg instanceof ViewHistory) {
-    echo2("View History", "src/pages/quiz_home.gleam", 211);
+    echo2("View History", "src/pages/quiz_home.gleam", 235);
     return [
       (() => {
         let _record = model;
         return new Model4(
           _record.db,
+          _record.data_set_name,
+          _record.data_set_list,
           _record.categories,
           _record.question_id_categories,
           _record.shuffle_or_not,
@@ -11352,10 +11564,10 @@ function update5(model, msg) {
       none2()
     ];
   } else if (msg instanceof GetCategories) {
-    let categories = msg[0];
-    echo2("GetCategories", "src/pages/quiz_home.gleam", 218);
+    let categories2 = msg[0];
+    echo2("GetCategories", "src/pages/quiz_home.gleam", 242);
     let new_selected_category = map(
-      categories,
+      categories2,
       (_capture) => {
         return new SelectedCategory(true, _capture);
       }
@@ -11365,7 +11577,9 @@ function update5(model, msg) {
         let _record = model;
         return new Model4(
           _record.db,
-          categories,
+          _record.data_set_name,
+          _record.data_set_list,
+          categories2,
           _record.question_id_categories,
           _record.shuffle_or_not,
           new_selected_category,
@@ -11381,12 +11595,14 @@ function update5(model, msg) {
     ];
   } else if (msg instanceof GetQuestionIdAndCategoryList) {
     let id_and_category_list = msg[0];
-    echo2("GetQuestionIdAndCategoryList", "src/pages/quiz_home.gleam", 233);
+    echo2("GetQuestionIdAndCategoryList", "src/pages/quiz_home.gleam", 257);
     return [
       (() => {
         let _record = model;
         return new Model4(
           _record.db,
+          _record.data_set_name,
+          _record.data_set_list,
           _record.categories,
           id_and_category_list,
           _record.shuffle_or_not,
@@ -11405,12 +11621,14 @@ function update5(model, msg) {
     ];
   } else if (msg instanceof GetQuizHistory) {
     let quiz_result = msg[0];
-    echo2("GetQuizHistory", "src/pages/quiz_home.gleam", 245);
+    echo2("GetQuizHistory", "src/pages/quiz_home.gleam", 269);
     return [
       (() => {
         let _record = model;
         return new Model4(
           _record.db,
+          _record.data_set_name,
+          _record.data_set_list,
           _record.categories,
           _record.question_id_categories,
           _record.shuffle_or_not,
@@ -11426,10 +11644,12 @@ function update5(model, msg) {
       none2()
     ];
   } else if (msg instanceof StartQuiz) {
-    echo2("Start Quiz", "src/pages/quiz_home.gleam", 254);
-    let eff = to_effect(
-      getQuestionByIds(model.db, model.selected_question_ids),
-      get_question_by_ids_decode,
+    echo2("Start Quiz", "src/pages/quiz_home.gleam", 278);
+    let _block;
+    let _pipe = getQuestionByIds(model.db, model.selected_question_ids);
+    let _pipe$1 = map_promise(_pipe, get_question_by_ids_decode);
+    _block = to_effect(
+      _pipe$1,
       (var0) => {
         return new OutCome(var0);
       },
@@ -11437,21 +11657,24 @@ function update5(model, msg) {
         return new ErrScreen(var0);
       }
     );
+    let eff = _block;
     return [model, eff];
   } else if (msg instanceof OutCome) {
-    let questions = msg[0];
+    let questions2 = msg[0];
     console_log(
-      "Fetched " + to_string(length(questions)) + " questions."
+      "Fetched " + to_string(length(questions2)) + " questions."
     );
     return [model, none2()];
   } else {
     let json_err = msg[0];
-    echo2("err screen", "src/pages/quiz_home.gleam", 250);
+    echo2("err screen", "src/pages/quiz_home.gleam", 274);
     return [
       (() => {
         let _record = model;
         return new Model4(
           _record.db,
+          _record.data_set_name,
+          _record.data_set_list,
           _record.categories,
           _record.question_id_categories,
           _record.shuffle_or_not,
@@ -11626,6 +11849,31 @@ function view_loading(loading) {
     return text3("");
   }
 }
+function view_db_selection(data_set_list2, selected_db) {
+  return div(
+    toList([]),
+    toList([
+      label(toList([]), toList([text3("\u554F\u984C\u96C6\u9078\u629E")])),
+      select(
+        toList([on_change((var0) => {
+          return new SelectDb(var0);
+        })]),
+        map(
+          data_set_list2,
+          (data_set_name) => {
+            return option(
+              toList([
+                value(data_set_name),
+                selected(data_set_name === selected_db)
+              ]),
+              data_set_name
+            );
+          }
+        )
+      )
+    ])
+  );
+}
 function view6(model) {
   let is_start_quiz_enabled = length(model.selected_question_ids) > 0;
   let _block;
@@ -11643,6 +11891,7 @@ function view6(model) {
     toList([
       h1(toList([]), toList([text3("Quiz App")])),
       view_error(model.error),
+      view_db_selection(model.data_set_list, model.data_set_name),
       h2(toList([]), toList([text3("\u30AB\u30C6\u30B4\u30EA")])),
       view_all_category_selection(checked2),
       view_category_selection(model.selected_category),
@@ -11808,10 +12057,10 @@ function perform(msg) {
 
 // build/dev/javascript/study_app/pages/quiz_screen.mjs
 var Model5 = class extends CustomType {
-  constructor(db, questions, questions_count, current_question_index, quiz_result, quiz_finished, score) {
+  constructor(db, questions2, questions_count, current_question_index, quiz_result, quiz_finished, score) {
     super();
     this.db = db;
-    this.questions = questions;
+    this.questions = questions2;
     this.questions_count = questions_count;
     this.current_question_index = current_question_index;
     this.quiz_result = quiz_result;
@@ -11831,22 +12080,22 @@ var OutCome2 = class extends CustomType {
 };
 var GoToResultScreen = class extends CustomType {
 };
-function init2(db, questions) {
-  let _pipe = map(questions, (q) => {
+function init2(db, questions2) {
+  let _pipe = map(questions2, (q) => {
     return q.id;
   });
   echo3(_pipe, "src/pages/quiz_screen.gleam", 64);
-  let $ = is_empty2(questions);
+  let $ = is_empty2(questions2);
   if ($) {
     return new Error(void 0);
   } else {
     return new Ok(
       new Model5(
         db,
-        questions,
-        length(questions),
+        questions2,
+        length(questions2),
         0,
-        from_questions(questions),
+        from_questions(questions2),
         false,
         0
       )
@@ -12496,11 +12745,25 @@ var DataInitialized = class extends CustomType {
     this[0] = $0;
   }
 };
+function init4(_) {
+  return [
+    new Loading(),
+    (() => {
+      let _pipe = setup2("default", 1, default_data_set);
+      return to_effect_no_decode(
+        _pipe,
+        (var0) => {
+          return new DataInitialized(var0);
+        }
+      );
+    })()
+  ];
+}
 function update8(model, msg) {
   if (model instanceof Loading) {
     if (msg instanceof DataInitialized) {
       let db = msg[0];
-      echo5("DataInitialized", "src/study_app.gleam", 48);
+      echo5("DataInitialized", "src/study_app.gleam", 49);
       let $ = init(db);
       let home_model = $[0];
       let home_effect = $[1];
@@ -12521,9 +12784,9 @@ function update8(model, msg) {
       let new_home = $[0];
       let home_effect = $[1];
       if (home_msg instanceof OutCome) {
-        let questions = home_msg[0];
-        echo5("Home -> QuizScreen", "src/study_app.gleam", 64);
-        let screen_ini = init2(new_home.db, questions);
+        let questions2 = home_msg[0];
+        echo5("Home -> QuizScreen", "src/study_app.gleam", 65);
+        let screen_ini = init2(new_home.db, questions2);
         if (screen_ini instanceof Ok) {
           let quiz_model = screen_ini[0];
           return [new QuizScreen(quiz_model), none2()];
@@ -12634,19 +12897,6 @@ function view9(model) {
     return text3("\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F");
   }
 }
-var db_name = "db";
-var db_version = 1;
-function init4(_) {
-  return [
-    new Loading(),
-    to_effect_no_decode(
-      setup(db_name, db_version),
-      (var0) => {
-        return new DataInitialized(var0);
-      }
-    )
-  ];
-}
 function main() {
   let app = application(init4, update8, view9);
   let $ = start3(app, "#app", void 0);
@@ -12655,15 +12905,15 @@ function main() {
       "let_assert",
       FILEPATH,
       "study_app",
-      146,
+      147,
       "main",
       "Pattern match failed, no pattern matched the value.",
       {
         value: $,
-        start: 4108,
-        end: 4157,
-        pattern_start: 4119,
-        pattern_end: 4124
+        start: 4142,
+        end: 4191,
+        pattern_start: 4153,
+        pattern_end: 4158
       }
     );
   }

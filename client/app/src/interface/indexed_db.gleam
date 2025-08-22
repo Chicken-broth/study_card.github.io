@@ -11,10 +11,29 @@ pub type DB
 pub type Err =
   List(decode.DecodeError)
 
+pub const default_data_set = "default_db"
+
+pub const extra_data_set = "extra_db"
+
+pub const data_set_list = [default_data_set, extra_data_set]
+
 /// IndexedDBデータベースを初期化します。
 /// `indexedDB_ffi.mjs`の`setup`に対応します。
-@external(javascript, "./indexedDB_ffi.mjs", "setup")
-pub fn setup(db_name: String, version: Int) -> Promise(DB)
+@external(javascript, "./indexedDB_ffi.mjs", "setupDefaultDB")
+fn setup_default_db(db_name: String, version: Int) -> Promise(DB)
+
+@external(javascript, "./indexedDB_ffi.mjs", "setupExtraDB")
+fn setup_extra_db(db_name: String, version: Int) -> Promise(DB)
+
+/// setup_default_dbとsetup_extra_dbのラッパー
+pub fn setup(db_name: String, version: Int, data_set: String) -> Promise(DB) {
+  case data_set {
+    d if extra_data_set == d -> {
+      setup_extra_db(db_name, version)
+    }
+    _ -> setup_default_db(db_name, version)
+  }
+}
 
 /// データベースからすべてのカテゴリを取得します。
 /// `indexedDB_ffi.mjs`の`getCategories`に対応します。
