@@ -1,6 +1,6 @@
 import core/category.{type Category}
-import core/history.{type History}
 import core/question.{type IdAndCategory}
+import core/quiz_result.{type QuizResults}
 import gleam/dynamic.{type Dynamic}
 import gleam/dynamic/decode
 import gleam/javascript/promise.{type Promise}
@@ -73,7 +73,10 @@ pub fn decode_question_id_and_category_list(
 ) -> Result(List(IdAndCategory), Err) {
   let id_and_category_decoder = {
     use id <- decode.field("id", decode.int)
-    use category <- decode.field("category", category.decoder())
+    use category <- decode.field(
+      "category",
+      question.qusetion_category_decoder(),
+    )
     decode.success(question.IdAndCategory(id, category))
   }
   decode.run(dynamic, decode.list(id_and_category_decoder))
@@ -92,6 +95,6 @@ pub fn save_quiz_history(db: DB, json: json.Json) -> Promise(Result(Nil, Nil))
 pub fn get_quiz_historys(db: DB) -> Promise(Dynamic)
 
 /// 取得したクイズ結果のリストをデコードします。
-pub fn decode_quiz_historys(dynamic: Dynamic) -> Result(History, Err) {
-  decode.run(dynamic, history.decoder())
+pub fn decode_quiz_historys(dynamic: Dynamic) -> Result(QuizResults, Err) {
+  decode.run(dynamic, quiz_result.decoder())
 }

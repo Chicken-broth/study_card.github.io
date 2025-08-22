@@ -1,22 +1,20 @@
-import core/answer.{Correct, Incorrect, NotAnswered}
 import core/category.{type Category}
-import core/history.{type History}
 import core/question.{type IdAndCategory}
+import core/quiz_result.{type QuizResults}
 import extra/list_
 import extra/promise_
 import gleam/bool
+import gleam/function
 import gleam/int
 import gleam/io
 import gleam/list
 import gleam/option.{type Option, None, Some}
-import gleam/result
 import interface/indexed_db.{type DB} as db
 import lustre/attribute as attr
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
-import plinth/browser/dom_token_list
 
 type ID =
   Int
@@ -29,6 +27,7 @@ pub type Model {
     categories: List(Category),
     /// データベースから取得したすべての問題IDとカテゴリのリスト。
     question_id_categories: List(IdAndCategory),
+    /// 問題をシャッフルするかどうか。
     shuffle_or_not: Bool,
     /// ユーザーによって選択されたカテゴリのIDリスト。
     selected_category: List(SelectedCategory),
@@ -40,7 +39,7 @@ pub type Model {
     /// 処理中に発生したエラーメッセージ。
     error: Option(db.Err),
     /// ユーザーの学習履歴。
-    history: History,
+    quiz_result: QuizResults,
     /// 履歴表示のON/OFFを切り替えるフラグ。
     show_history: Bool,
   )
@@ -61,7 +60,10 @@ pub type Msg {
   SelectCategory(ID, Bool)
   /// ユーザーが問題数を選択した際に送信される。
   SelectCount(QuestionCount)
+  /// ユーザーがシャッフルのスイッチを操作した際に送信される。
   SwitchShuffle(Bool)
+  ///カテゴリを全部選択にするか全部選択なしにするかの切り替えボタンがクリックされた際に送信される。
+  SWitchAllCategory(Bool)
   /// 学習履歴ボタンがクリックされた際に送信される。
   ViewHistory
   /// カテゴリのリストが取得された際に送信される。
@@ -69,7 +71,7 @@ pub type Msg {
   /// 問題IDのリストが取得された際に送信される。
   GetQuestionIdAndCategoryList(List(IdAndCategory))
   /// 学習記録が取得された
-  GetQuizHistory(History)
+  GetQuizHistory(QuizResults)
   /// クイズ開始ボタンがクリックされた際に送信される。
   StartQuiz
   /// クイズの結果（問題リスト）が取得された際に送信される。
@@ -110,13 +112,13 @@ pub fn init(db: DB) -> #(Model, Effect(Msg)) {
       db: db,
       categories: [],
       question_id_categories: [],
-      shuffle_or_not: True,
+      shuffle_or_not: False,
       selected_category: [],
       selected_question_ids: [],
       selected_count: Full,
       loading: False,
       error: None,
-      history: [],
+      quiz_result: [],
       show_history: False,
     ),
     effect.batch([
@@ -172,18 +174,38 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       )
     }
     SwitchShuffle(is_shuffle) -> {
-      #(Model(..model, shuffle_or_not: is_shuffle), effect.none())
+      let new_question_ids: List(ID) =
+        shuffle(model.selected_question_ids, is_shuffle)
+      #(
+        Model(
+          ..model,
+          selected_question_ids: new_question_ids,
+          shuffle_or_not: is_shuffle,
+        ),
+        effect.none(),
+      )
     }
-    StartQuiz -> {
-      echo "Start Quiz"
-      let eff =
-        promise_.to_effect(
-          db.get_question_by_ids(model.db, model.selected_question_ids),
-          db.get_question_by_ids_decode,
-          OutCome,
-          ErrScreen,
+    SWitchAllCategory(is_selected) -> {
+      echo "SWitchAllCategory"
+      let new_select_category: List(SelectedCategory) =
+        list.map(model.selected_category, fn(c) {
+          SelectedCategory(is_selected, c.category)
+        })
+      let new_question_ids: List(ID) =
+        filtering_question_id(
+          model.question_id_categories,
+          new_select_category,
+          model.selected_count,
+          model.shuffle_or_not,
         )
-      #(model, eff)
+      #(
+        Model(
+          ..model,
+          selected_category: new_select_category,
+          selected_question_ids: new_question_ids,
+        ),
+        effect.none(),
+      )
     }
     ViewHistory -> {
       echo "View History"
@@ -219,14 +241,25 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         effect.none(),
       )
     }
-    GetQuizHistory(history) -> {
+    GetQuizHistory(quiz_result) -> {
       echo "GetQuizHistory"
-      // Update the model with the fetched history.
-      #(Model(..model, history: history, loading: False), effect.none())
+      // Update the model with the fetched quiz_result.
+      #(Model(..model, quiz_result: quiz_result, loading: False), effect.none())
     }
     ErrScreen(json_err) -> {
       echo "err screen"
       #(Model(..model, error: Some(json_err)), effect.none())
+    }
+    StartQuiz -> {
+      echo "Start Quiz"
+      let eff =
+        promise_.to_effect(
+          db.get_question_by_ids(model.db, model.selected_question_ids),
+          db.get_question_by_ids_decode,
+          OutCome,
+          ErrScreen,
+        )
+      #(model, eff)
     }
     OutCome(questions) -> {
       // NOTE: This will overwrite the questions list. 
@@ -252,20 +285,25 @@ fn filtering_question_id(
     |> list.filter(fn(c) { c.is_selected })
     |> list.map(fn(c) { c.category.id })
   //categoryでfilterしたquestionのidリストを作成
-  let filtered_questions =
+  let filtered_questions: List(ID) =
     id_categorie_list
     |> list.filter(fn(q) { list.contains(filtered_category_ids, q.category.id) })
-    |> list.map(fn(c) { c.category.id })
+    |> list.map(fn(c) { c.id })
+  // |> echo
 
   let limit_count = case selected_count {
     Limit(count) -> count
     Full -> list.length(filtered_questions)
   }
-  case do_shuffle {
-    True -> list.shuffle(filtered_questions)
-    False -> filtered_questions
-  }
+  shuffle(filtered_questions, do_shuffle)
   |> list.take(limit_count)
+}
+
+fn shuffle(xs: List(a), is_shuffle: Bool) -> List(a) {
+  case is_shuffle {
+    True -> list.shuffle(xs)
+    False -> xs
+  }
 }
 
 /// カテゴリ選択の更新。
@@ -288,31 +326,68 @@ fn view_error(error: Option(db.Err)) -> Element(Msg) {
 
 fn view_shuffle(shuffle: Bool) -> Element(Msg) {
   html.div([], [
-    html.label([], [
-      html.input([
-        attr.type_("checkbox"),
-        attr.checked(shuffle),
-        event.on_check(fn(checked) { SwitchShuffle(checked) }),
-      ]),
+    html.input([
+      attr.type_("checkbox"),
+      attr.checked(shuffle),
+      event.on_check(fn(checked) { SwitchShuffle(checked) }),
     ]),
   ])
 }
 
+///全カテゴリを選択/未選択にするボタン
+fn view_all_category_selection(checked: Bool) -> Element(Msg) {
+  html.div(
+    [
+      attr.styles([
+        // #("margin", "1rem"),
+        #("padding", "0.5rem"),
+        #("border-radius", "0.5rem"),
+        #("background-color", "#f0f0f0"),
+        #("display", "inline-flex"),
+        #("align-items", "center"),
+        #("cursor", "pointer"),
+        #("box-shadow", "0 2px 4px rgba(0, 0, 0, 0.1)"),
+        #("transition", "background-color 0.3s ease"),
+      ]),
+      // event.on_click(SWitchAllCategory(checked)),
+    ],
+    [
+      html.input([
+        attr.type_("checkbox"),
+        attr.checked(checked),
+        event.on_check(fn(checked) { SWitchAllCategory(checked) }),
+      ]),
+      html.label([], [html.text("switch all select")]),
+    ],
+  )
+}
+
+///角を丸くする
+///ボタンの背景色を灰色に
+///モダンなボタン
 /// カテゴリ選択UIをレンダリングする。
 fn view_category_selection(
   selected_categories: List(SelectedCategory),
 ) -> Element(Msg) {
   html.div(
-    [attr.styles([])],
+    [attr.styles([#("margin-left", "1rem")])],
     list.map(selected_categories, fn(c) {
-      html.div([attr.styles([#("margin-right", "1rem")])], [
-        html.input([
-          attr.type_("checkbox"),
-          attr.checked(c.is_selected),
-          event.on_check(fn(checked) { SelectCategory(c.category.id, checked) }),
-        ]),
-        html.label([], [html.text(c.category.name)]),
-      ])
+      html.div(
+        [
+          attr.styles([#("margin-right", "1rem")]),
+          // event.on_click(SelectCategory(c.category.id, c.is_selected)),
+        ],
+        [
+          html.input([
+            attr.type_("checkbox"),
+            attr.checked(c.is_selected),
+            event.on_check(fn(checked) {
+              SelectCategory(c.category.id, checked)
+            }),
+          ]),
+          html.label([], [html.text(c.category.name)]),
+        ],
+      )
     }),
   )
 }
@@ -348,7 +423,7 @@ fn view_count_selection(quest_count: QuestionCount) -> Element(Msg) {
 fn view_actions(
   is_start_quiz_enabled: Bool,
   show_history: Bool,
-  history: History,
+  quiz_result: QuizResults,
 ) -> Element(Msg) {
   html.div([], [
     html.button(
@@ -360,7 +435,7 @@ fn view_actions(
     ),
     html.button([event.on_click(ViewHistory)], [html.text("学習履歴")]),
     case show_history {
-      True -> view_history(history)
+      True -> quiz_result.view(quiz_result)
       False -> html.text("")
     },
   ])
@@ -374,39 +449,42 @@ fn view_loading(loading: Bool) -> Element(Msg) {
   }
 }
 
-/// ユーザーの学習履歴を表示するテーブルをレンダリングする。
-fn view_history(history: History) -> Element(Msg) {
-  html.table([attr.class("history-table")], [
-    html.thead([], [
-      html.tr([], [
-        html.th([], [html.text("ID")]),
-        html.th([], [html.text("Category")]),
-        html.th([], [html.text("Result")]),
-      ]),
-    ]),
-    html.tbody(
-      [],
-      list.map(history, fn(h) {
-        html.tr([], [
-          html.td([], [html.text(int.to_string(h.id))]),
-          html.td([], [html.text(h.category.name)]),
-          html.td([], [
-            case h.answer {
-              Correct -> html.text("○")
-              Incorrect -> html.text("✖")
-              NotAnswered -> html.text("-")
-            },
-          ]),
-        ])
-      }),
-    ),
-  ])
-}
+// /// ユーザーの学習履歴を表示するテーブルをレンダリングする。
+// fn view_history(quiz_result: QuizResults) -> Element(Msg) {
+//   html.table([attr.class("quiz_result-table")], [
+//     html.thead([], [
+//       html.tr([], [
+//         html.th([], [html.text("ID")]),
+//         html.th([], [html.text("Category")]),
+//         html.th([], [html.text("Result")]),
+//       ]),
+//     ]),
+//     html.tbody(
+//       [],
+//       list.map(quiz_result, fn(h) {
+//         html.tr([], [
+//           html.td([], [html.text(int.to_string(h.id))]),
+//           html.td([], [html.text(h.category.name)]),
+//           html.td([], [
+//             case h.answer {
+//               Correct -> html.text("○")
+//               Incorrect -> html.text("✖")
+//               NotAnswered -> html.text("-")
+//             },
+//           ]),
+//         ])
+//       }),
+//     ),
+//   ])
+// }
 
 /// アプリケーションのメインビューをレンダリングする。
 pub fn view(model: Model) -> Element(Msg) {
   // カテゴリと問題IDがロードされている場合にのみクイズ開始ボタンを有効にする。
   let is_start_quiz_enabled = list.length(model.selected_question_ids) > 0
+  let checked =
+    list.map(model.selected_category, fn(c) { c.is_selected })
+    |> list.any(function.identity)
   // list.length(model.categories) > 0
   // && list.length(model.question_id_categories) > 0
   let qty = list.length(model.selected_question_ids)
@@ -414,13 +492,14 @@ pub fn view(model: Model) -> Element(Msg) {
     html.h1([], [html.text("Quiz App")]),
     view_error(model.error),
     html.h2([], [html.text("カテゴリ")]),
+    view_all_category_selection(checked),
     view_category_selection(model.selected_category),
     html.h2([], [html.text("shuffle")]),
     view_shuffle(model.shuffle_or_not),
     html.h2([], [html.text("出題数選択")]),
     view_count_selection(model.selected_count),
     html.div([], [html.text("Loaded questions:" <> int.to_string(qty))]),
-    view_actions(is_start_quiz_enabled, model.show_history, model.history),
+    view_actions(is_start_quiz_enabled, model.show_history, model.quiz_result),
     view_loading(model.loading),
   ])
 }

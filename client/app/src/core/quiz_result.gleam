@@ -1,8 +1,13 @@
 import core/answer.{type Answer}
 import core/category.{type Category}
-import core/question
+import core/question.{type QusetionCategory}
 import gleam/dynamic/decode
+import gleam/int
+import gleam/json
 import gleam/list
+import lustre/attribute as attr
+import lustre/element
+import lustre/element/html
 
 /// POST /api/quiz-results のリクエストボディで送信される個々の解答結果
 pub type QuizResults =
@@ -10,23 +15,99 @@ pub type QuizResults =
 
 /// IndexedDBに保存される学習履歴のレコード
 pub type Record {
-  Record(id: ID, category: Category, answer: Answer)
+  Record(id: ID, category: QusetionCategory, answer: List(Answer))
 }
 
 pub type ID =
   Int
 
-/// JSONからQuizResultRecordをデコードするためのデコーダー
-pub fn decoder() -> decode.Decoder(List(Record)) {
+pub fn decoder() -> decode.Decoder(QuizResults) {
   decode.list({
     use id <- decode.field("id", decode.int)
-    use category <- decode.field("category", category.decoder())
-    decode.success(Record(id, category, answer.NotAnswered))
+    use category <- decode.field(
+      "category",
+      question.qusetion_category_decoder(),
+    )
+    use answers <- decode.field("answer", decode.list(answer.decoder()))
+    decode.success(Record(id, category, answers))
   })
+}
+
+/// JSONからQuizResultRecordをデコードするためのデコーダー
+// pub fn decoder() -> decode.Decoder(List(Record)) {
+//   decode.list({
+//     use id <- decode.field("id", decode.int)
+//     use category <- decode.field("category", category.decoder())
+//     decode.success(Record(id, category, []))
+//   })
+// }
+pub fn to_json(qr: QuizResults) {
+  use record <- json.array(qr)
+  json.object([
+    #("id", json.int(record.id)),
+    #("category", question.qusetion_category_to_json(record.category)),
+    #("answer", json.array(record.answer, answer.to_json)),
+  ])
 }
 
 pub fn from_questions(questions: List(question.Model)) -> QuizResults {
   list.map(questions, fn(q) {
-    Record(id: q.id, category: q.category, answer: answer.NotAnswered)
+    Record(id: q.id, category: q.category, answer: [])
   })
+}
+
+// pub fn update_from_quiz_results(
+//   quiz_result: History,
+//   results: quiz_result.QuizResults,
+// ) -> History {
+//   use record <- list.map(quiz_result)
+//   let result = list.find(results, fn(result) { record.id == result.id })
+//   case result {
+//     Ok(a) -> Record(..record, answer: a.answer)
+//     Error(Nil) -> record
+//   }
+// }
+
+pub fn from_id_category(
+  id_category_list: List(question.IdAndCategory),
+) -> QuizResults {
+  list.map(id_category_list, fn(a) {
+    Record(id: a.id, category: a.category, answer: [answer.NotAnswered])
+  })
+}
+
+fn view_answers(answers: List(Answer)) -> element.Element(msg) {
+  html.div(
+    [
+      attr.styles([#("display", "flex")]),
+      attr.styles([#("flex-direction", "row")]),
+      attr.styles([#("gap", "0.5rem")]),
+      attr.styles([#("justify-content", "center")]),
+      attr.styles([#("align-items", "center")]),
+    ],
+    list.map(answers, answer.view),
+  )
+}
+
+pub fn view(quiz_result: QuizResults) -> element.Element(msg) {
+  echo quiz_result
+  html.table([], [
+    html.thead([], [
+      html.tr([], [
+        html.th([], [html.text("ID")]),
+        html.th([], [html.text("Category")]),
+        html.th([], [html.text("Result")]),
+      ]),
+    ]),
+    html.tbody(
+      [],
+      list.map(quiz_result, fn(h) {
+        html.tr([], [
+          html.td([], [html.text(int.to_string(h.id))]),
+          html.td([], [html.text(h.category.name)]),
+          html.td([], [view_answers(h.answer)]),
+        ])
+      }),
+    ),
+  ])
 }

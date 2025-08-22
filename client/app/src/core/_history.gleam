@@ -3,8 +3,11 @@ import core/category.{type Category}
 import core/question
 import core/quiz_result
 import gleam/dynamic/decode
+import gleam/int
 import gleam/json
 import gleam/list
+import lustre/element
+import lustre/element/html
 
 // import interface/indexed_db
 
@@ -25,7 +28,7 @@ pub fn decoder() -> decode.Decoder(History) {
   decode.list({
     use id <- decode.field("id", decode.int)
     use category <- decode.field("category", category.decoder())
-    use history <- decode.field("answer", answer.decoder())
+    use answers <- decode.field("answer", decode.list(answer.decoder()))
     decode.success(Record(id, category, history))
   })
 }
@@ -55,4 +58,26 @@ pub fn from_id_category(id_category_list: List(question.IdAndCategory)) {
   list.map(id_category_list, fn(a) {
     Record(id: a.id, category: a.category, answer: answer.NotAnswered)
   })
+}
+
+pub fn view(history: History) -> element.Element(msg) {
+  html.table([], [
+    html.thead([], [
+      html.tr([], [
+        html.th([], [html.text("ID")]),
+        html.th([], [html.text("Category")]),
+        html.th([], [html.text("Result")]),
+      ]),
+    ]),
+    html.tbody(
+      [],
+      list.map(history, fn(h) {
+        html.tr([], [
+          html.td([], [html.text(int.to_string(h.id))]),
+          html.td([], [html.text(h.category.name)]),
+          html.td([], [answer.view(h.answer)]),
+        ])
+      }),
+    ),
+  ])
 }

@@ -1583,21 +1583,21 @@ function fold(loop$list, loop$initial, loop$fun) {
     }
   }
 }
-function find2(loop$list, loop$is_desired) {
+function any(loop$list, loop$predicate) {
   while (true) {
     let list4 = loop$list;
-    let is_desired = loop$is_desired;
+    let predicate = loop$predicate;
     if (list4 instanceof Empty) {
-      return new Error(void 0);
+      return false;
     } else {
       let first$1 = list4.head;
       let rest$1 = list4.tail;
-      let $ = is_desired(first$1);
+      let $ = predicate(first$1);
       if ($) {
-        return new Ok(first$1);
+        return true;
       } else {
         loop$list = rest$1;
-        loop$is_desired = is_desired;
+        loop$predicate = predicate;
       }
     }
   }
@@ -5168,10 +5168,10 @@ var virtualiseAttribute = (attr) => {
 // build/dev/javascript/lustre/lustre/runtime/client/runtime.ffi.mjs
 var is_browser = () => !!document();
 var Runtime = class {
-  constructor(root3, [model, effects], view8, update9) {
+  constructor(root3, [model, effects], view10, update9) {
     this.root = root3;
     this.#model = model;
-    this.#view = view8;
+    this.#view = view10;
     this.#update = update9;
     this.root.addEventListener("context-request", (event4) => {
       if (!(event4.context && event4.callback)) return;
@@ -5396,8 +5396,8 @@ function new$6(options) {
 // build/dev/javascript/lustre/lustre/runtime/client/spa.ffi.mjs
 var Spa = class {
   #runtime;
-  constructor(root3, [init5, effects], update9, view8) {
-    this.#runtime = new Runtime(root3, [init5, effects], view8, update9);
+  constructor(root3, [init5, effects], update9, view10) {
+    this.#runtime = new Runtime(root3, [init5, effects], view10, update9);
   }
   send(message) {
     switch (message.constructor) {
@@ -5420,20 +5420,20 @@ var Spa = class {
     this.#runtime.emit(event4, data);
   }
 };
-var start = ({ init: init5, update: update9, view: view8 }, selector, flags) => {
+var start = ({ init: init5, update: update9, view: view10 }, selector, flags) => {
   if (!is_browser()) return new Error(new NotABrowser());
   const root3 = selector instanceof HTMLElement ? selector : document().querySelector(selector);
   if (!root3) return new Error(new ElementNotFound(selector));
-  return new Ok(new Spa(root3, init5(flags), update9, view8));
+  return new Ok(new Spa(root3, init5(flags), update9, view10));
 };
 
 // build/dev/javascript/lustre/lustre.mjs
 var App = class extends CustomType {
-  constructor(init5, update9, view8, config) {
+  constructor(init5, update9, view10, config) {
     super();
     this.init = init5;
     this.update = update9;
-    this.view = view8;
+    this.view = view10;
     this.config = config;
   }
 };
@@ -5445,8 +5445,8 @@ var ElementNotFound = class extends CustomType {
 };
 var NotABrowser = class extends CustomType {
 };
-function application(init5, update9, view8) {
-  return new App(init5, update9, view8, new$6(empty_list));
+function application(init5, update9, view10) {
+  return new App(init5, update9, view10, new$6(empty_list));
 }
 function start3(app, selector, start_args) {
   return guard(
@@ -5529,13 +5529,6 @@ var Category = class extends CustomType {
     this.name = name2;
   }
 };
-function to_json4(category) {
-  let id = category.id;
-  let name2 = category.name;
-  return object2(
-    toList([["id", int3(id)], ["name", string3(name2)]])
-  );
-}
 function decoder() {
   return field(
     "id",
@@ -5592,6 +5585,21 @@ function to_string4(answer) {
   } else {
     return "NotAnswered";
   }
+}
+function to_json4(answer) {
+  return string3(to_string4(answer));
+}
+function view(answer) {
+  let _block;
+  if (answer instanceof Correct) {
+    _block = "\u25CB";
+  } else if (answer instanceof Incorrect) {
+    _block = "\u2716";
+  } else {
+    _block = "-";
+  }
+  let _pipe = _block;
+  return text3(_pipe);
 }
 
 // build/dev/javascript/lustre/lustre/event.mjs
@@ -5924,7 +5932,7 @@ function view_completion_message(model) {
     return text3("");
   }
 }
-function view(model) {
+function view2(model) {
   let container_style = toList([["display", "flex"]]);
   return div(
     toList([]),
@@ -6167,7 +6175,7 @@ function view_option(text4, index5, model) {
     toList([text2(text4)])
   );
 }
-function view2(model) {
+function view3(model) {
   let options = index_map(
     model.question.texts,
     (text4, i) => {
@@ -6231,6 +6239,15 @@ var Model3 = class extends CustomType {
     this.category = category;
     this.question_text = question_text;
     this.question_interaction = question_interaction;
+  }
+};
+var QusetionCategory = class extends CustomType {
+  constructor(id, name2, sub_id, sub_name) {
+    super();
+    this.id = id;
+    this.name = name2;
+    this.sub_id = sub_id;
+    this.sub_name = sub_name;
   }
 };
 var IdAndCategory = class extends CustomType {
@@ -6309,12 +6326,12 @@ function update4(model, msg) {
     }
   }
 }
-function view3(model) {
+function view4(model) {
   let $ = model.question_interaction;
   if ($ instanceof MultipleChoice) {
     let mc_model = $[0];
     return map4(
-      view2(mc_model),
+      view3(mc_model),
       (m) => {
         return new MultipleChoiceMsg(m);
       }
@@ -6322,7 +6339,7 @@ function view3(model) {
   } else {
     let as_model = $[0];
     return map4(
-      view(as_model),
+      view2(as_model),
       (m) => {
         return new AssociationMsg(m);
       }
@@ -6350,6 +6367,45 @@ function interaction_decoder() {
   };
   return one_of(decode_as(), toList([decode_mc()]));
 }
+function qusetion_category_to_json(category) {
+  return object2(
+    toList([
+      ["id", int3(category.id)],
+      ["name", string3(category.name)],
+      ["sub_id", int3(category.sub_id)],
+      ["sub_name", string3(category.sub_name)]
+    ])
+  );
+}
+function qusetion_category_decoder() {
+  return field(
+    "id",
+    int2,
+    (id) => {
+      return field(
+        "name",
+        string2,
+        (name2) => {
+          return field(
+            "sub_id",
+            int2,
+            (sub_id) => {
+              return field(
+                "sub_name",
+                string2,
+                (sub_name) => {
+                  return success(
+                    new QusetionCategory(id, name2, sub_id, sub_name)
+                  );
+                }
+              );
+            }
+          );
+        }
+      );
+    }
+  );
+}
 function decoder5() {
   return field(
     "id",
@@ -6357,7 +6413,7 @@ function decoder5() {
     (id) => {
       return field(
         "category",
-        decoder(),
+        qusetion_category_decoder(),
         (category) => {
           return field(
             "question_text",
@@ -6389,24 +6445,6 @@ var Record = class extends CustomType {
     this.answer = answer;
   }
 };
-function from_questions(questions) {
-  return map(
-    questions,
-    (q) => {
-      return new Record(q.id, q.category, new NotAnswered());
-    }
-  );
-}
-
-// build/dev/javascript/study_app/core/history.mjs
-var Record2 = class extends CustomType {
-  constructor(id, category, answer) {
-    super();
-    this.id = id;
-    this.category = category;
-    this.answer = answer;
-  }
-};
 function decoder6() {
   return list2(
     field(
@@ -6415,13 +6453,13 @@ function decoder6() {
       (id) => {
         return field(
           "category",
-          decoder(),
+          qusetion_category_decoder(),
           (category) => {
             return field(
               "answer",
-              decoder2(),
-              (history) => {
-                return success(new Record2(id, category, history));
+              list2(decoder2()),
+              (answers) => {
+                return success(new Record(id, category, answers));
               }
             );
           }
@@ -6430,39 +6468,212 @@ function decoder6() {
     )
   );
 }
-function to_json7(history) {
+function to_json7(qr) {
   return array2(
-    history,
+    qr,
     (record) => {
       return object2(
         toList([
           ["id", int3(record.id)],
-          ["category", to_json4(record.category)],
-          ["answer", string3(to_string4(record.answer))]
+          ["category", qusetion_category_to_json(record.category)],
+          ["answer", array2(record.answer, to_json4)]
         ])
       );
     }
   );
 }
-function update_from_quiz_results(history, results) {
+function from_questions(questions) {
   return map(
-    history,
-    (record) => {
-      let result = find2(
-        results,
-        (result2) => {
-          return record.id === result2.id;
-        }
-      );
-      if (result instanceof Ok) {
-        let a = result[0];
-        let _record = record;
-        return new Record2(_record.id, _record.category, a.answer);
-      } else {
-        return record;
-      }
+    questions,
+    (q) => {
+      return new Record(q.id, q.category, toList([]));
     }
   );
+}
+function view_answers(answers) {
+  return div(
+    toList([
+      styles(toList([["display", "flex"]])),
+      styles(toList([["flex-direction", "row"]])),
+      styles(toList([["gap", "0.5rem"]])),
+      styles(toList([["justify-content", "center"]])),
+      styles(toList([["align-items", "center"]]))
+    ]),
+    map(answers, view)
+  );
+}
+function view5(quiz_result) {
+  echo(quiz_result, "src/core/quiz_result.gleam", 93);
+  return table(
+    toList([]),
+    toList([
+      thead(
+        toList([]),
+        toList([
+          tr(
+            toList([]),
+            toList([
+              th(toList([]), toList([text3("ID")])),
+              th(toList([]), toList([text3("Category")])),
+              th(toList([]), toList([text3("Result")]))
+            ])
+          )
+        ])
+      ),
+      tbody(
+        toList([]),
+        map(
+          quiz_result,
+          (h) => {
+            return tr(
+              toList([]),
+              toList([
+                td(toList([]), toList([text3(to_string(h.id))])),
+                td(toList([]), toList([text3(h.category.name)])),
+                td(toList([]), toList([view_answers(h.answer)]))
+              ])
+            );
+          }
+        )
+      )
+    ])
+  );
+}
+function echo(value2, file, line) {
+  const grey = "\x1B[90m";
+  const reset_color = "\x1B[39m";
+  const file_line = `${file}:${line}`;
+  const string_value = echo$inspect(value2);
+  if (globalThis.process?.stderr?.write) {
+    const string5 = `${grey}${file_line}${reset_color}
+${string_value}
+`;
+    process.stderr.write(string5);
+  } else if (globalThis.Deno) {
+    const string5 = `${grey}${file_line}${reset_color}
+${string_value}
+`;
+    globalThis.Deno.stderr.writeSync(new TextEncoder().encode(string5));
+  } else {
+    const string5 = `${file_line}
+${string_value}`;
+    globalThis.console.log(string5);
+  }
+  return value2;
+}
+function echo$inspectString(str) {
+  let new_str = '"';
+  for (let i = 0; i < str.length; i++) {
+    let char = str[i];
+    if (char == "\n") new_str += "\\n";
+    else if (char == "\r") new_str += "\\r";
+    else if (char == "	") new_str += "\\t";
+    else if (char == "\f") new_str += "\\f";
+    else if (char == "\\") new_str += "\\\\";
+    else if (char == '"') new_str += '\\"';
+    else if (char < " " || char > "~" && char < "\xA0") {
+      new_str += "\\u{" + char.charCodeAt(0).toString(16).toUpperCase().padStart(4, "0") + "}";
+    } else {
+      new_str += char;
+    }
+  }
+  new_str += '"';
+  return new_str;
+}
+function echo$inspectDict(map7) {
+  let body = "dict.from_list([";
+  let first = true;
+  let key_value_pairs = [];
+  map7.forEach((value2, key) => {
+    key_value_pairs.push([key, value2]);
+  });
+  key_value_pairs.sort();
+  key_value_pairs.forEach(([key, value2]) => {
+    if (!first) body = body + ", ";
+    body = body + "#(" + echo$inspect(key) + ", " + echo$inspect(value2) + ")";
+    first = false;
+  });
+  return body + "])";
+}
+function echo$inspectCustomType(record) {
+  const props = globalThis.Object.keys(record).map((label2) => {
+    const value2 = echo$inspect(record[label2]);
+    return isNaN(parseInt(label2)) ? `${label2}: ${value2}` : value2;
+  }).join(", ");
+  return props ? `${record.constructor.name}(${props})` : record.constructor.name;
+}
+function echo$inspectObject(v) {
+  const name2 = Object.getPrototypeOf(v)?.constructor?.name || "Object";
+  const props = [];
+  for (const k of Object.keys(v)) {
+    props.push(`${echo$inspect(k)}: ${echo$inspect(v[k])}`);
+  }
+  const body = props.length ? " " + props.join(", ") + " " : "";
+  const head = name2 === "Object" ? "" : name2 + " ";
+  return `//js(${head}{${body}})`;
+}
+function echo$inspect(v) {
+  const t = typeof v;
+  if (v === true) return "True";
+  if (v === false) return "False";
+  if (v === null) return "//js(null)";
+  if (v === void 0) return "Nil";
+  if (t === "string") return echo$inspectString(v);
+  if (t === "bigint" || t === "number") return v.toString();
+  if (globalThis.Array.isArray(v))
+    return `#(${v.map(echo$inspect).join(", ")})`;
+  if (v instanceof List)
+    return `[${v.toArray().map(echo$inspect).join(", ")}]`;
+  if (v instanceof UtfCodepoint)
+    return `//utfcodepoint(${String.fromCodePoint(v.value)})`;
+  if (v instanceof BitArray) return echo$inspectBitArray(v);
+  if (v instanceof CustomType) return echo$inspectCustomType(v);
+  if (echo$isDict(v)) return echo$inspectDict(v);
+  if (v instanceof Set)
+    return `//js(Set(${[...v].map(echo$inspect).join(", ")}))`;
+  if (v instanceof RegExp) return `//js(${v})`;
+  if (v instanceof Date) return `//js(Date("${v.toISOString()}"))`;
+  if (v instanceof Function) {
+    const args = [];
+    for (const i of Array(v.length).keys())
+      args.push(String.fromCharCode(i + 97));
+    return `//fn(${args.join(", ")}) { ... }`;
+  }
+  return echo$inspectObject(v);
+}
+function echo$inspectBitArray(bitArray) {
+  let endOfAlignedBytes = bitArray.bitOffset + 8 * Math.trunc(bitArray.bitSize / 8);
+  let alignedBytes = bitArraySlice(
+    bitArray,
+    bitArray.bitOffset,
+    endOfAlignedBytes
+  );
+  let remainingUnalignedBits = bitArray.bitSize % 8;
+  if (remainingUnalignedBits > 0) {
+    let remainingBits = bitArraySliceToInt(
+      bitArray,
+      endOfAlignedBytes,
+      bitArray.bitSize,
+      false,
+      false
+    );
+    let alignedBytesArray = Array.from(alignedBytes.rawBuffer);
+    let suffix = `${remainingBits}:size(${remainingUnalignedBits})`;
+    if (alignedBytesArray.length === 0) {
+      return `<<${suffix}>>`;
+    } else {
+      return `<<${Array.from(alignedBytes.rawBuffer).join(", ")}, ${suffix}>>`;
+    }
+  } else {
+    return `<<${Array.from(alignedBytes.rawBuffer).join(", ")}>>`;
+  }
+}
+function echo$isDict(value2) {
+  try {
+    return value2 instanceof Dict;
+  } catch {
+    return false;
+  }
 }
 
 // build/dev/javascript/study_app/interface/data.mjs
@@ -10765,7 +10976,7 @@ function decode_question_id_and_category_list(dynamic2) {
     (id) => {
       return field(
         "category",
-        decoder(),
+        qusetion_category_decoder(),
         (category) => {
           return success(new IdAndCategory(id, category));
         }
@@ -10819,7 +11030,7 @@ function update_if(list4, prefix, fun) {
 
 // build/dev/javascript/study_app/pages/quiz_home.mjs
 var Model4 = class extends CustomType {
-  constructor(db, categories, question_id_categories, shuffle_or_not, selected_category, selected_count, selected_question_ids, loading, error, history, show_history) {
+  constructor(db, categories, question_id_categories, shuffle_or_not, selected_category, selected_count, selected_question_ids, loading, error, quiz_result, show_history) {
     super();
     this.db = db;
     this.categories = categories;
@@ -10830,7 +11041,7 @@ var Model4 = class extends CustomType {
     this.selected_question_ids = selected_question_ids;
     this.loading = loading;
     this.error = error;
-    this.history = history;
+    this.quiz_result = quiz_result;
     this.show_history = show_history;
   }
 };
@@ -10863,6 +11074,12 @@ var SelectCount = class extends CustomType {
   }
 };
 var SwitchShuffle = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var SWitchAllCategory = class extends CustomType {
   constructor($0) {
     super();
     this[0] = $0;
@@ -10938,7 +11155,7 @@ function init(db) {
       db,
       toList([]),
       toList([]),
-      true,
+      false,
       toList([]),
       new Full(),
       toList([]),
@@ -10951,6 +11168,13 @@ function init(db) {
       toList([get_categories, get_question_id_and_category_list, get_history])
     )
   ];
+}
+function shuffle2(xs, is_shuffle) {
+  if (is_shuffle) {
+    return shuffle(xs);
+  } else {
+    return xs;
+  }
 }
 function filtering_question_id(id_categorie_list, selected_category_ids, selected_count, do_shuffle) {
   let _block;
@@ -10971,7 +11195,7 @@ function filtering_question_id(id_categorie_list, selected_category_ids, selecte
     }
   );
   _block$1 = map(_pipe$3, (c) => {
-    return c.category.id;
+    return c.id;
   });
   let filtered_questions = _block$1;
   let _block$2;
@@ -10982,13 +11206,7 @@ function filtering_question_id(id_categorie_list, selected_category_ids, selecte
     _block$2 = length(filtered_questions);
   }
   let limit_count = _block$2;
-  let _block$3;
-  if (do_shuffle) {
-    _block$3 = shuffle(filtered_questions);
-  } else {
-    _block$3 = filtered_questions;
-  }
-  let _pipe$4 = _block$3;
+  let _pipe$4 = shuffle2(filtered_questions, do_shuffle);
   return take(_pipe$4, limit_count);
 }
 function update5(model, msg) {
@@ -11023,7 +11241,7 @@ function update5(model, msg) {
           new_question_ids,
           _record.loading,
           _record.error,
-          _record.history,
+          _record.quiz_result,
           _record.show_history
         );
       })(),
@@ -11050,7 +11268,7 @@ function update5(model, msg) {
           new_question_ids,
           _record.loading,
           _record.error,
-          _record.history,
+          _record.quiz_result,
           _record.show_history
         );
       })(),
@@ -11058,6 +11276,7 @@ function update5(model, msg) {
     ];
   } else if (msg instanceof SwitchShuffle) {
     let is_shuffle = msg[0];
+    let new_question_ids = shuffle2(model.selected_question_ids, is_shuffle);
     return [
       (() => {
         let _record = model;
@@ -11068,17 +11287,51 @@ function update5(model, msg) {
           is_shuffle,
           _record.selected_category,
           _record.selected_count,
-          _record.selected_question_ids,
+          new_question_ids,
           _record.loading,
           _record.error,
-          _record.history,
+          _record.quiz_result,
+          _record.show_history
+        );
+      })(),
+      none2()
+    ];
+  } else if (msg instanceof SWitchAllCategory) {
+    let is_selected = msg[0];
+    echo2("SWitchAllCategory", "src/pages/quiz_home.gleam", 189);
+    let new_select_category = map(
+      model.selected_category,
+      (c) => {
+        return new SelectedCategory(is_selected, c.category);
+      }
+    );
+    let new_question_ids = filtering_question_id(
+      model.question_id_categories,
+      new_select_category,
+      model.selected_count,
+      model.shuffle_or_not
+    );
+    return [
+      (() => {
+        let _record = model;
+        return new Model4(
+          _record.db,
+          _record.categories,
+          _record.question_id_categories,
+          _record.shuffle_or_not,
+          new_select_category,
+          _record.selected_count,
+          new_question_ids,
+          _record.loading,
+          _record.error,
+          _record.quiz_result,
           _record.show_history
         );
       })(),
       none2()
     ];
   } else if (msg instanceof ViewHistory) {
-    echo("View History", "src/pages/quiz_home.gleam", 189);
+    echo2("View History", "src/pages/quiz_home.gleam", 211);
     return [
       (() => {
         let _record = model;
@@ -11092,7 +11345,7 @@ function update5(model, msg) {
           _record.selected_question_ids,
           _record.loading,
           _record.error,
-          _record.history,
+          _record.quiz_result,
           negate(model.show_history)
         );
       })(),
@@ -11100,7 +11353,7 @@ function update5(model, msg) {
     ];
   } else if (msg instanceof GetCategories) {
     let categories = msg[0];
-    echo("GetCategories", "src/pages/quiz_home.gleam", 196);
+    echo2("GetCategories", "src/pages/quiz_home.gleam", 218);
     let new_selected_category = map(
       categories,
       (_capture) => {
@@ -11120,7 +11373,7 @@ function update5(model, msg) {
           _record.selected_question_ids,
           _record.loading,
           _record.error,
-          _record.history,
+          _record.quiz_result,
           _record.show_history
         );
       })(),
@@ -11128,7 +11381,7 @@ function update5(model, msg) {
     ];
   } else if (msg instanceof GetQuestionIdAndCategoryList) {
     let id_and_category_list = msg[0];
-    echo("GetQuestionIdAndCategoryList", "src/pages/quiz_home.gleam", 211);
+    echo2("GetQuestionIdAndCategoryList", "src/pages/quiz_home.gleam", 233);
     return [
       (() => {
         let _record = model;
@@ -11144,15 +11397,15 @@ function update5(model, msg) {
           }),
           _record.loading,
           _record.error,
-          _record.history,
+          _record.quiz_result,
           _record.show_history
         );
       })(),
       none2()
     ];
   } else if (msg instanceof GetQuizHistory) {
-    let history = msg[0];
-    echo("GetQuizHistory", "src/pages/quiz_home.gleam", 223);
+    let quiz_result = msg[0];
+    echo2("GetQuizHistory", "src/pages/quiz_home.gleam", 245);
     return [
       (() => {
         let _record = model;
@@ -11166,14 +11419,14 @@ function update5(model, msg) {
           _record.selected_question_ids,
           false,
           _record.error,
-          history,
+          quiz_result,
           _record.show_history
         );
       })(),
       none2()
     ];
   } else if (msg instanceof StartQuiz) {
-    echo("Start Quiz", "src/pages/quiz_home.gleam", 178);
+    echo2("Start Quiz", "src/pages/quiz_home.gleam", 254);
     let eff = to_effect(
       getQuestionByIds(model.db, model.selected_question_ids),
       get_question_by_ids_decode,
@@ -11193,7 +11446,7 @@ function update5(model, msg) {
     return [model, none2()];
   } else {
     let json_err = msg[0];
-    echo("err screen", "src/pages/quiz_home.gleam", 228);
+    echo2("err screen", "src/pages/quiz_home.gleam", 250);
     return [
       (() => {
         let _record = model;
@@ -11207,7 +11460,7 @@ function update5(model, msg) {
           _record.selected_question_ids,
           _record.loading,
           new Some(json_err),
-          _record.history,
+          _record.quiz_result,
           _record.show_history
         );
       })(),
@@ -11222,32 +11475,57 @@ function view_error(error) {
     return text3("");
   }
 }
-function view_shuffle(shuffle2) {
+function view_shuffle(shuffle3) {
   return div(
     toList([]),
     toList([
-      label(
-        toList([]),
+      input(
         toList([
-          input(
-            toList([
-              type_("checkbox"),
-              checked(shuffle2),
-              on_check(
-                (checked2) => {
-                  return new SwitchShuffle(checked2);
-                }
-              )
-            ])
-          )
+          type_("checkbox"),
+          checked(shuffle3),
+          on_check((checked2) => {
+            return new SwitchShuffle(checked2);
+          })
         ])
       )
     ])
   );
 }
+function view_all_category_selection(checked2) {
+  return div(
+    toList([
+      styles(
+        toList([
+          ["padding", "0.5rem"],
+          ["border-radius", "0.5rem"],
+          ["background-color", "#f0f0f0"],
+          ["display", "inline-flex"],
+          ["align-items", "center"],
+          ["cursor", "pointer"],
+          ["box-shadow", "0 2px 4px rgba(0, 0, 0, 0.1)"],
+          ["transition", "background-color 0.3s ease"]
+        ])
+      )
+    ]),
+    toList([
+      input(
+        toList([
+          type_("checkbox"),
+          checked(checked2),
+          on_check(
+            (checked3) => {
+              return new SWitchAllCategory(checked3);
+            }
+          )
+        ])
+      ),
+      label(toList([]), toList([text3("switch all select")]))
+    ])
+  );
+}
 function view_category_selection(selected_categories) {
   return div(
-    toList([styles(toList([]))]),
+    toList([styles(toList([["margin-left", "1rem"]]))]),
     map(
       selected_categories,
       (c) => {
@@ -11316,64 +11594,7 @@ function view_count_selection(quest_count) {
     )
   );
 }
-function view_loading(loading) {
-  if (loading) {
-    return p(toList([]), toList([text3("Loading...")]));
-  } else {
-    return text3("");
-  }
-}
-function view_history(history) {
-  return table(
-    toList([class$("history-table")]),
-    toList([
-      thead(
-        toList([]),
-        toList([
-          tr(
-            toList([]),
-            toList([
-              th(toList([]), toList([text3("ID")])),
-              th(toList([]), toList([text3("Category")])),
-              th(toList([]), toList([text3("Result")]))
-            ])
-          )
-        ])
-      ),
-      tbody(
-        toList([]),
-        map(
-          history,
-          (h) => {
-            return tr(
-              toList([]),
-              toList([
-                td(toList([]), toList([text3(to_string(h.id))])),
-                td(toList([]), toList([text3(h.category.name)])),
-                td(
-                  toList([]),
-                  toList([
-                    (() => {
-                      let $ = h.answer;
-                      if ($ instanceof Correct) {
-                        return text3("\u25CB");
-                      } else if ($ instanceof Incorrect) {
-                        return text3("\u2716");
-                      } else {
-                        return text3("-");
-                      }
-                    })()
-                  ])
-                )
-              ])
-            );
-          }
-        )
-      )
-    ])
-  );
-}
-function view_actions(is_start_quiz_enabled, show_history, history) {
+function view_actions(is_start_quiz_enabled, show_history, quiz_result) {
   return div(
     toList([]),
     toList([
@@ -11390,7 +11611,7 @@ function view_actions(is_start_quiz_enabled, show_history, history) {
       ),
       (() => {
         if (show_history) {
-          return view_history(history);
+          return view5(quiz_result);
         } else {
           return text3("");
         }
@@ -11398,8 +11619,24 @@ function view_actions(is_start_quiz_enabled, show_history, history) {
     ])
   );
 }
-function view4(model) {
+function view_loading(loading) {
+  if (loading) {
+    return p(toList([]), toList([text3("Loading...")]));
+  } else {
+    return text3("");
+  }
+}
+function view6(model) {
   let is_start_quiz_enabled = length(model.selected_question_ids) > 0;
+  let _block;
+  let _pipe = map(
+    model.selected_category,
+    (c) => {
+      return c.is_selected;
+    }
+  );
+  _block = any(_pipe, identity2);
+  let checked2 = _block;
   let qty = length(model.selected_question_ids);
   return div(
     toList([]),
@@ -11407,6 +11644,7 @@ function view4(model) {
       h1(toList([]), toList([text3("Quiz App")])),
       view_error(model.error),
       h2(toList([]), toList([text3("\u30AB\u30C6\u30B4\u30EA")])),
+      view_all_category_selection(checked2),
       view_category_selection(model.selected_category),
       h2(toList([]), toList([text3("shuffle")])),
       view_shuffle(model.shuffle_or_not),
@@ -11416,512 +11654,8 @@ function view4(model) {
         toList([]),
         toList([text3("Loaded questions:" + to_string(qty))])
       ),
-      view_actions(is_start_quiz_enabled, model.show_history, model.history),
+      view_actions(is_start_quiz_enabled, model.show_history, model.quiz_result),
       view_loading(model.loading)
-    ])
-  );
-}
-function echo(value2, file, line) {
-  const grey = "\x1B[90m";
-  const reset_color = "\x1B[39m";
-  const file_line = `${file}:${line}`;
-  const string_value = echo$inspect(value2);
-  if (globalThis.process?.stderr?.write) {
-    const string5 = `${grey}${file_line}${reset_color}
-${string_value}
-`;
-    process.stderr.write(string5);
-  } else if (globalThis.Deno) {
-    const string5 = `${grey}${file_line}${reset_color}
-${string_value}
-`;
-    globalThis.Deno.stderr.writeSync(new TextEncoder().encode(string5));
-  } else {
-    const string5 = `${file_line}
-${string_value}`;
-    globalThis.console.log(string5);
-  }
-  return value2;
-}
-function echo$inspectString(str) {
-  let new_str = '"';
-  for (let i = 0; i < str.length; i++) {
-    let char = str[i];
-    if (char == "\n") new_str += "\\n";
-    else if (char == "\r") new_str += "\\r";
-    else if (char == "	") new_str += "\\t";
-    else if (char == "\f") new_str += "\\f";
-    else if (char == "\\") new_str += "\\\\";
-    else if (char == '"') new_str += '\\"';
-    else if (char < " " || char > "~" && char < "\xA0") {
-      new_str += "\\u{" + char.charCodeAt(0).toString(16).toUpperCase().padStart(4, "0") + "}";
-    } else {
-      new_str += char;
-    }
-  }
-  new_str += '"';
-  return new_str;
-}
-function echo$inspectDict(map7) {
-  let body = "dict.from_list([";
-  let first = true;
-  let key_value_pairs = [];
-  map7.forEach((value2, key) => {
-    key_value_pairs.push([key, value2]);
-  });
-  key_value_pairs.sort();
-  key_value_pairs.forEach(([key, value2]) => {
-    if (!first) body = body + ", ";
-    body = body + "#(" + echo$inspect(key) + ", " + echo$inspect(value2) + ")";
-    first = false;
-  });
-  return body + "])";
-}
-function echo$inspectCustomType(record) {
-  const props = globalThis.Object.keys(record).map((label2) => {
-    const value2 = echo$inspect(record[label2]);
-    return isNaN(parseInt(label2)) ? `${label2}: ${value2}` : value2;
-  }).join(", ");
-  return props ? `${record.constructor.name}(${props})` : record.constructor.name;
-}
-function echo$inspectObject(v) {
-  const name2 = Object.getPrototypeOf(v)?.constructor?.name || "Object";
-  const props = [];
-  for (const k of Object.keys(v)) {
-    props.push(`${echo$inspect(k)}: ${echo$inspect(v[k])}`);
-  }
-  const body = props.length ? " " + props.join(", ") + " " : "";
-  const head = name2 === "Object" ? "" : name2 + " ";
-  return `//js(${head}{${body}})`;
-}
-function echo$inspect(v) {
-  const t = typeof v;
-  if (v === true) return "True";
-  if (v === false) return "False";
-  if (v === null) return "//js(null)";
-  if (v === void 0) return "Nil";
-  if (t === "string") return echo$inspectString(v);
-  if (t === "bigint" || t === "number") return v.toString();
-  if (globalThis.Array.isArray(v))
-    return `#(${v.map(echo$inspect).join(", ")})`;
-  if (v instanceof List)
-    return `[${v.toArray().map(echo$inspect).join(", ")}]`;
-  if (v instanceof UtfCodepoint)
-    return `//utfcodepoint(${String.fromCodePoint(v.value)})`;
-  if (v instanceof BitArray) return echo$inspectBitArray(v);
-  if (v instanceof CustomType) return echo$inspectCustomType(v);
-  if (echo$isDict(v)) return echo$inspectDict(v);
-  if (v instanceof Set)
-    return `//js(Set(${[...v].map(echo$inspect).join(", ")}))`;
-  if (v instanceof RegExp) return `//js(${v})`;
-  if (v instanceof Date) return `//js(Date("${v.toISOString()}"))`;
-  if (v instanceof Function) {
-    const args = [];
-    for (const i of Array(v.length).keys())
-      args.push(String.fromCharCode(i + 97));
-    return `//fn(${args.join(", ")}) { ... }`;
-  }
-  return echo$inspectObject(v);
-}
-function echo$inspectBitArray(bitArray) {
-  let endOfAlignedBytes = bitArray.bitOffset + 8 * Math.trunc(bitArray.bitSize / 8);
-  let alignedBytes = bitArraySlice(
-    bitArray,
-    bitArray.bitOffset,
-    endOfAlignedBytes
-  );
-  let remainingUnalignedBits = bitArray.bitSize % 8;
-  if (remainingUnalignedBits > 0) {
-    let remainingBits = bitArraySliceToInt(
-      bitArray,
-      endOfAlignedBytes,
-      bitArray.bitSize,
-      false,
-      false
-    );
-    let alignedBytesArray = Array.from(alignedBytes.rawBuffer);
-    let suffix = `${remainingBits}:size(${remainingUnalignedBits})`;
-    if (alignedBytesArray.length === 0) {
-      return `<<${suffix}>>`;
-    } else {
-      return `<<${Array.from(alignedBytes.rawBuffer).join(", ")}, ${suffix}>>`;
-    }
-  } else {
-    return `<<${Array.from(alignedBytes.rawBuffer).join(", ")}>>`;
-  }
-}
-function echo$isDict(value2) {
-  try {
-    return value2 instanceof Dict;
-  } catch {
-    return false;
-  }
-}
-
-// build/dev/javascript/study_app/extra/effect_.mjs
-function perform(msg) {
-  return from(
-    (dispatch) => {
-      dispatch(msg);
-      return void 0;
-    }
-  );
-}
-
-// build/dev/javascript/study_app/pages/quiz_screen.mjs
-var Model5 = class extends CustomType {
-  constructor(db, questions, questions_count, current_question_index, quiz_result, quiz_finished, score) {
-    super();
-    this.db = db;
-    this.questions = questions;
-    this.questions_count = questions_count;
-    this.current_question_index = current_question_index;
-    this.quiz_result = quiz_result;
-    this.quiz_finished = quiz_finished;
-    this.score = score;
-  }
-};
-var QuestionMsg = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var NextQuestion = class extends CustomType {
-};
-var OutCome2 = class extends CustomType {
-};
-var GoToResultScreen = class extends CustomType {
-};
-function init2(db, questions) {
-  let $ = is_empty2(questions);
-  if ($) {
-    return new Error(void 0);
-  } else {
-    return new Ok(
-      new Model5(
-        db,
-        questions,
-        length(questions),
-        0,
-        from_questions(questions),
-        false,
-        0
-      )
-    );
-  }
-}
-function update_quiz_result(model) {
-  let current_question = get_at(
-    model.questions,
-    model.current_question_index
-  );
-  if (current_question instanceof Some) {
-    let q = current_question[0];
-    let new_answer = check_answer2(q);
-    return update_if(
-      model.quiz_result,
-      (r) => {
-        return r.id === q.id;
-      },
-      (r) => {
-        let _record = r;
-        return new Record(_record.id, _record.category, new_answer);
-      }
-    );
-  } else {
-    return model.quiz_result;
-  }
-}
-function get_score(quiz_result) {
-  let _pipe = quiz_result;
-  let _pipe$1 = filter(
-    _pipe,
-    (result) => {
-      return isEqual(result.answer, new Correct());
-    }
-  );
-  return length(_pipe$1);
-}
-function update6(model, msg) {
-  if (msg instanceof QuestionMsg) {
-    let q_msg = msg[0];
-    let new_questions = update_at(
-      model.questions,
-      model.current_question_index,
-      (_capture) => {
-        return update4(_capture, q_msg);
-      }
-    );
-    return [
-      (() => {
-        let _record = model;
-        return new Model5(
-          _record.db,
-          new_questions,
-          _record.questions_count,
-          _record.current_question_index,
-          _record.quiz_result,
-          _record.quiz_finished,
-          _record.score
-        );
-      })(),
-      none2()
-    ];
-  } else if (msg instanceof NextQuestion) {
-    let new_quiz_result = update_quiz_result(model);
-    let new_score = get_score(new_quiz_result);
-    let next_index = model.current_question_index + 1;
-    let is_finished = next_index >= length(model.questions);
-    if (is_finished) {
-      return [
-        (() => {
-          let _record = model;
-          return new Model5(
-            _record.db,
-            _record.questions,
-            _record.questions_count,
-            _record.current_question_index,
-            new_quiz_result,
-            true,
-            new_score
-          );
-        })(),
-        perform(new GoToResultScreen())
-      ];
-    } else {
-      return [
-        (() => {
-          let _record = model;
-          return new Model5(
-            _record.db,
-            _record.questions,
-            _record.questions_count,
-            next_index,
-            new_quiz_result,
-            _record.quiz_finished,
-            new_score
-          );
-        })(),
-        none2()
-      ];
-    }
-  } else if (msg instanceof OutCome2) {
-    return [model, none2()];
-  } else {
-    return [model, perform(new OutCome2())];
-  }
-}
-function view_question(model) {
-  let $ = get_at(model.questions, model.current_question_index);
-  if ($ instanceof Some) {
-    let current_question = $[0];
-    let progress = "Question " + to_string(
-      model.current_question_index + 1
-    ) + " of " + to_string(length(model.questions));
-    return div(
-      toList([]),
-      toList([
-        h2(toList([]), toList([text3(progress)])),
-        p(
-          toList([]),
-          toList([text3(current_question.question_text)])
-        ),
-        div(
-          toList([]),
-          toList([
-            (() => {
-              let _pipe = current_question;
-              let _pipe$1 = view3(_pipe);
-              return map4(
-                _pipe$1,
-                (var0) => {
-                  return new QuestionMsg(var0);
-                }
-              );
-            })()
-          ])
-        ),
-        button(
-          toList([on_click(new NextQuestion())]),
-          toList([text3("Next")])
-        )
-      ])
-    );
-  } else {
-    return text3("Error: Question not found.");
-  }
-}
-function view_quiz_finished(model) {
-  let score = get_score(model.quiz_result);
-  let total_questions = length(model.questions);
-  return div(
-    toList([]),
-    toList([
-      h2(toList([]), toList([text3("Quiz Finished!")])),
-      p(
-        toList([]),
-        toList([
-          text3(
-            "Your score: " + to_string(score) + "/" + to_string(
-              total_questions
-            )
-          )
-        ])
-      ),
-      button(
-        toList([on_click(new GoToResultScreen())]),
-        toList([text3("View Results")])
-      )
-    ])
-  );
-}
-function view5(model) {
-  let $ = model.quiz_finished;
-  if ($) {
-    return view_quiz_finished(model);
-  } else {
-    return view_question(model);
-  }
-}
-
-// build/dev/javascript/study_app/pages/result_screen.mjs
-var Model6 = class extends CustomType {
-  constructor(db, score, total_questions, quiz_result, history) {
-    super();
-    this.db = db;
-    this.score = score;
-    this.total_questions = total_questions;
-    this.quiz_result = quiz_result;
-    this.history = history;
-  }
-};
-var GetHistory = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var Err = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var SaveHistory = class extends CustomType {
-};
-var GoToHome = class extends CustomType {
-};
-var OutCome3 = class extends CustomType {
-};
-function init3(db, score, total_questions, quiz_result) {
-  let eff = to_effect(
-    getQuizHistory(db),
-    decode_quiz_historys,
-    (var0) => {
-      return new GetHistory(var0);
-    },
-    (var0) => {
-      return new Err(var0);
-    }
-  );
-  return [new Model6(db, score, total_questions, quiz_result, toList([])), eff];
-}
-function update7(model, msg) {
-  if (msg instanceof GetHistory) {
-    let history = msg[0];
-    echo2("GetHistory", "src/pages/result_screen.gleam", 63);
-    let new_history = update_from_quiz_results(
-      history,
-      model.quiz_result
-    );
-    return [
-      (() => {
-        let _record = model;
-        return new Model6(
-          _record.db,
-          _record.score,
-          _record.total_questions,
-          _record.quiz_result,
-          new_history
-        );
-      })(),
-      none2()
-    ];
-  } else if (msg instanceof Err) {
-    let json_err = msg[0];
-    echo2("err screen", "src/pages/result_screen.gleam", 69);
-    echo2(json_err, "src/pages/result_screen.gleam", 70);
-    return [model, none2()];
-  } else if (msg instanceof SaveHistory) {
-    echo2("SaveHistory", "src/pages/result_screen.gleam", 74);
-    return [model, none2()];
-  } else if (msg instanceof GoToHome) {
-    echo2("GoToHome", "src/pages/result_screen.gleam", 78);
-    let _block;
-    let _pipe = model.history;
-    let _pipe$1 = to_json7(_pipe);
-    let _pipe$2 = ((_capture) => {
-      return saveQuizHistory(model.db, _capture);
-    })(_pipe$1);
-    _block = to_effect_no_decode(
-      _pipe$2,
-      (a) => {
-        return new OutCome3();
-      }
-    );
-    let eff = _block;
-    return [model, eff];
-  } else {
-    echo2("result -> home", "src/pages/result_screen.gleam", 88);
-    return [model, none2()];
-  }
-}
-function view_answers(quiz_result) {
-  return ul(
-    toList([]),
-    map(
-      quiz_result,
-      (record) => {
-        let _block;
-        let $ = record.answer;
-        if ($ instanceof Correct) {
-          _block = "\u25CB";
-        } else if ($ instanceof Incorrect) {
-          _block = "\u2716";
-        } else {
-          _block = "-";
-        }
-        let status_text = _block;
-        return li(
-          toList([]),
-          toList([text3(to_string(record.id) + ": " + status_text)])
-        );
-      }
-    )
-  );
-}
-function view6(model) {
-  return div(
-    toList([]),
-    toList([
-      h2(toList([]), toList([text3("Quiz Results")])),
-      p(
-        toList([]),
-        toList([
-          text3(
-            "Your score: " + to_string(model.score) + "/" + to_string(
-              model.total_questions
-            )
-          )
-        ])
-      ),
-      h3(toList([]), toList([text3("Detailed Results:")])),
-      view_answers(model.quiz_result),
-      button(
-        toList([on_click(new GoToHome())]),
-        toList([text3("Go to Home")])
-      )
     ])
   );
 }
@@ -12062,226 +11796,304 @@ function echo$isDict2(value2) {
   }
 }
 
-// build/dev/javascript/study_app/study_app.mjs
-var FILEPATH = "src/study_app.gleam";
-var Loading = class extends CustomType {
-};
-var Home = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var QuizScreen = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var QuizResult = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var ErrScreen2 = class extends CustomType {
-};
-var HomeMsg = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var QuizMsg = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var QuizResultMsg = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var DataInitialized = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-function update8(model, msg) {
-  if (model instanceof Loading) {
-    if (msg instanceof DataInitialized) {
-      let db = msg[0];
-      echo3("DataInitialized", "src/study_app.gleam", 48);
-      let $ = init(db);
-      let home_model = $[0];
-      let home_effect = $[1];
-      return [
-        new Home(home_model),
-        map3(home_effect, (var0) => {
-          return new HomeMsg(var0);
-        })
-      ];
-    } else {
-      return [model, none2()];
+// build/dev/javascript/study_app/extra/effect_.mjs
+function perform(msg) {
+  return from(
+    (dispatch) => {
+      dispatch(msg);
+      return void 0;
     }
-  } else if (model instanceof Home) {
-    let home_model = model[0];
-    if (msg instanceof HomeMsg) {
-      let home_msg = msg[0];
-      let $ = update5(home_model, home_msg);
-      let new_home = $[0];
-      let home_effect = $[1];
-      if (home_msg instanceof OutCome) {
-        let questions = home_msg[0];
-        echo3("Home -> QuizScreen", "src/study_app.gleam", 64);
-        let screen_ini = init2(new_home.db, questions);
-        if (screen_ini instanceof Ok) {
-          let quiz_model = screen_ini[0];
-          return [new QuizScreen(quiz_model), none2()];
-        } else {
-          return [new ErrScreen2(), none2()];
-        }
-      } else {
-        return [
-          new Home(new_home),
-          map3(home_effect, (var0) => {
-            return new HomeMsg(var0);
-          })
-        ];
-      }
-    } else {
-      return [model, none2()];
-    }
-  } else if (model instanceof QuizScreen) {
-    let quiz_model = model[0];
-    if (msg instanceof QuizMsg) {
-      let quiz_msg = msg[0];
-      let $ = update6(quiz_model, quiz_msg);
-      let new_quiz_model = $[0];
-      let quiz_eff = $[1];
-      if (quiz_msg instanceof OutCome2) {
-        let $1 = init3(
-          new_quiz_model.db,
-          new_quiz_model.score,
-          new_quiz_model.questions_count,
-          new_quiz_model.quiz_result
-        );
-        let result_model = $1[0];
-        let result_effect = $1[1];
-        return [
-          new QuizResult(result_model),
-          map3(
-            result_effect,
-            (var0) => {
-              return new QuizResultMsg(var0);
-            }
-          )
-        ];
-      } else {
-        return [
-          new QuizScreen(new_quiz_model),
-          map3(quiz_eff, (var0) => {
-            return new QuizMsg(var0);
-          })
-        ];
-      }
-    } else {
-      return [model, none2()];
-    }
-  } else if (model instanceof QuizResult) {
-    let quiz_model = model[0];
-    if (msg instanceof QuizResultMsg) {
-      let result_msg = msg[0];
-      let $ = update7(quiz_model, result_msg);
-      let new_model = $[0];
-      let eff = $[1];
-      if (result_msg instanceof OutCome3) {
-        let $1 = init(quiz_model.db);
-        let new_modek = $1[0];
-        let new_eff = $1[1];
-        return [
-          new Home(new_modek),
-          map3(new_eff, (var0) => {
-            return new HomeMsg(var0);
-          })
-        ];
-      } else {
-        return [
-          new QuizResult(new_model),
-          map3(eff, (var0) => {
-            return new QuizResultMsg(var0);
-          })
-        ];
-      }
-    } else {
-      return [model, none2()];
-    }
+  );
+}
+
+// build/dev/javascript/study_app/pages/quiz_screen.mjs
+var Model5 = class extends CustomType {
+  constructor(db, questions, questions_count, current_question_index, quiz_result, quiz_finished, score) {
+    super();
+    this.db = db;
+    this.questions = questions;
+    this.questions_count = questions_count;
+    this.current_question_index = current_question_index;
+    this.quiz_result = quiz_result;
+    this.quiz_finished = quiz_finished;
+    this.score = score;
+  }
+};
+var QuestionMsg = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var NextQuestion = class extends CustomType {
+};
+var OutCome2 = class extends CustomType {
+};
+var GoToResultScreen = class extends CustomType {
+};
+function init2(db, questions) {
+  let _pipe = map(questions, (q) => {
+    return q.id;
+  });
+  echo3(_pipe, "src/pages/quiz_screen.gleam", 64);
+  let $ = is_empty2(questions);
+  if ($) {
+    return new Error(void 0);
   } else {
-    return [model, none2()];
-  }
-}
-function view7(model) {
-  if (model instanceof Loading) {
-    return text3("Loading...");
-  } else if (model instanceof Home) {
-    let home_model = model[0];
-    let _pipe = view4(home_model);
-    return map4(_pipe, (var0) => {
-      return new HomeMsg(var0);
-    });
-  } else if (model instanceof QuizScreen) {
-    let quiz_model = model[0];
-    let _pipe = view5(quiz_model);
-    return map4(_pipe, (var0) => {
-      return new QuizMsg(var0);
-    });
-  } else if (model instanceof QuizResult) {
-    let result_model = model[0];
-    let _pipe = view6(result_model);
-    return map4(_pipe, (var0) => {
-      return new QuizResultMsg(var0);
-    });
-  } else {
-    return text3("\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F");
-  }
-}
-var db_name = "db";
-var db_version = 1;
-function init4(_) {
-  return [
-    new Loading(),
-    to_effect_no_decode(
-      setup(db_name, db_version),
-      (var0) => {
-        return new DataInitialized(var0);
-      }
-    )
-  ];
-}
-function main() {
-  let app = application(init4, update8, view7);
-  let $ = start3(app, "#app", void 0);
-  if (!($ instanceof Ok)) {
-    throw makeError(
-      "let_assert",
-      FILEPATH,
-      "study_app",
-      146,
-      "main",
-      "Pattern match failed, no pattern matched the value.",
-      {
-        value: $,
-        start: 4108,
-        end: 4157,
-        pattern_start: 4119,
-        pattern_end: 4124
-      }
+    return new Ok(
+      new Model5(
+        db,
+        questions,
+        length(questions),
+        0,
+        from_questions(questions),
+        false,
+        0
+      )
     );
   }
-  return void 0;
+}
+function update_quiz_result(model) {
+  let current_question = get_at(
+    model.questions,
+    model.current_question_index
+  );
+  if (current_question instanceof Some) {
+    let q = current_question[0];
+    let new_answer = check_answer2(q);
+    echo3(new_answer, "src/pages/quiz_screen.gleam", 156);
+    return update_if(
+      model.quiz_result,
+      (r) => {
+        return r.id === q.id;
+      },
+      (r) => {
+        let _record = r;
+        return new Record(_record.id, _record.category, toList([new_answer]));
+      }
+    );
+  } else {
+    return model.quiz_result;
+  }
+}
+function get_score(quiz_result) {
+  let _pipe = quiz_result;
+  let _pipe$1 = filter(
+    _pipe,
+    (r) => {
+      let $ = r.answer;
+      if ($ instanceof Empty) {
+        return false;
+      } else {
+        let $1 = $.head;
+        if ($1 instanceof Correct) {
+          return true;
+        } else {
+          return false;
+        }
+      }
+    }
+  );
+  return length(_pipe$1);
+}
+function update6(model, msg) {
+  if (msg instanceof QuestionMsg) {
+    let q_msg = msg[0];
+    let new_questions = update_at(
+      model.questions,
+      model.current_question_index,
+      (_capture) => {
+        return update4(_capture, q_msg);
+      }
+    );
+    return [
+      (() => {
+        let _record = model;
+        return new Model5(
+          _record.db,
+          new_questions,
+          _record.questions_count,
+          _record.current_question_index,
+          _record.quiz_result,
+          _record.quiz_finished,
+          _record.score
+        );
+      })(),
+      none2()
+    ];
+  } else if (msg instanceof NextQuestion) {
+    let new_quiz_result = update_quiz_result(model);
+    let new_score = get_score(new_quiz_result);
+    let next_index = model.current_question_index + 1;
+    let is_finished = next_index >= length(model.questions);
+    if (is_finished) {
+      return [
+        (() => {
+          let _record = model;
+          return new Model5(
+            _record.db,
+            _record.questions,
+            _record.questions_count,
+            _record.current_question_index,
+            new_quiz_result,
+            true,
+            new_score
+          );
+        })(),
+        perform(new GoToResultScreen())
+      ];
+    } else {
+      return [
+        (() => {
+          let _record = model;
+          return new Model5(
+            _record.db,
+            _record.questions,
+            _record.questions_count,
+            next_index,
+            new_quiz_result,
+            _record.quiz_finished,
+            new_score
+          );
+        })(),
+        none2()
+      ];
+    }
+  } else if (msg instanceof OutCome2) {
+    return [model, none2()];
+  } else {
+    return [model, perform(new OutCome2())];
+  }
+}
+function view_progress2(current_index, total_questions) {
+  let progress = "Question " + to_string(current_index + 1) + " / " + to_string(
+    total_questions
+  );
+  return h2(toList([]), toList([text3(progress)]));
+}
+function view_question_header(current_question) {
+  return h3(
+    toList([]),
+    toList([
+      div(
+        toList([]),
+        toList([text3("id:" + to_string(current_question.id))])
+      ),
+      div(
+        toList([]),
+        toList([text3("category:" + current_question.category.name)])
+      ),
+      div(
+        toList([]),
+        toList([
+          text3("sub_category:" + current_question.category.sub_name)
+        ])
+      )
+    ])
+  );
+}
+function view_question_body(current_question) {
+  return div(
+    toList([]),
+    toList([
+      p(toList([]), toList([text3(current_question.question_text)])),
+      div(
+        toList([]),
+        toList([
+          (() => {
+            let _pipe = current_question;
+            let _pipe$1 = view4(_pipe);
+            return map4(
+              _pipe$1,
+              (var0) => {
+                return new QuestionMsg(var0);
+              }
+            );
+          })()
+        ])
+      )
+    ])
+  );
+}
+function view_navigation_buttons(current_question) {
+  return div(
+    toList([]),
+    toList([
+      div(
+        toList([]),
+        toList([
+          button(
+            toList([on_click(new NextQuestion())]),
+            toList([text3("Next")])
+          )
+        ])
+      ),
+      div(
+        toList([]),
+        toList([
+          button(
+            toList([
+              styles(toList([["margin-top", "1rem"]])),
+              on_click(new GoToResultScreen())
+            ]),
+            toList([text3("GoResult")])
+          )
+        ])
+      )
+    ])
+  );
+}
+function view_question(model) {
+  let $ = get_at(model.questions, model.current_question_index);
+  if ($ instanceof Some) {
+    let current_question = $[0];
+    return div(
+      toList([]),
+      toList([
+        view_progress2(
+          model.current_question_index,
+          length(model.questions)
+        ),
+        view_question_header(current_question),
+        view_question_body(current_question),
+        view_navigation_buttons(current_question)
+      ])
+    );
+  } else {
+    return text3("Error: Question not found.");
+  }
+}
+function view_quiz_finished(model) {
+  let score = get_score(model.quiz_result);
+  let total_questions = length(model.questions);
+  return div(
+    toList([]),
+    toList([
+      h2(toList([]), toList([text3("Quiz Finished!")])),
+      p(
+        toList([]),
+        toList([
+          text3(
+            "Your score: " + to_string(score) + "/" + to_string(
+              total_questions
+            )
+          )
+        ])
+      ),
+      button(
+        toList([on_click(new GoToResultScreen())]),
+        toList([text3("View Results")])
+      )
+    ])
+  );
+}
+function view7(model) {
+  let $ = model.quiz_finished;
+  if ($) {
+    return view_quiz_finished(model);
+  } else {
+    return view_question(model);
+  }
 }
 function echo3(value2, file, line) {
   const grey = "\x1B[90m";
@@ -12413,6 +12225,580 @@ function echo$inspectBitArray3(bitArray) {
   }
 }
 function echo$isDict3(value2) {
+  try {
+    return value2 instanceof Dict;
+  } catch {
+    return false;
+  }
+}
+
+// build/dev/javascript/study_app/pages/result_screen.mjs
+var Model6 = class extends CustomType {
+  constructor(db, score, total_questions, quiz_result) {
+    super();
+    this.db = db;
+    this.score = score;
+    this.total_questions = total_questions;
+    this.quiz_result = quiz_result;
+  }
+};
+var Err = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var GoToHome = class extends CustomType {
+};
+var OutCome3 = class extends CustomType {
+};
+function init3(db, score, total_questions, quiz_result) {
+  echo4(quiz_result, "src/pages/result_screen.gleam", 33);
+  return [new Model6(db, score, total_questions, quiz_result), none2()];
+}
+function update7(model, msg) {
+  if (msg instanceof Err) {
+    let json_err = msg[0];
+    echo4("err screen", "src/pages/result_screen.gleam", 50);
+    echo4(json_err, "src/pages/result_screen.gleam", 51);
+    return [model, none2()];
+  } else if (msg instanceof GoToHome) {
+    echo4("GoToHome", "src/pages/result_screen.gleam", 59);
+    let _block;
+    let _pipe = model.quiz_result;
+    let _pipe$1 = to_json7(_pipe);
+    let _pipe$2 = ((_capture) => {
+      return saveQuizHistory(model.db, _capture);
+    })(_pipe$1);
+    _block = to_effect_no_decode(
+      _pipe$2,
+      (_) => {
+        return new OutCome3();
+      }
+    );
+    let eff = _block;
+    return [model, eff];
+  } else {
+    echo4("result -> home", "src/pages/result_screen.gleam", 80);
+    return [model, none2()];
+  }
+}
+function view8(model) {
+  return div(
+    toList([]),
+    toList([
+      h2(toList([]), toList([text3("Quiz Results")])),
+      p(
+        toList([]),
+        toList([
+          text3(
+            "Your score: " + to_string(model.score) + "/" + to_string(
+              model.total_questions
+            )
+          )
+        ])
+      ),
+      button(
+        toList([on_click(new GoToHome())]),
+        toList([text3("Go to Home")])
+      ),
+      h3(toList([]), toList([text3("Detailed Results:")])),
+      view5(model.quiz_result),
+      button(
+        toList([on_click(new GoToHome())]),
+        toList([text3("Go to Home")])
+      )
+    ])
+  );
+}
+function echo4(value2, file, line) {
+  const grey = "\x1B[90m";
+  const reset_color = "\x1B[39m";
+  const file_line = `${file}:${line}`;
+  const string_value = echo$inspect4(value2);
+  if (globalThis.process?.stderr?.write) {
+    const string5 = `${grey}${file_line}${reset_color}
+${string_value}
+`;
+    process.stderr.write(string5);
+  } else if (globalThis.Deno) {
+    const string5 = `${grey}${file_line}${reset_color}
+${string_value}
+`;
+    globalThis.Deno.stderr.writeSync(new TextEncoder().encode(string5));
+  } else {
+    const string5 = `${file_line}
+${string_value}`;
+    globalThis.console.log(string5);
+  }
+  return value2;
+}
+function echo$inspectString4(str) {
+  let new_str = '"';
+  for (let i = 0; i < str.length; i++) {
+    let char = str[i];
+    if (char == "\n") new_str += "\\n";
+    else if (char == "\r") new_str += "\\r";
+    else if (char == "	") new_str += "\\t";
+    else if (char == "\f") new_str += "\\f";
+    else if (char == "\\") new_str += "\\\\";
+    else if (char == '"') new_str += '\\"';
+    else if (char < " " || char > "~" && char < "\xA0") {
+      new_str += "\\u{" + char.charCodeAt(0).toString(16).toUpperCase().padStart(4, "0") + "}";
+    } else {
+      new_str += char;
+    }
+  }
+  new_str += '"';
+  return new_str;
+}
+function echo$inspectDict4(map7) {
+  let body = "dict.from_list([";
+  let first = true;
+  let key_value_pairs = [];
+  map7.forEach((value2, key) => {
+    key_value_pairs.push([key, value2]);
+  });
+  key_value_pairs.sort();
+  key_value_pairs.forEach(([key, value2]) => {
+    if (!first) body = body + ", ";
+    body = body + "#(" + echo$inspect4(key) + ", " + echo$inspect4(value2) + ")";
+    first = false;
+  });
+  return body + "])";
+}
+function echo$inspectCustomType4(record) {
+  const props = globalThis.Object.keys(record).map((label2) => {
+    const value2 = echo$inspect4(record[label2]);
+    return isNaN(parseInt(label2)) ? `${label2}: ${value2}` : value2;
+  }).join(", ");
+  return props ? `${record.constructor.name}(${props})` : record.constructor.name;
+}
+function echo$inspectObject4(v) {
+  const name2 = Object.getPrototypeOf(v)?.constructor?.name || "Object";
+  const props = [];
+  for (const k of Object.keys(v)) {
+    props.push(`${echo$inspect4(k)}: ${echo$inspect4(v[k])}`);
+  }
+  const body = props.length ? " " + props.join(", ") + " " : "";
+  const head = name2 === "Object" ? "" : name2 + " ";
+  return `//js(${head}{${body}})`;
+}
+function echo$inspect4(v) {
+  const t = typeof v;
+  if (v === true) return "True";
+  if (v === false) return "False";
+  if (v === null) return "//js(null)";
+  if (v === void 0) return "Nil";
+  if (t === "string") return echo$inspectString4(v);
+  if (t === "bigint" || t === "number") return v.toString();
+  if (globalThis.Array.isArray(v))
+    return `#(${v.map(echo$inspect4).join(", ")})`;
+  if (v instanceof List)
+    return `[${v.toArray().map(echo$inspect4).join(", ")}]`;
+  if (v instanceof UtfCodepoint)
+    return `//utfcodepoint(${String.fromCodePoint(v.value)})`;
+  if (v instanceof BitArray) return echo$inspectBitArray4(v);
+  if (v instanceof CustomType) return echo$inspectCustomType4(v);
+  if (echo$isDict4(v)) return echo$inspectDict4(v);
+  if (v instanceof Set)
+    return `//js(Set(${[...v].map(echo$inspect4).join(", ")}))`;
+  if (v instanceof RegExp) return `//js(${v})`;
+  if (v instanceof Date) return `//js(Date("${v.toISOString()}"))`;
+  if (v instanceof Function) {
+    const args = [];
+    for (const i of Array(v.length).keys())
+      args.push(String.fromCharCode(i + 97));
+    return `//fn(${args.join(", ")}) { ... }`;
+  }
+  return echo$inspectObject4(v);
+}
+function echo$inspectBitArray4(bitArray) {
+  let endOfAlignedBytes = bitArray.bitOffset + 8 * Math.trunc(bitArray.bitSize / 8);
+  let alignedBytes = bitArraySlice(
+    bitArray,
+    bitArray.bitOffset,
+    endOfAlignedBytes
+  );
+  let remainingUnalignedBits = bitArray.bitSize % 8;
+  if (remainingUnalignedBits > 0) {
+    let remainingBits = bitArraySliceToInt(
+      bitArray,
+      endOfAlignedBytes,
+      bitArray.bitSize,
+      false,
+      false
+    );
+    let alignedBytesArray = Array.from(alignedBytes.rawBuffer);
+    let suffix = `${remainingBits}:size(${remainingUnalignedBits})`;
+    if (alignedBytesArray.length === 0) {
+      return `<<${suffix}>>`;
+    } else {
+      return `<<${Array.from(alignedBytes.rawBuffer).join(", ")}, ${suffix}>>`;
+    }
+  } else {
+    return `<<${Array.from(alignedBytes.rawBuffer).join(", ")}>>`;
+  }
+}
+function echo$isDict4(value2) {
+  try {
+    return value2 instanceof Dict;
+  } catch {
+    return false;
+  }
+}
+
+// build/dev/javascript/study_app/study_app.mjs
+var FILEPATH = "src/study_app.gleam";
+var Loading = class extends CustomType {
+};
+var Home = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var QuizScreen = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var QuizResult = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var ErrScreen2 = class extends CustomType {
+};
+var HomeMsg = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var QuizMsg = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var QuizResultMsg = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var DataInitialized = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+function update8(model, msg) {
+  if (model instanceof Loading) {
+    if (msg instanceof DataInitialized) {
+      let db = msg[0];
+      echo5("DataInitialized", "src/study_app.gleam", 48);
+      let $ = init(db);
+      let home_model = $[0];
+      let home_effect = $[1];
+      return [
+        new Home(home_model),
+        map3(home_effect, (var0) => {
+          return new HomeMsg(var0);
+        })
+      ];
+    } else {
+      return [model, none2()];
+    }
+  } else if (model instanceof Home) {
+    let home_model = model[0];
+    if (msg instanceof HomeMsg) {
+      let home_msg = msg[0];
+      let $ = update5(home_model, home_msg);
+      let new_home = $[0];
+      let home_effect = $[1];
+      if (home_msg instanceof OutCome) {
+        let questions = home_msg[0];
+        echo5("Home -> QuizScreen", "src/study_app.gleam", 64);
+        let screen_ini = init2(new_home.db, questions);
+        if (screen_ini instanceof Ok) {
+          let quiz_model = screen_ini[0];
+          return [new QuizScreen(quiz_model), none2()];
+        } else {
+          return [new ErrScreen2(), none2()];
+        }
+      } else {
+        return [
+          new Home(new_home),
+          map3(home_effect, (var0) => {
+            return new HomeMsg(var0);
+          })
+        ];
+      }
+    } else {
+      return [model, none2()];
+    }
+  } else if (model instanceof QuizScreen) {
+    let quiz_model = model[0];
+    if (msg instanceof QuizMsg) {
+      let quiz_msg = msg[0];
+      let $ = update6(quiz_model, quiz_msg);
+      let new_quiz_model = $[0];
+      let quiz_eff = $[1];
+      if (quiz_msg instanceof OutCome2) {
+        let $1 = init3(
+          new_quiz_model.db,
+          new_quiz_model.score,
+          new_quiz_model.questions_count,
+          new_quiz_model.quiz_result
+        );
+        let result_model = $1[0];
+        let result_effect = $1[1];
+        return [
+          new QuizResult(result_model),
+          map3(
+            result_effect,
+            (var0) => {
+              return new QuizResultMsg(var0);
+            }
+          )
+        ];
+      } else {
+        return [
+          new QuizScreen(new_quiz_model),
+          map3(quiz_eff, (var0) => {
+            return new QuizMsg(var0);
+          })
+        ];
+      }
+    } else {
+      return [model, none2()];
+    }
+  } else if (model instanceof QuizResult) {
+    let quiz_model = model[0];
+    if (msg instanceof QuizResultMsg) {
+      let result_msg = msg[0];
+      let $ = update7(quiz_model, result_msg);
+      let new_model = $[0];
+      let eff = $[1];
+      if (result_msg instanceof OutCome3) {
+        let $1 = init(quiz_model.db);
+        let new_modek = $1[0];
+        let new_eff = $1[1];
+        return [
+          new Home(new_modek),
+          map3(new_eff, (var0) => {
+            return new HomeMsg(var0);
+          })
+        ];
+      } else {
+        return [
+          new QuizResult(new_model),
+          map3(eff, (var0) => {
+            return new QuizResultMsg(var0);
+          })
+        ];
+      }
+    } else {
+      return [model, none2()];
+    }
+  } else {
+    return [model, none2()];
+  }
+}
+function view9(model) {
+  if (model instanceof Loading) {
+    return text3("Loading...");
+  } else if (model instanceof Home) {
+    let home_model = model[0];
+    let _pipe = view6(home_model);
+    return map4(_pipe, (var0) => {
+      return new HomeMsg(var0);
+    });
+  } else if (model instanceof QuizScreen) {
+    let quiz_model = model[0];
+    let _pipe = view7(quiz_model);
+    return map4(_pipe, (var0) => {
+      return new QuizMsg(var0);
+    });
+  } else if (model instanceof QuizResult) {
+    let result_model = model[0];
+    let _pipe = view8(result_model);
+    return map4(_pipe, (var0) => {
+      return new QuizResultMsg(var0);
+    });
+  } else {
+    return text3("\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F");
+  }
+}
+var db_name = "db";
+var db_version = 1;
+function init4(_) {
+  return [
+    new Loading(),
+    to_effect_no_decode(
+      setup(db_name, db_version),
+      (var0) => {
+        return new DataInitialized(var0);
+      }
+    )
+  ];
+}
+function main() {
+  let app = application(init4, update8, view9);
+  let $ = start3(app, "#app", void 0);
+  if (!($ instanceof Ok)) {
+    throw makeError(
+      "let_assert",
+      FILEPATH,
+      "study_app",
+      146,
+      "main",
+      "Pattern match failed, no pattern matched the value.",
+      {
+        value: $,
+        start: 4108,
+        end: 4157,
+        pattern_start: 4119,
+        pattern_end: 4124
+      }
+    );
+  }
+  return void 0;
+}
+function echo5(value2, file, line) {
+  const grey = "\x1B[90m";
+  const reset_color = "\x1B[39m";
+  const file_line = `${file}:${line}`;
+  const string_value = echo$inspect5(value2);
+  if (globalThis.process?.stderr?.write) {
+    const string5 = `${grey}${file_line}${reset_color}
+${string_value}
+`;
+    process.stderr.write(string5);
+  } else if (globalThis.Deno) {
+    const string5 = `${grey}${file_line}${reset_color}
+${string_value}
+`;
+    globalThis.Deno.stderr.writeSync(new TextEncoder().encode(string5));
+  } else {
+    const string5 = `${file_line}
+${string_value}`;
+    globalThis.console.log(string5);
+  }
+  return value2;
+}
+function echo$inspectString5(str) {
+  let new_str = '"';
+  for (let i = 0; i < str.length; i++) {
+    let char = str[i];
+    if (char == "\n") new_str += "\\n";
+    else if (char == "\r") new_str += "\\r";
+    else if (char == "	") new_str += "\\t";
+    else if (char == "\f") new_str += "\\f";
+    else if (char == "\\") new_str += "\\\\";
+    else if (char == '"') new_str += '\\"';
+    else if (char < " " || char > "~" && char < "\xA0") {
+      new_str += "\\u{" + char.charCodeAt(0).toString(16).toUpperCase().padStart(4, "0") + "}";
+    } else {
+      new_str += char;
+    }
+  }
+  new_str += '"';
+  return new_str;
+}
+function echo$inspectDict5(map7) {
+  let body = "dict.from_list([";
+  let first = true;
+  let key_value_pairs = [];
+  map7.forEach((value2, key) => {
+    key_value_pairs.push([key, value2]);
+  });
+  key_value_pairs.sort();
+  key_value_pairs.forEach(([key, value2]) => {
+    if (!first) body = body + ", ";
+    body = body + "#(" + echo$inspect5(key) + ", " + echo$inspect5(value2) + ")";
+    first = false;
+  });
+  return body + "])";
+}
+function echo$inspectCustomType5(record) {
+  const props = globalThis.Object.keys(record).map((label2) => {
+    const value2 = echo$inspect5(record[label2]);
+    return isNaN(parseInt(label2)) ? `${label2}: ${value2}` : value2;
+  }).join(", ");
+  return props ? `${record.constructor.name}(${props})` : record.constructor.name;
+}
+function echo$inspectObject5(v) {
+  const name2 = Object.getPrototypeOf(v)?.constructor?.name || "Object";
+  const props = [];
+  for (const k of Object.keys(v)) {
+    props.push(`${echo$inspect5(k)}: ${echo$inspect5(v[k])}`);
+  }
+  const body = props.length ? " " + props.join(", ") + " " : "";
+  const head = name2 === "Object" ? "" : name2 + " ";
+  return `//js(${head}{${body}})`;
+}
+function echo$inspect5(v) {
+  const t = typeof v;
+  if (v === true) return "True";
+  if (v === false) return "False";
+  if (v === null) return "//js(null)";
+  if (v === void 0) return "Nil";
+  if (t === "string") return echo$inspectString5(v);
+  if (t === "bigint" || t === "number") return v.toString();
+  if (globalThis.Array.isArray(v))
+    return `#(${v.map(echo$inspect5).join(", ")})`;
+  if (v instanceof List)
+    return `[${v.toArray().map(echo$inspect5).join(", ")}]`;
+  if (v instanceof UtfCodepoint)
+    return `//utfcodepoint(${String.fromCodePoint(v.value)})`;
+  if (v instanceof BitArray) return echo$inspectBitArray5(v);
+  if (v instanceof CustomType) return echo$inspectCustomType5(v);
+  if (echo$isDict5(v)) return echo$inspectDict5(v);
+  if (v instanceof Set)
+    return `//js(Set(${[...v].map(echo$inspect5).join(", ")}))`;
+  if (v instanceof RegExp) return `//js(${v})`;
+  if (v instanceof Date) return `//js(Date("${v.toISOString()}"))`;
+  if (v instanceof Function) {
+    const args = [];
+    for (const i of Array(v.length).keys())
+      args.push(String.fromCharCode(i + 97));
+    return `//fn(${args.join(", ")}) { ... }`;
+  }
+  return echo$inspectObject5(v);
+}
+function echo$inspectBitArray5(bitArray) {
+  let endOfAlignedBytes = bitArray.bitOffset + 8 * Math.trunc(bitArray.bitSize / 8);
+  let alignedBytes = bitArraySlice(
+    bitArray,
+    bitArray.bitOffset,
+    endOfAlignedBytes
+  );
+  let remainingUnalignedBits = bitArray.bitSize % 8;
+  if (remainingUnalignedBits > 0) {
+    let remainingBits = bitArraySliceToInt(
+      bitArray,
+      endOfAlignedBytes,
+      bitArray.bitSize,
+      false,
+      false
+    );
+    let alignedBytesArray = Array.from(alignedBytes.rawBuffer);
+    let suffix = `${remainingBits}:size(${remainingUnalignedBits})`;
+    if (alignedBytesArray.length === 0) {
+      return `<<${suffix}>>`;
+    } else {
+      return `<<${Array.from(alignedBytes.rawBuffer).join(", ")}, ${suffix}>>`;
+    }
+  } else {
+    return `<<${Array.from(alignedBytes.rawBuffer).join(", ")}>>`;
+  }
+}
+function echo$isDict5(value2) {
   try {
     return value2 instanceof Dict;
   } catch {

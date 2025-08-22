@@ -1,8 +1,8 @@
 import core/answer.{type Answer, NotAnswered}
 import core/association_question as as_question
-import core/category.{type Category}
 import core/multiple_choice_question as mc_question
 import extra/json_
+import gleam/dynamic as dynamic
 import gleam/dynamic/decode.{type Decoder}
 import gleam/json
 import lustre/element.{type Element}
@@ -12,14 +12,18 @@ import lustre/element.{type Element}
 pub type Model {
   Model(
     id: Int,
-    category: Category,
+    category: QusetionCategory,
     question_text: String,
     question_interaction: QuestionInteraction,
   )
 }
 
+pub type QusetionCategory {
+  QusetionCategory(id: Int, name: String, sub_id: Int, sub_name: String)
+}
+
 pub type IdAndCategory {
-  IdAndCategory(id: Int, category: Category)
+  IdAndCategory(id: Int, category: QusetionCategory)
 }
 
 /// 問題のインタラクション部分を表す型
@@ -37,7 +41,7 @@ pub type Msg {
 
 pub fn init(
   id: Int,
-  category: Category,
+  category: QusetionCategory,
   question_text: String,
   question_interaction: QuestionInteraction,
 ) -> Model {
@@ -132,16 +136,25 @@ fn interaction_decoder() -> Decoder(QuestionInteraction) {
 pub fn to_json(model: Model) -> json.Json {
   json.object([
     #("id", json.int(model.id)),
-    #("category", category.to_json(model.category)),
+    #("category", qusetion_category_to_json(model.category)),
     #("question_text", json.string(model.question_text)),
     #("question_interaction", interaction_to_json(model.question_interaction)),
+  ])
+}
+
+pub fn qusetion_category_to_json(category: QusetionCategory) -> json.Json {
+  json.object([
+    #("id", json.int(category.id)),
+    #("name", json.string(category.name)),
+    #("sub_id", json.int(category.sub_id)),
+    #("sub_name", json.string(category.sub_name)),
   ])
 }
 
 /// JSON から `Model` 型にデコードする
 pub fn decoder() -> Decoder(Model) {
   use id <- decode.field("id", decode.int)
-  use category <- decode.field("category", category.decoder())
+  use category <- decode.field("category", qusetion_category_decoder())
   use question_text <- decode.field("question_text", decode.string)
   use question_interaction <- decode.field(
     "question_interaction",
@@ -149,6 +162,15 @@ pub fn decoder() -> Decoder(Model) {
   )
   decode.success(Model(id:, category:, question_text:, question_interaction:))
 }
+
+pub fn qusetion_category_decoder() -> Decoder(QusetionCategory) {
+  use id <- decode.field("id", decode.int)
+  use name <- decode.field("name", decode.string)
+  use sub_id <- decode.field("sub_id", decode.int)
+  use sub_name <- decode.field("sub_name", decode.string)
+  decode.success(QusetionCategory(id, name, sub_id, sub_name))
+}
+
 // pub fn decode_question_list(
 //   dynamic: dynamic.Dynamic,
 // ) -> Result(List(Model), json.DecodeError) {

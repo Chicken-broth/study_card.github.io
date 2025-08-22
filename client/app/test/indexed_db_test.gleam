@@ -1,6 +1,4 @@
-import core/answer
 import core/category
-import core/history
 import gleam/int
 import gleam/javascript/promise
 import gleam/list
