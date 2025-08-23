@@ -6532,7 +6532,6 @@ function view_answers(answers) {
   );
 }
 function view5(quiz_result) {
-  echo(quiz_result, "src/core/quiz_result.gleam", 92);
   return table(
     toList([]),
     toList([
@@ -6567,142 +6566,6 @@ function view5(quiz_result) {
       )
     ])
   );
-}
-function echo(value2, file, line) {
-  const grey = "\x1B[90m";
-  const reset_color = "\x1B[39m";
-  const file_line = `${file}:${line}`;
-  const string_value = echo$inspect(value2);
-  if (globalThis.process?.stderr?.write) {
-    const string5 = `${grey}${file_line}${reset_color}
-${string_value}
-`;
-    process.stderr.write(string5);
-  } else if (globalThis.Deno) {
-    const string5 = `${grey}${file_line}${reset_color}
-${string_value}
-`;
-    globalThis.Deno.stderr.writeSync(new TextEncoder().encode(string5));
-  } else {
-    const string5 = `${file_line}
-${string_value}`;
-    globalThis.console.log(string5);
-  }
-  return value2;
-}
-function echo$inspectString(str) {
-  let new_str = '"';
-  for (let i = 0; i < str.length; i++) {
-    let char = str[i];
-    if (char == "\n") new_str += "\\n";
-    else if (char == "\r") new_str += "\\r";
-    else if (char == "	") new_str += "\\t";
-    else if (char == "\f") new_str += "\\f";
-    else if (char == "\\") new_str += "\\\\";
-    else if (char == '"') new_str += '\\"';
-    else if (char < " " || char > "~" && char < "\xA0") {
-      new_str += "\\u{" + char.charCodeAt(0).toString(16).toUpperCase().padStart(4, "0") + "}";
-    } else {
-      new_str += char;
-    }
-  }
-  new_str += '"';
-  return new_str;
-}
-function echo$inspectDict(map7) {
-  let body = "dict.from_list([";
-  let first = true;
-  let key_value_pairs = [];
-  map7.forEach((value2, key) => {
-    key_value_pairs.push([key, value2]);
-  });
-  key_value_pairs.sort();
-  key_value_pairs.forEach(([key, value2]) => {
-    if (!first) body = body + ", ";
-    body = body + "#(" + echo$inspect(key) + ", " + echo$inspect(value2) + ")";
-    first = false;
-  });
-  return body + "])";
-}
-function echo$inspectCustomType(record) {
-  const props = globalThis.Object.keys(record).map((label2) => {
-    const value2 = echo$inspect(record[label2]);
-    return isNaN(parseInt(label2)) ? `${label2}: ${value2}` : value2;
-  }).join(", ");
-  return props ? `${record.constructor.name}(${props})` : record.constructor.name;
-}
-function echo$inspectObject(v) {
-  const name2 = Object.getPrototypeOf(v)?.constructor?.name || "Object";
-  const props = [];
-  for (const k of Object.keys(v)) {
-    props.push(`${echo$inspect(k)}: ${echo$inspect(v[k])}`);
-  }
-  const body = props.length ? " " + props.join(", ") + " " : "";
-  const head = name2 === "Object" ? "" : name2 + " ";
-  return `//js(${head}{${body}})`;
-}
-function echo$inspect(v) {
-  const t = typeof v;
-  if (v === true) return "True";
-  if (v === false) return "False";
-  if (v === null) return "//js(null)";
-  if (v === void 0) return "Nil";
-  if (t === "string") return echo$inspectString(v);
-  if (t === "bigint" || t === "number") return v.toString();
-  if (globalThis.Array.isArray(v))
-    return `#(${v.map(echo$inspect).join(", ")})`;
-  if (v instanceof List)
-    return `[${v.toArray().map(echo$inspect).join(", ")}]`;
-  if (v instanceof UtfCodepoint)
-    return `//utfcodepoint(${String.fromCodePoint(v.value)})`;
-  if (v instanceof BitArray) return echo$inspectBitArray(v);
-  if (v instanceof CustomType) return echo$inspectCustomType(v);
-  if (echo$isDict(v)) return echo$inspectDict(v);
-  if (v instanceof Set)
-    return `//js(Set(${[...v].map(echo$inspect).join(", ")}))`;
-  if (v instanceof RegExp) return `//js(${v})`;
-  if (v instanceof Date) return `//js(Date("${v.toISOString()}"))`;
-  if (v instanceof Function) {
-    const args = [];
-    for (const i of Array(v.length).keys())
-      args.push(String.fromCharCode(i + 97));
-    return `//fn(${args.join(", ")}) { ... }`;
-  }
-  return echo$inspectObject(v);
-}
-function echo$inspectBitArray(bitArray) {
-  let endOfAlignedBytes = bitArray.bitOffset + 8 * Math.trunc(bitArray.bitSize / 8);
-  let alignedBytes = bitArraySlice(
-    bitArray,
-    bitArray.bitOffset,
-    endOfAlignedBytes
-  );
-  let remainingUnalignedBits = bitArray.bitSize % 8;
-  if (remainingUnalignedBits > 0) {
-    let remainingBits = bitArraySliceToInt(
-      bitArray,
-      endOfAlignedBytes,
-      bitArray.bitSize,
-      false,
-      false
-    );
-    let alignedBytesArray = Array.from(alignedBytes.rawBuffer);
-    let suffix = `${remainingBits}:size(${remainingUnalignedBits})`;
-    if (alignedBytesArray.length === 0) {
-      return `<<${suffix}>>`;
-    } else {
-      return `<<${Array.from(alignedBytes.rawBuffer).join(", ")}, ${suffix}>>`;
-    }
-  } else {
-    return `<<${Array.from(alignedBytes.rawBuffer).join(", ")}>>`;
-  }
-}
-function echo$isDict(value2) {
-  try {
-    return value2 instanceof Dict;
-  } catch {
-    return false;
-  }
 }
 
 // build/dev/javascript/study_app/interface/data.mjs
@@ -11379,12 +11242,12 @@ function decode_quiz_historys(dynamic2) {
 }
 var default_data_set = "default_db";
 var extra_data_set = "extra_db";
-function setup2(db_name, version, data_set) {
+function setup2(db_name2, version, data_set) {
   let d = data_set;
   if ("extra_db" === d) {
-    return setupExtraDB(db_name, version);
+    return setupExtraDB(db_name2, version);
   } else {
-    return setupDefaultDB(db_name, version);
+    return setupDefaultDB(db_name2, version);
   }
 }
 var data_set_list = /* @__PURE__ */ toList([
@@ -11801,7 +11664,7 @@ function update5(model, msg) {
     ];
   } else if (msg instanceof SWitchAllCategory) {
     let is_selected = msg[0];
-    echo2("SWitchAllCategory", "src/pages/quiz_home.gleam", 213);
+    echo("SWitchAllCategory", "src/pages/quiz_home.gleam", 213);
     let new_select_category = map(
       model.selected_category,
       (c) => {
@@ -11836,7 +11699,7 @@ function update5(model, msg) {
       none2()
     ];
   } else if (msg instanceof ViewHistory) {
-    echo2("View History", "src/pages/quiz_home.gleam", 235);
+    echo("View History", "src/pages/quiz_home.gleam", 235);
     return [
       (() => {
         let _record = model;
@@ -11860,7 +11723,7 @@ function update5(model, msg) {
     ];
   } else if (msg instanceof GetCategories) {
     let categories2 = msg[0];
-    echo2("GetCategories", "src/pages/quiz_home.gleam", 242);
+    echo("GetCategories", "src/pages/quiz_home.gleam", 242);
     let new_selected_category = map(
       categories2,
       (_capture) => {
@@ -11890,7 +11753,7 @@ function update5(model, msg) {
     ];
   } else if (msg instanceof GetQuestionIdAndCategoryList) {
     let id_and_category_list = msg[0];
-    echo2("GetQuestionIdAndCategoryList", "src/pages/quiz_home.gleam", 257);
+    echo("GetQuestionIdAndCategoryList", "src/pages/quiz_home.gleam", 257);
     return [
       (() => {
         let _record = model;
@@ -11916,7 +11779,7 @@ function update5(model, msg) {
     ];
   } else if (msg instanceof GetQuizHistory) {
     let quiz_result = msg[0];
-    echo2("GetQuizHistory", "src/pages/quiz_home.gleam", 269);
+    echo("GetQuizHistory", "src/pages/quiz_home.gleam", 269);
     return [
       (() => {
         let _record = model;
@@ -11939,7 +11802,7 @@ function update5(model, msg) {
       none2()
     ];
   } else if (msg instanceof StartQuiz) {
-    echo2("Start Quiz", "src/pages/quiz_home.gleam", 278);
+    echo("Start Quiz", "src/pages/quiz_home.gleam", 278);
     let _block;
     let _pipe = getQuestionByIds(model.db, model.selected_question_ids);
     let _pipe$1 = map_promise(_pipe, get_question_by_ids_decode);
@@ -11962,7 +11825,7 @@ function update5(model, msg) {
     return [model, none2()];
   } else {
     let json_err = msg[0];
-    echo2("err screen", "src/pages/quiz_home.gleam", 274);
+    echo("err screen", "src/pages/quiz_home.gleam", 274);
     return [
       (() => {
         let _record = model;
@@ -12146,7 +12009,7 @@ function view_count_selection(quest_count) {
     )
   );
 }
-function view_actions(is_start_quiz_enabled, show_history) {
+function view_actions(is_start_quiz_enabled) {
   let button_style = (is_primary) => {
     return toList([
       styles(
@@ -12268,7 +12131,7 @@ function view6(model) {
         toList([styles(toList([["margin-top", "1rem"]]))]),
         toList([text3("\u9078\u629E\u4E2D\u306E\u554F\u984C\u6570: " + to_string(qty))])
       ),
-      view_actions(is_start_quiz_enabled, model.show_history),
+      view_actions(is_start_quiz_enabled),
       view_loading(model.loading),
       (() => {
         let $ = model.show_history;
@@ -12281,11 +12144,11 @@ function view6(model) {
     ])
   );
 }
-function echo2(value2, file, line) {
+function echo(value2, file, line) {
   const grey = "\x1B[90m";
   const reset_color = "\x1B[39m";
   const file_line = `${file}:${line}`;
-  const string_value = echo$inspect2(value2);
+  const string_value = echo$inspect(value2);
   if (globalThis.process?.stderr?.write) {
     const string5 = `${grey}${file_line}${reset_color}
 ${string_value}
@@ -12303,7 +12166,7 @@ ${string_value}`;
   }
   return value2;
 }
-function echo$inspectString2(str) {
+function echo$inspectString(str) {
   let new_str = '"';
   for (let i = 0; i < str.length; i++) {
     let char = str[i];
@@ -12322,7 +12185,7 @@ function echo$inspectString2(str) {
   new_str += '"';
   return new_str;
 }
-function echo$inspectDict2(map7) {
+function echo$inspectDict(map7) {
   let body = "dict.from_list([";
   let first = true;
   let key_value_pairs = [];
@@ -12332,47 +12195,47 @@ function echo$inspectDict2(map7) {
   key_value_pairs.sort();
   key_value_pairs.forEach(([key, value2]) => {
     if (!first) body = body + ", ";
-    body = body + "#(" + echo$inspect2(key) + ", " + echo$inspect2(value2) + ")";
+    body = body + "#(" + echo$inspect(key) + ", " + echo$inspect(value2) + ")";
     first = false;
   });
   return body + "])";
 }
-function echo$inspectCustomType2(record) {
+function echo$inspectCustomType(record) {
   const props = globalThis.Object.keys(record).map((label2) => {
-    const value2 = echo$inspect2(record[label2]);
+    const value2 = echo$inspect(record[label2]);
     return isNaN(parseInt(label2)) ? `${label2}: ${value2}` : value2;
   }).join(", ");
   return props ? `${record.constructor.name}(${props})` : record.constructor.name;
 }
-function echo$inspectObject2(v) {
+function echo$inspectObject(v) {
   const name2 = Object.getPrototypeOf(v)?.constructor?.name || "Object";
   const props = [];
   for (const k of Object.keys(v)) {
-    props.push(`${echo$inspect2(k)}: ${echo$inspect2(v[k])}`);
+    props.push(`${echo$inspect(k)}: ${echo$inspect(v[k])}`);
   }
   const body = props.length ? " " + props.join(", ") + " " : "";
   const head = name2 === "Object" ? "" : name2 + " ";
   return `//js(${head}{${body}})`;
 }
-function echo$inspect2(v) {
+function echo$inspect(v) {
   const t = typeof v;
   if (v === true) return "True";
   if (v === false) return "False";
   if (v === null) return "//js(null)";
   if (v === void 0) return "Nil";
-  if (t === "string") return echo$inspectString2(v);
+  if (t === "string") return echo$inspectString(v);
   if (t === "bigint" || t === "number") return v.toString();
   if (globalThis.Array.isArray(v))
-    return `#(${v.map(echo$inspect2).join(", ")})`;
+    return `#(${v.map(echo$inspect).join(", ")})`;
   if (v instanceof List)
-    return `[${v.toArray().map(echo$inspect2).join(", ")}]`;
+    return `[${v.toArray().map(echo$inspect).join(", ")}]`;
   if (v instanceof UtfCodepoint)
     return `//utfcodepoint(${String.fromCodePoint(v.value)})`;
-  if (v instanceof BitArray) return echo$inspectBitArray2(v);
-  if (v instanceof CustomType) return echo$inspectCustomType2(v);
-  if (echo$isDict2(v)) return echo$inspectDict2(v);
+  if (v instanceof BitArray) return echo$inspectBitArray(v);
+  if (v instanceof CustomType) return echo$inspectCustomType(v);
+  if (echo$isDict(v)) return echo$inspectDict(v);
   if (v instanceof Set)
-    return `//js(Set(${[...v].map(echo$inspect2).join(", ")}))`;
+    return `//js(Set(${[...v].map(echo$inspect).join(", ")}))`;
   if (v instanceof RegExp) return `//js(${v})`;
   if (v instanceof Date) return `//js(Date("${v.toISOString()}"))`;
   if (v instanceof Function) {
@@ -12381,9 +12244,9 @@ function echo$inspect2(v) {
       args.push(String.fromCharCode(i + 97));
     return `//fn(${args.join(", ")}) { ... }`;
   }
-  return echo$inspectObject2(v);
+  return echo$inspectObject(v);
 }
-function echo$inspectBitArray2(bitArray) {
+function echo$inspectBitArray(bitArray) {
   let endOfAlignedBytes = bitArray.bitOffset + 8 * Math.trunc(bitArray.bitSize / 8);
   let alignedBytes = bitArraySlice(
     bitArray,
@@ -12410,7 +12273,7 @@ function echo$inspectBitArray2(bitArray) {
     return `<<${Array.from(alignedBytes.rawBuffer).join(", ")}>>`;
   }
 }
-function echo$isDict2(value2) {
+function echo$isDict(value2) {
   try {
     return value2 instanceof Dict;
   } catch {
@@ -12457,7 +12320,7 @@ function init3(db, questions2) {
   let _pipe = map(questions2, (q) => {
     return q.id;
   });
-  echo3(_pipe, "src/pages/quiz_screen.gleam", 64);
+  echo2(_pipe, "src/pages/quiz_screen.gleam", 64);
   let $ = is_empty2(questions2);
   if ($) {
     return new Error(void 0);
@@ -12483,7 +12346,7 @@ function update_quiz_result(model) {
   if (current_question instanceof Some) {
     let q = current_question[0];
     let new_answer = check_answer2(q);
-    echo3(new_answer, "src/pages/quiz_screen.gleam", 156);
+    echo2(new_answer, "src/pages/quiz_screen.gleam", 156);
     return update_if(
       model.quiz_result,
       (r) => {
@@ -12717,6 +12580,222 @@ function view7(model) {
     return view_question(model);
   }
 }
+function echo2(value2, file, line) {
+  const grey = "\x1B[90m";
+  const reset_color = "\x1B[39m";
+  const file_line = `${file}:${line}`;
+  const string_value = echo$inspect2(value2);
+  if (globalThis.process?.stderr?.write) {
+    const string5 = `${grey}${file_line}${reset_color}
+${string_value}
+`;
+    process.stderr.write(string5);
+  } else if (globalThis.Deno) {
+    const string5 = `${grey}${file_line}${reset_color}
+${string_value}
+`;
+    globalThis.Deno.stderr.writeSync(new TextEncoder().encode(string5));
+  } else {
+    const string5 = `${file_line}
+${string_value}`;
+    globalThis.console.log(string5);
+  }
+  return value2;
+}
+function echo$inspectString2(str) {
+  let new_str = '"';
+  for (let i = 0; i < str.length; i++) {
+    let char = str[i];
+    if (char == "\n") new_str += "\\n";
+    else if (char == "\r") new_str += "\\r";
+    else if (char == "	") new_str += "\\t";
+    else if (char == "\f") new_str += "\\f";
+    else if (char == "\\") new_str += "\\\\";
+    else if (char == '"') new_str += '\\"';
+    else if (char < " " || char > "~" && char < "\xA0") {
+      new_str += "\\u{" + char.charCodeAt(0).toString(16).toUpperCase().padStart(4, "0") + "}";
+    } else {
+      new_str += char;
+    }
+  }
+  new_str += '"';
+  return new_str;
+}
+function echo$inspectDict2(map7) {
+  let body = "dict.from_list([";
+  let first = true;
+  let key_value_pairs = [];
+  map7.forEach((value2, key) => {
+    key_value_pairs.push([key, value2]);
+  });
+  key_value_pairs.sort();
+  key_value_pairs.forEach(([key, value2]) => {
+    if (!first) body = body + ", ";
+    body = body + "#(" + echo$inspect2(key) + ", " + echo$inspect2(value2) + ")";
+    first = false;
+  });
+  return body + "])";
+}
+function echo$inspectCustomType2(record) {
+  const props = globalThis.Object.keys(record).map((label2) => {
+    const value2 = echo$inspect2(record[label2]);
+    return isNaN(parseInt(label2)) ? `${label2}: ${value2}` : value2;
+  }).join(", ");
+  return props ? `${record.constructor.name}(${props})` : record.constructor.name;
+}
+function echo$inspectObject2(v) {
+  const name2 = Object.getPrototypeOf(v)?.constructor?.name || "Object";
+  const props = [];
+  for (const k of Object.keys(v)) {
+    props.push(`${echo$inspect2(k)}: ${echo$inspect2(v[k])}`);
+  }
+  const body = props.length ? " " + props.join(", ") + " " : "";
+  const head = name2 === "Object" ? "" : name2 + " ";
+  return `//js(${head}{${body}})`;
+}
+function echo$inspect2(v) {
+  const t = typeof v;
+  if (v === true) return "True";
+  if (v === false) return "False";
+  if (v === null) return "//js(null)";
+  if (v === void 0) return "Nil";
+  if (t === "string") return echo$inspectString2(v);
+  if (t === "bigint" || t === "number") return v.toString();
+  if (globalThis.Array.isArray(v))
+    return `#(${v.map(echo$inspect2).join(", ")})`;
+  if (v instanceof List)
+    return `[${v.toArray().map(echo$inspect2).join(", ")}]`;
+  if (v instanceof UtfCodepoint)
+    return `//utfcodepoint(${String.fromCodePoint(v.value)})`;
+  if (v instanceof BitArray) return echo$inspectBitArray2(v);
+  if (v instanceof CustomType) return echo$inspectCustomType2(v);
+  if (echo$isDict2(v)) return echo$inspectDict2(v);
+  if (v instanceof Set)
+    return `//js(Set(${[...v].map(echo$inspect2).join(", ")}))`;
+  if (v instanceof RegExp) return `//js(${v})`;
+  if (v instanceof Date) return `//js(Date("${v.toISOString()}"))`;
+  if (v instanceof Function) {
+    const args = [];
+    for (const i of Array(v.length).keys())
+      args.push(String.fromCharCode(i + 97));
+    return `//fn(${args.join(", ")}) { ... }`;
+  }
+  return echo$inspectObject2(v);
+}
+function echo$inspectBitArray2(bitArray) {
+  let endOfAlignedBytes = bitArray.bitOffset + 8 * Math.trunc(bitArray.bitSize / 8);
+  let alignedBytes = bitArraySlice(
+    bitArray,
+    bitArray.bitOffset,
+    endOfAlignedBytes
+  );
+  let remainingUnalignedBits = bitArray.bitSize % 8;
+  if (remainingUnalignedBits > 0) {
+    let remainingBits = bitArraySliceToInt(
+      bitArray,
+      endOfAlignedBytes,
+      bitArray.bitSize,
+      false,
+      false
+    );
+    let alignedBytesArray = Array.from(alignedBytes.rawBuffer);
+    let suffix = `${remainingBits}:size(${remainingUnalignedBits})`;
+    if (alignedBytesArray.length === 0) {
+      return `<<${suffix}>>`;
+    } else {
+      return `<<${Array.from(alignedBytes.rawBuffer).join(", ")}, ${suffix}>>`;
+    }
+  } else {
+    return `<<${Array.from(alignedBytes.rawBuffer).join(", ")}>>`;
+  }
+}
+function echo$isDict2(value2) {
+  try {
+    return value2 instanceof Dict;
+  } catch {
+    return false;
+  }
+}
+
+// build/dev/javascript/study_app/pages/result_screen.mjs
+var Model6 = class extends CustomType {
+  constructor(db, score, total_questions, quiz_result) {
+    super();
+    this.db = db;
+    this.score = score;
+    this.total_questions = total_questions;
+    this.quiz_result = quiz_result;
+  }
+};
+var Err = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var GoToHome = class extends CustomType {
+};
+var OutCome3 = class extends CustomType {
+};
+function init4(db, score, total_questions, quiz_result) {
+  echo3(quiz_result, "src/pages/result_screen.gleam", 31);
+  return [new Model6(db, score, total_questions, quiz_result), none2()];
+}
+function update7(model, msg) {
+  if (msg instanceof Err) {
+    let json_err = msg[0];
+    echo3("err screen", "src/pages/result_screen.gleam", 48);
+    echo3(json_err, "src/pages/result_screen.gleam", 49);
+    return [model, none2()];
+  } else if (msg instanceof GoToHome) {
+    echo3("GoToHome", "src/pages/result_screen.gleam", 57);
+    let _block;
+    let _pipe = model.quiz_result;
+    let _pipe$1 = to_json7(_pipe);
+    let _pipe$2 = ((_capture) => {
+      return saveQuizHistory(model.db, _capture);
+    })(_pipe$1);
+    _block = to_effect_no_decode(
+      _pipe$2,
+      (_) => {
+        return new OutCome3();
+      }
+    );
+    let eff = _block;
+    return [model, eff];
+  } else {
+    echo3("result -> home", "src/pages/result_screen.gleam", 78);
+    return [model, none2()];
+  }
+}
+function view8(model) {
+  return div(
+    toList([]),
+    toList([
+      h2(toList([]), toList([text3("Quiz Results")])),
+      p(
+        toList([]),
+        toList([
+          text3(
+            "Your score: " + to_string(model.score) + "/" + to_string(
+              model.total_questions
+            )
+          )
+        ])
+      ),
+      button(
+        toList([on_click(new GoToHome())]),
+        toList([text3("Go to Home")])
+      ),
+      h3(toList([]), toList([text3("Detailed Results:")])),
+      view5(model.quiz_result),
+      button(
+        toList([on_click(new GoToHome())]),
+        toList([text3("Go to Home")])
+      )
+    ])
+  );
+}
 function echo3(value2, file, line) {
   const grey = "\x1B[90m";
   const reset_color = "\x1B[39m";
@@ -12854,84 +12933,233 @@ function echo$isDict3(value2) {
   }
 }
 
-// build/dev/javascript/study_app/pages/result_screen.mjs
-var Model6 = class extends CustomType {
-  constructor(db, score, total_questions, quiz_result) {
-    super();
-    this.db = db;
-    this.score = score;
-    this.total_questions = total_questions;
-    this.quiz_result = quiz_result;
-  }
+// build/dev/javascript/study_app/study_app.mjs
+var FILEPATH = "src/study_app.gleam";
+var Loading = class extends CustomType {
 };
-var Err = class extends CustomType {
+var Home = class extends CustomType {
   constructor($0) {
     super();
     this[0] = $0;
   }
 };
-var GoToHome = class extends CustomType {
+var QuizScreen = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
 };
-var OutCome3 = class extends CustomType {
+var QuizResult = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
 };
-function init4(db, score, total_questions, quiz_result) {
-  echo4(quiz_result, "src/pages/result_screen.gleam", 33);
-  return [new Model6(db, score, total_questions, quiz_result), none2()];
-}
-function update7(model, msg) {
-  if (msg instanceof Err) {
-    let json_err = msg[0];
-    echo4("err screen", "src/pages/result_screen.gleam", 50);
-    echo4(json_err, "src/pages/result_screen.gleam", 51);
-    return [model, none2()];
-  } else if (msg instanceof GoToHome) {
-    echo4("GoToHome", "src/pages/result_screen.gleam", 59);
-    let _block;
-    let _pipe = model.quiz_result;
-    let _pipe$1 = to_json7(_pipe);
-    let _pipe$2 = ((_capture) => {
-      return saveQuizHistory(model.db, _capture);
-    })(_pipe$1);
-    _block = to_effect_no_decode(
-      _pipe$2,
-      (_) => {
-        return new OutCome3();
+var ErrScreen2 = class extends CustomType {
+};
+var HomeMsg = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var QuizMsg = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var QuizResultMsg = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var DataInitialized = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+function update8(model, msg) {
+  if (model instanceof Loading) {
+    if (msg instanceof DataInitialized) {
+      let db = msg[0];
+      echo4("DataInitialized", "src/study_app.gleam", 49);
+      let $ = init2(db);
+      let home_model = $[0];
+      let home_effect = $[1];
+      return [
+        new Home(home_model),
+        map3(home_effect, (var0) => {
+          return new HomeMsg(var0);
+        })
+      ];
+    } else {
+      return [model, none2()];
+    }
+  } else if (model instanceof Home) {
+    let home_model = model[0];
+    if (msg instanceof HomeMsg) {
+      let home_msg = msg[0];
+      let $ = update5(home_model, home_msg);
+      let new_home = $[0];
+      let home_effect = $[1];
+      if (home_msg instanceof OutCome) {
+        let questions2 = home_msg[0];
+        echo4("Home -> QuizScreen", "src/study_app.gleam", 65);
+        let screen_ini = init3(new_home.db, questions2);
+        if (screen_ini instanceof Ok) {
+          let quiz_model = screen_ini[0];
+          return [new QuizScreen(quiz_model), none2()];
+        } else {
+          return [new ErrScreen2(), none2()];
+        }
+      } else {
+        return [
+          new Home(new_home),
+          map3(home_effect, (var0) => {
+            return new HomeMsg(var0);
+          })
+        ];
       }
-    );
-    let eff = _block;
-    return [model, eff];
+    } else {
+      return [model, none2()];
+    }
+  } else if (model instanceof QuizScreen) {
+    let quiz_model = model[0];
+    if (msg instanceof QuizMsg) {
+      let quiz_msg = msg[0];
+      let $ = update6(quiz_model, quiz_msg);
+      let new_quiz_model = $[0];
+      let quiz_eff = $[1];
+      if (quiz_msg instanceof OutCome2) {
+        let $1 = init4(
+          new_quiz_model.db,
+          new_quiz_model.score,
+          new_quiz_model.questions_count,
+          new_quiz_model.quiz_result
+        );
+        let result_model = $1[0];
+        let result_effect = $1[1];
+        return [
+          new QuizResult(result_model),
+          map3(
+            result_effect,
+            (var0) => {
+              return new QuizResultMsg(var0);
+            }
+          )
+        ];
+      } else {
+        return [
+          new QuizScreen(new_quiz_model),
+          map3(quiz_eff, (var0) => {
+            return new QuizMsg(var0);
+          })
+        ];
+      }
+    } else {
+      return [model, none2()];
+    }
+  } else if (model instanceof QuizResult) {
+    let quiz_model = model[0];
+    if (msg instanceof QuizResultMsg) {
+      let result_msg = msg[0];
+      let $ = update7(quiz_model, result_msg);
+      let new_model = $[0];
+      let eff = $[1];
+      if (result_msg instanceof OutCome3) {
+        let $1 = init2(quiz_model.db);
+        let new_modek = $1[0];
+        let new_eff = $1[1];
+        return [
+          new Home(new_modek),
+          map3(new_eff, (var0) => {
+            return new HomeMsg(var0);
+          })
+        ];
+      } else {
+        return [
+          new QuizResult(new_model),
+          map3(eff, (var0) => {
+            return new QuizResultMsg(var0);
+          })
+        ];
+      }
+    } else {
+      return [model, none2()];
+    }
   } else {
-    echo4("result -> home", "src/pages/result_screen.gleam", 80);
     return [model, none2()];
   }
 }
-function view8(model) {
-  return div(
-    toList([]),
-    toList([
-      h2(toList([]), toList([text3("Quiz Results")])),
-      p(
-        toList([]),
-        toList([
-          text3(
-            "Your score: " + to_string(model.score) + "/" + to_string(
-              model.total_questions
-            )
-          )
-        ])
-      ),
-      button(
-        toList([on_click(new GoToHome())]),
-        toList([text3("Go to Home")])
-      ),
-      h3(toList([]), toList([text3("Detailed Results:")])),
-      view5(model.quiz_result),
-      button(
-        toList([on_click(new GoToHome())]),
-        toList([text3("Go to Home")])
-      )
-    ])
-  );
+function view9(model) {
+  if (model instanceof Loading) {
+    return text3("Loading...");
+  } else if (model instanceof Home) {
+    let home_model = model[0];
+    let _pipe = view6(home_model);
+    return map4(_pipe, (var0) => {
+      return new HomeMsg(var0);
+    });
+  } else if (model instanceof QuizScreen) {
+    let quiz_model = model[0];
+    let _pipe = view7(quiz_model);
+    return map4(_pipe, (var0) => {
+      return new QuizMsg(var0);
+    });
+  } else if (model instanceof QuizResult) {
+    let result_model = model[0];
+    let _pipe = view8(result_model);
+    return map4(_pipe, (var0) => {
+      return new QuizResultMsg(var0);
+    });
+  } else {
+    return text3("\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F");
+  }
+}
+var db_name = "default";
+var db_version = 1;
+function init5(_) {
+  return [
+    new Loading(),
+    (() => {
+      let _pipe = setup2(
+        db_name,
+        db_version,
+        default_data_set
+      );
+      return to_effect_no_decode(
+        _pipe,
+        (var0) => {
+          return new DataInitialized(var0);
+        }
+      );
+    })()
+  ];
+}
+function main() {
+  let app = application(init5, update8, view9);
+  let $ = start3(app, "#app", void 0);
+  if (!($ instanceof Ok)) {
+    throw makeError(
+      "let_assert",
+      FILEPATH,
+      "study_app",
+      147,
+      "main",
+      "Pattern match failed, no pattern matched the value.",
+      {
+        value: $,
+        start: 4154,
+        end: 4203,
+        pattern_start: 4165,
+        pattern_end: 4170
+      }
+    );
+  }
+  return void 0;
 }
 function echo4(value2, file, line) {
   const grey = "\x1B[90m";
@@ -13063,365 +13291,6 @@ function echo$inspectBitArray4(bitArray) {
   }
 }
 function echo$isDict4(value2) {
-  try {
-    return value2 instanceof Dict;
-  } catch {
-    return false;
-  }
-}
-
-// build/dev/javascript/study_app/study_app.mjs
-var FILEPATH = "src/study_app.gleam";
-var Loading = class extends CustomType {
-};
-var Home = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var QuizScreen = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var QuizResult = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var ErrScreen2 = class extends CustomType {
-};
-var HomeMsg = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var QuizMsg = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var QuizResultMsg = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var DataInitialized = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-function init5(_) {
-  return [
-    new Loading(),
-    (() => {
-      let _pipe = setup2("default", 1, default_data_set);
-      return to_effect_no_decode(
-        _pipe,
-        (var0) => {
-          return new DataInitialized(var0);
-        }
-      );
-    })()
-  ];
-}
-function update8(model, msg) {
-  if (model instanceof Loading) {
-    if (msg instanceof DataInitialized) {
-      let db = msg[0];
-      echo5("DataInitialized", "src/study_app.gleam", 49);
-      let $ = init2(db);
-      let home_model = $[0];
-      let home_effect = $[1];
-      return [
-        new Home(home_model),
-        map3(home_effect, (var0) => {
-          return new HomeMsg(var0);
-        })
-      ];
-    } else {
-      return [model, none2()];
-    }
-  } else if (model instanceof Home) {
-    let home_model = model[0];
-    if (msg instanceof HomeMsg) {
-      let home_msg = msg[0];
-      let $ = update5(home_model, home_msg);
-      let new_home = $[0];
-      let home_effect = $[1];
-      if (home_msg instanceof OutCome) {
-        let questions2 = home_msg[0];
-        echo5("Home -> QuizScreen", "src/study_app.gleam", 65);
-        let screen_ini = init3(new_home.db, questions2);
-        if (screen_ini instanceof Ok) {
-          let quiz_model = screen_ini[0];
-          return [new QuizScreen(quiz_model), none2()];
-        } else {
-          return [new ErrScreen2(), none2()];
-        }
-      } else {
-        return [
-          new Home(new_home),
-          map3(home_effect, (var0) => {
-            return new HomeMsg(var0);
-          })
-        ];
-      }
-    } else {
-      return [model, none2()];
-    }
-  } else if (model instanceof QuizScreen) {
-    let quiz_model = model[0];
-    if (msg instanceof QuizMsg) {
-      let quiz_msg = msg[0];
-      let $ = update6(quiz_model, quiz_msg);
-      let new_quiz_model = $[0];
-      let quiz_eff = $[1];
-      if (quiz_msg instanceof OutCome2) {
-        let $1 = init4(
-          new_quiz_model.db,
-          new_quiz_model.score,
-          new_quiz_model.questions_count,
-          new_quiz_model.quiz_result
-        );
-        let result_model = $1[0];
-        let result_effect = $1[1];
-        return [
-          new QuizResult(result_model),
-          map3(
-            result_effect,
-            (var0) => {
-              return new QuizResultMsg(var0);
-            }
-          )
-        ];
-      } else {
-        return [
-          new QuizScreen(new_quiz_model),
-          map3(quiz_eff, (var0) => {
-            return new QuizMsg(var0);
-          })
-        ];
-      }
-    } else {
-      return [model, none2()];
-    }
-  } else if (model instanceof QuizResult) {
-    let quiz_model = model[0];
-    if (msg instanceof QuizResultMsg) {
-      let result_msg = msg[0];
-      let $ = update7(quiz_model, result_msg);
-      let new_model = $[0];
-      let eff = $[1];
-      if (result_msg instanceof OutCome3) {
-        let $1 = init2(quiz_model.db);
-        let new_modek = $1[0];
-        let new_eff = $1[1];
-        return [
-          new Home(new_modek),
-          map3(new_eff, (var0) => {
-            return new HomeMsg(var0);
-          })
-        ];
-      } else {
-        return [
-          new QuizResult(new_model),
-          map3(eff, (var0) => {
-            return new QuizResultMsg(var0);
-          })
-        ];
-      }
-    } else {
-      return [model, none2()];
-    }
-  } else {
-    return [model, none2()];
-  }
-}
-function view9(model) {
-  if (model instanceof Loading) {
-    return text3("Loading...");
-  } else if (model instanceof Home) {
-    let home_model = model[0];
-    let _pipe = view6(home_model);
-    return map4(_pipe, (var0) => {
-      return new HomeMsg(var0);
-    });
-  } else if (model instanceof QuizScreen) {
-    let quiz_model = model[0];
-    let _pipe = view7(quiz_model);
-    return map4(_pipe, (var0) => {
-      return new QuizMsg(var0);
-    });
-  } else if (model instanceof QuizResult) {
-    let result_model = model[0];
-    let _pipe = view8(result_model);
-    return map4(_pipe, (var0) => {
-      return new QuizResultMsg(var0);
-    });
-  } else {
-    return text3("\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F");
-  }
-}
-function main() {
-  let app = application(init5, update8, view9);
-  let $ = start3(app, "#app", void 0);
-  if (!($ instanceof Ok)) {
-    throw makeError(
-      "let_assert",
-      FILEPATH,
-      "study_app",
-      147,
-      "main",
-      "Pattern match failed, no pattern matched the value.",
-      {
-        value: $,
-        start: 4142,
-        end: 4191,
-        pattern_start: 4153,
-        pattern_end: 4158
-      }
-    );
-  }
-  return void 0;
-}
-function echo5(value2, file, line) {
-  const grey = "\x1B[90m";
-  const reset_color = "\x1B[39m";
-  const file_line = `${file}:${line}`;
-  const string_value = echo$inspect5(value2);
-  if (globalThis.process?.stderr?.write) {
-    const string5 = `${grey}${file_line}${reset_color}
-${string_value}
-`;
-    process.stderr.write(string5);
-  } else if (globalThis.Deno) {
-    const string5 = `${grey}${file_line}${reset_color}
-${string_value}
-`;
-    globalThis.Deno.stderr.writeSync(new TextEncoder().encode(string5));
-  } else {
-    const string5 = `${file_line}
-${string_value}`;
-    globalThis.console.log(string5);
-  }
-  return value2;
-}
-function echo$inspectString5(str) {
-  let new_str = '"';
-  for (let i = 0; i < str.length; i++) {
-    let char = str[i];
-    if (char == "\n") new_str += "\\n";
-    else if (char == "\r") new_str += "\\r";
-    else if (char == "	") new_str += "\\t";
-    else if (char == "\f") new_str += "\\f";
-    else if (char == "\\") new_str += "\\\\";
-    else if (char == '"') new_str += '\\"';
-    else if (char < " " || char > "~" && char < "\xA0") {
-      new_str += "\\u{" + char.charCodeAt(0).toString(16).toUpperCase().padStart(4, "0") + "}";
-    } else {
-      new_str += char;
-    }
-  }
-  new_str += '"';
-  return new_str;
-}
-function echo$inspectDict5(map7) {
-  let body = "dict.from_list([";
-  let first = true;
-  let key_value_pairs = [];
-  map7.forEach((value2, key) => {
-    key_value_pairs.push([key, value2]);
-  });
-  key_value_pairs.sort();
-  key_value_pairs.forEach(([key, value2]) => {
-    if (!first) body = body + ", ";
-    body = body + "#(" + echo$inspect5(key) + ", " + echo$inspect5(value2) + ")";
-    first = false;
-  });
-  return body + "])";
-}
-function echo$inspectCustomType5(record) {
-  const props = globalThis.Object.keys(record).map((label2) => {
-    const value2 = echo$inspect5(record[label2]);
-    return isNaN(parseInt(label2)) ? `${label2}: ${value2}` : value2;
-  }).join(", ");
-  return props ? `${record.constructor.name}(${props})` : record.constructor.name;
-}
-function echo$inspectObject5(v) {
-  const name2 = Object.getPrototypeOf(v)?.constructor?.name || "Object";
-  const props = [];
-  for (const k of Object.keys(v)) {
-    props.push(`${echo$inspect5(k)}: ${echo$inspect5(v[k])}`);
-  }
-  const body = props.length ? " " + props.join(", ") + " " : "";
-  const head = name2 === "Object" ? "" : name2 + " ";
-  return `//js(${head}{${body}})`;
-}
-function echo$inspect5(v) {
-  const t = typeof v;
-  if (v === true) return "True";
-  if (v === false) return "False";
-  if (v === null) return "//js(null)";
-  if (v === void 0) return "Nil";
-  if (t === "string") return echo$inspectString5(v);
-  if (t === "bigint" || t === "number") return v.toString();
-  if (globalThis.Array.isArray(v))
-    return `#(${v.map(echo$inspect5).join(", ")})`;
-  if (v instanceof List)
-    return `[${v.toArray().map(echo$inspect5).join(", ")}]`;
-  if (v instanceof UtfCodepoint)
-    return `//utfcodepoint(${String.fromCodePoint(v.value)})`;
-  if (v instanceof BitArray) return echo$inspectBitArray5(v);
-  if (v instanceof CustomType) return echo$inspectCustomType5(v);
-  if (echo$isDict5(v)) return echo$inspectDict5(v);
-  if (v instanceof Set)
-    return `//js(Set(${[...v].map(echo$inspect5).join(", ")}))`;
-  if (v instanceof RegExp) return `//js(${v})`;
-  if (v instanceof Date) return `//js(Date("${v.toISOString()}"))`;
-  if (v instanceof Function) {
-    const args = [];
-    for (const i of Array(v.length).keys())
-      args.push(String.fromCharCode(i + 97));
-    return `//fn(${args.join(", ")}) { ... }`;
-  }
-  return echo$inspectObject5(v);
-}
-function echo$inspectBitArray5(bitArray) {
-  let endOfAlignedBytes = bitArray.bitOffset + 8 * Math.trunc(bitArray.bitSize / 8);
-  let alignedBytes = bitArraySlice(
-    bitArray,
-    bitArray.bitOffset,
-    endOfAlignedBytes
-  );
-  let remainingUnalignedBits = bitArray.bitSize % 8;
-  if (remainingUnalignedBits > 0) {
-    let remainingBits = bitArraySliceToInt(
-      bitArray,
-      endOfAlignedBytes,
-      bitArray.bitSize,
-      false,
-      false
-    );
-    let alignedBytesArray = Array.from(alignedBytes.rawBuffer);
-    let suffix = `${remainingBits}:size(${remainingUnalignedBits})`;
-    if (alignedBytesArray.length === 0) {
-      return `<<${suffix}>>`;
-    } else {
-      return `<<${Array.from(alignedBytes.rawBuffer).join(", ")}, ${suffix}>>`;
-    }
-  } else {
-    return `<<${Array.from(alignedBytes.rawBuffer).join(", ")}>>`;
-  }
-}
-function echo$isDict5(value2) {
   try {
     return value2 instanceof Dict;
   } catch {

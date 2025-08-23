@@ -8,7 +8,7 @@ import pages/quiz_home
 import pages/quiz_screen
 import pages/result_screen
 
-const db_name = "db"
+const db_name = "default"
 
 const db_version = 1
 
@@ -34,7 +34,7 @@ pub type Msg {
 pub fn init(_) -> #(Model, Effect(Msg)) {
   #(
     Loading,
-    indexed_db.setup("default", 1, indexed_db.default_data_set)
+    indexed_db.setup(db_name, db_version, indexed_db.default_data_set)
       |> promise_.to_effect_no_decode(DataInitialized),
   )
 }

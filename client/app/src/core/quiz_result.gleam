@@ -32,14 +32,6 @@ pub fn decoder() -> decode.Decoder(QuizResults) {
   })
 }
 
-/// JSONからQuizResultRecordをデコードするためのデコーダー
-// pub fn decoder() -> decode.Decoder(List(Record)) {
-//   decode.list({
-//     use id <- decode.field("id", decode.int)
-//     use category <- decode.field("category", category.decoder())
-//     decode.success(Record(id, category, []))
-//   })
-// }
 pub fn to_json(qr: QuizResults) -> json.Json {
   use record <- json.array(qr)
   json.object([
@@ -54,18 +46,6 @@ pub fn from_questions(questions: List(question.Model)) -> QuizResults {
     Record(id: q.id, category: q.category, answer: [])
   })
 }
-
-// pub fn update_from_quiz_results(
-//   quiz_result: History,
-//   results: quiz_result.QuizResults,
-// ) -> History {
-//   use record <- list.map(quiz_result)
-//   let result = list.find(results, fn(result) { record.id == result.id })
-//   case result {
-//     Ok(a) -> Record(..record, answer: a.answer)
-//     Error(Nil) -> record
-//   }
-// }
 
 pub fn from_id_category(
   id_category_list: List(question.IdAndCategory),
@@ -89,7 +69,7 @@ fn view_answers(answers: List(Answer)) -> element.Element(msg) {
 }
 
 pub fn view(quiz_result: QuizResults) -> element.Element(msg) {
-  echo quiz_result
+  // echo quiz_result
   html.table([], [
     html.thead([], [
       html.tr([], [

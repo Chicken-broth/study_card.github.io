@@ -2,7 +2,6 @@ import core/answer.{type Answer, NotAnswered}
 import core/association_question as as_question
 import core/multiple_choice_question as mc_question
 import extra/json_
-import gleam/dynamic as dynamic
 import gleam/dynamic/decode.{type Decoder}
 import gleam/json
 import lustre/element.{type Element}
@@ -170,7 +169,6 @@ pub fn qusetion_category_decoder() -> Decoder(QusetionCategory) {
   use sub_name <- decode.field("sub_name", decode.string)
   decode.success(QusetionCategory(id, name, sub_id, sub_name))
 }
-
 // pub fn decode_question_list(
 //   dynamic: dynamic.Dynamic,
 // ) -> Result(List(Model), json.DecodeError) {

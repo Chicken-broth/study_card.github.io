@@ -1,8 +1,6 @@
-import core/answer.{Correct, Incorrect, NotAnswered}
 import core/quiz_result.{type QuizResults}
 import extra/promise_
 import gleam/int
-import gleam/list
 import interface/indexed_db.{type DB} as db
 import lustre/effect.{type Effect, none}
 import lustre/element.{type Element}

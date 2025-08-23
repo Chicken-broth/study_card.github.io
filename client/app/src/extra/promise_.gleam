@@ -1,4 +1,3 @@
-import gleam/dynamic.{type Dynamic}
 import gleam/javascript/promise.{type Promise}
 import lustre/effect.{type Effect}
 

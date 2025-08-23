@@ -454,7 +454,7 @@ fn view_count_selection(quest_count: QuestionCount) -> Element(Msg) {
 }
 
 /// アクションボタン（クイズ開始、学習履歴）をレンダリングする。
-fn view_actions(is_start_quiz_enabled: Bool, show_history: Bool) -> Element(Msg) {
+fn view_actions(is_start_quiz_enabled: Bool) -> Element(Msg) {
   let button_style = fn(is_primary) {
     [
       attr.styles([
@@ -549,7 +549,7 @@ pub fn view(model: Model) -> Element(Msg) {
     html.div([attr.styles([#("margin-top", "1rem")])], [
       html.text("選択中の問題数: " <> int.to_string(qty)),
     ]),
-    view_actions(is_start_quiz_enabled, model.show_history),
+    view_actions(is_start_quiz_enabled),
     view_loading(model.loading),
     case model.show_history {
       True -> quiz_result.view(model.quiz_result)
