@@ -12107,11 +12107,22 @@ function view6(model) {
         toList([text3("Quiz App")])
       ),
       view_error(model.error),
-      h2(
-        toList([styles(toList([["margin-top", "1rem"]]))]),
-        toList([text3("\u554F\u984C\u96C6\u9078\u629E")])
+      div(
+        toList([
+          styles(toList([["display", "flex"], ["align-items", "center"]]))
+        ]),
+        toList([
+          h2(
+            toList([
+              styles(
+                toList([["margin-right", "1rem"], ["font-size", "1.17em"]])
+              )
+            ]),
+            toList([text3("\u554F\u984C\u96C6\u9078\u629E")])
+          ),
+          view_db_selection(model.data_set_list, model.data_set_name)
+        ])
       ),
-      view_db_selection(model.data_set_list, model.data_set_name),
       h2(
         toList([styles(toList([["margin-top", "1rem"]]))]),
         toList([text3("\u30AB\u30C6\u30B4\u30EA")])

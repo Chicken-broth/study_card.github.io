@@ -537,8 +537,13 @@ pub fn view(model: Model) -> Element(Msg) {
   html.div([], [
     html.h1([attr.styles([#("text-align", "center")])], [html.text("Quiz App")]),
     view_error(model.error),
-    html.h2([attr.styles([#("margin-top", "1rem")])], [html.text("問題集選択")]),
-    view_db_selection(model.data_set_list, model.data_set_name),
+    html.div([attr.styles([#("display", "flex"), #("align-items", "center")])], [
+      html.h2(
+        [attr.styles([#("margin-right", "1rem"), #("font-size", "1.17em")])],
+        [html.text("問題集選択")],
+      ),
+      view_db_selection(model.data_set_list, model.data_set_name),
+    ]),
     html.h2([attr.styles([#("margin-top", "1rem")])], [html.text("カテゴリ")]),
     // view_all_category_selection(checked),
     view_category_selection(model.selected_category, checked),
