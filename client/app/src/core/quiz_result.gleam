@@ -40,7 +40,7 @@ pub fn decoder() -> decode.Decoder(QuizResults) {
 //     decode.success(Record(id, category, []))
 //   })
 // }
-pub fn to_json(qr: QuizResults) {
+pub fn to_json(qr: QuizResults) -> json.Json {
   use record <- json.array(qr)
   json.object([
     #("id", json.int(record.id)),

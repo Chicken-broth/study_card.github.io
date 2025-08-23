@@ -10,10 +10,11 @@ import lustre/element/html
 import lustre/event
 
 //spec
+
 /// 組み合わせ問題の実装
 /// ユーザーは2列に並んだリストから、各列から1つづつPairを選び、正しい組み合わせを選ぶ
-
-pub type ID = Int
+pub type ID =
+  Int
 
 pub type Msg {
   SelectLeft(ID)
@@ -55,8 +56,10 @@ pub type Model {
 pub fn init(pairs: List(Pair)) -> Model {
   let left =
     list.map(pairs, fn(p) { Item(p.id, p.left, NotFocused, NotYetMatched) })
+  // |> list.shuffle
   let right =
     list.map(pairs, fn(p) { Item(p.id, p.right, NotFocused, NotYetMatched) })
+    |> list.shuffle
   Model(pairs, left, right, None, None, [], NotAnswered)
 }
 
@@ -296,14 +299,13 @@ pub fn decoder() -> Decoder(Model) {
       decode.success(Pair(id, left, right))
     })
   use pairs <- decode.then(decode_pair)
-  pair_to_model(pairs)
+  init(pairs)
   |> decode.success
 }
-
-fn pair_to_model(pairs: List(Pair)) -> Model {
-  let left =
-    list.map(pairs, fn(p) { Item(p.id, p.left, NotFocused, NotYetMatched) })
-  let right =
-    list.map(pairs, fn(p) { Item(p.id, p.right, NotFocused, NotYetMatched) })
-  Model(pairs, left, right, None, None, [], NotAnswered)
-}
+// fn pair_to_model(pairs: List(Pair)) -> Model {
+//   let left =
+//     list.map(pairs, fn(p) { Item(p.id, p.left, NotFocused, NotYetMatched) })
+//   let right =
+//     list.map(pairs, fn(p) { Item(p.id, p.right, NotFocused, NotYetMatched) })
+//   Model(pairs, left, right, None, None, [], NotAnswered)
+// }

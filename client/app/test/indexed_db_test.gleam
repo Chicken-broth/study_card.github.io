@@ -12,6 +12,8 @@ pub fn main() {
 
 const data_set = db.default_data_set
 
+const extra_data_set = db.extra_data_set
+
 /// `setup`が正常に完了することをテストします
 pub fn setup_test() {
   use db <- promise.tap(db.setup("db_setup", 1, data_set))
@@ -99,26 +101,40 @@ pub fn get_question_id_and_category_list_test() {
 }
 
 pub fn db_switching_test() {
-  // Test with "default_db"
-  use default_db <- promise.await(db.setup("default_db", 1, data_set))
-  use default_categories_dynamic <- promise.tap(db.get_categories(default_db))
-  let assert Ok(default_categories) =
-    db.get_categories_decode(default_categories_dynamic)
+  let default_data_set_test = fn() {
+    echo "db switch test start"
+    use default_db <- promise.await(db.setup("db_switching", 1, data_set))
+    echo "db switch setuped"
+    use default_categories_dynamic <- promise.tap(db.get_categories(default_db))
+    let assert Ok(default_categories) =
+      db.get_categories_decode(default_categories_dynamic)
 
-  let expected_default_categories = [
-    category.Category(id: 1, name: "Gleam基礎"),
-    category.Category(id: 2, name: "Lustre基礎"),
-  ]
-  default_categories |> should.equal(expected_default_categories)
+    let expected_default_categories = [
+      category.Category(id: 1, name: "情報セキュリティとは"),
+      category.Category(id: 2, name: "情報セキュリティ技術"),
+      category.Category(id: 3, name: "情報セキュリティ管理"),
+      category.Category(id: 4, name: "情報セキュリティ対策"),
+      category.Category(id: 5, name: "法務"),
+      category.Category(id: 6, name: "マネジメント"),
+      category.Category(id: 7, name: "テクノロジ"),
+      category.Category(id: 8, name: "ストラテジ"),
+    ]
+    default_categories |> should.equal(expected_default_categories)
+  }
+  let extra_data_set_test = fn() {
+    // Test with "extra_db"
+    use extra_db <- promise.await(db.setup("extra_db", 1, extra_data_set))
+    use extra_categories_dynamic <- promise.tap(db.get_categories(extra_db))
+    let assert Ok(extra_categories) =
+      db.get_categories_decode(extra_categories_dynamic)
 
-  // Test with "extra_db"
-  use extra_db <- promise.await(db.setup("extra_db", 1, data_set))
-  use extra_categories_dynamic <- promise.tap(db.get_categories(extra_db))
-  let assert Ok(extra_categories) =
-    db.get_categories_decode(extra_categories_dynamic)
-
-  let expected_extra_categories = [category.Category(id: 101, name: "英単語の語源")]
-  extra_categories |> should.equal(expected_extra_categories)
-
+    let expected_extra_categories = [
+      category.Category(id: 1, name: "語根"),
+      category.Category(id: 2, name: "接頭語"),
+    ]
+    extra_categories |> should.equal(expected_extra_categories)
+  }
+  default_data_set_test()
+  extra_data_set_test()
   Nil
 }

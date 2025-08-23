@@ -1,5 +1,4 @@
-// import "fake-indexeddb/auto";
-// import "fake-indexeddb/auto";
+import "fake-indexeddb/auto";
 import default_data from './data.mjs'
 import extra_data from './extra_data.mjs';
 import { Ok, Error } from "../gleam.mjs";
@@ -104,7 +103,7 @@ function setup(dbName, version, data) {
           historyStore.add({
             id: q.id,
             category: q.category,
-            answer: "NotAnswered"
+            answer: ["NotAnswered"]
           })
         });
       }

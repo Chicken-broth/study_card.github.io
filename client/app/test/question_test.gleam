@@ -1,7 +1,9 @@
+import core/association_question as association
 import core/question
 import gleam/dynamic
 import gleam/dynamic/decode
 import gleam/json
+import gleam/list
 import gleeunit
 import gleeunit/should
 
@@ -37,6 +39,35 @@ pub fn decoder_success_association_test() {
   should.be_ok(Ok(decoded))
 }
 
+/// 組み合わせ問題の選択肢がシャッフルされていることをテストします
+pub fn shuffled_association_question_test() {
+  let assert Ok(decoded_question) =
+    get_valid_as_question_dynamic()
+    |> decode.run(question.decoder())
+
+  // シャッフルされていることをアサート (元の順序と異なることを確認)
+  // 非常に低い確率で元の順序と同じになる可能性があるが、テストとしては許容範囲
+  let assert question.Association(association) =
+    decoded_question.question_interaction
+  echo association
+  list.map2(association.left, association.right, fn(l, r) { l.id != r.id })
+  |> list.any(fn(a) { a })
+  |> should.be_true
+
+  let original_associatiod: association.Model =
+    [
+      association.Pair(1, "Model", "状態"),
+      association.Pair(2, "View", "UIの描画"),
+      association.Pair(3, "Update", "状態の更新"),
+    ]
+    |> association.init
+  list.map2(original_associatiod.left, original_associatiod.right, fn(l, r) {
+    l.id != r.id
+  })
+  |> list.any(fn(a) { a })
+  |> should.be_true
+}
+
 /// `question_interaction` の `type` が不正な場合にデコードが失敗することをテストします
 pub fn decoder_fail_wrong_interaction_type_test() {
   get_invalid_question_wrong_interaction_type_dynamic()
@@ -64,7 +95,12 @@ pub fn decode_then_encode_multiple_choice_test() {
       #("id", json.int(1)),
       #(
         "category",
-        json.object([#("id", json.int(1)), #("name", json.string("Gleam基礎"))]),
+        json.object([
+          #("id", json.int(1)),
+          #("name", json.string("Gleam基礎")),
+          #("sub_id", json.int(1)),
+          #("sub_name", json.string("")),
+        ]),
       ),
       #("question_text", json.string("Gleamの型で、不変なデータ構造を表現するものはどれ？")),
       #(

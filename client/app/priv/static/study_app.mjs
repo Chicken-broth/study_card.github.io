@@ -1401,13 +1401,13 @@ function length(list4) {
 }
 function reverse_and_prepend(loop$prefix, loop$suffix) {
   while (true) {
-    let prefix = loop$prefix;
+    let prefix2 = loop$prefix;
     let suffix = loop$suffix;
-    if (prefix instanceof Empty) {
+    if (prefix2 instanceof Empty) {
       return suffix;
     } else {
-      let first$1 = prefix.head;
-      let rest$1 = prefix.tail;
+      let first$1 = prefix2.head;
+      let rest$1 = prefix2.tail;
       loop$prefix = rest$1;
       loop$suffix = prepend(first$1, suffix);
     }
@@ -10822,17 +10822,26 @@ var data_default = {
 };
 
 // build/dev/javascript/study_app/interface/extra_data.mjs
-var questionCategory1 = {
+var rootWord = {
   id: 1,
-  name: "\u8A9E\u6E90",
+  name: "\u8A9E\u6839",
   sub_id: 1,
-  sub_name: "-"
+  sub_name: ""
 };
-var categories = [{ id: 1, name: "\u8A9E\u6E90", sub: [{ id: 1, name: "-" }] }];
+var prefix = {
+  id: 2,
+  name: "\u63A5\u982D\u8A9E",
+  sub_id: 1,
+  sub_name: ""
+};
+var categories = [
+  { id: 1, name: "\u8A9E\u6839", sub: [{ id: 1, name: "" }] },
+  { id: 2, name: "\u63A5\u982D\u8A9E", sub: [{ id: 1, name: "" }] }
+];
 var questions = [
   {
     id: 1,
-    category: questionCategory1,
+    category: rootWord,
     question_text: "\u8A9E\u6839\u3068\u3001\u610F\u5473/\u7528\u4F8B\u306E\u7D44\u307F\u5408\u308F\u305B\u3092\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044",
     question_interaction: {
       type: "Association",
@@ -10845,8 +10854,8 @@ var questions = [
     }
   },
   {
-    id: 1,
-    category: questionCategory1,
+    id: 2,
+    category: rootWord,
     question_text: "\u8A9E\u6839\u3068\u3001\u610F\u5473/\u7528\u4F8B\u306E\u7D44\u307F\u5408\u308F\u305B\u3092\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044",
     question_interaction: {
       type: "Association",
@@ -10859,8 +10868,8 @@ var questions = [
     }
   },
   {
-    id: 1,
-    category: questionCategory1,
+    id: 3,
+    category: rootWord,
     question_text: "\u8A9E\u6839\u3068\u3001\u610F\u5473/\u7528\u4F8B\u306E\u7D44\u307F\u5408\u308F\u305B\u3092\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044",
     question_interaction: {
       type: "Association",
@@ -10873,21 +10882,298 @@ var questions = [
     }
   },
   {
-    id: 1,
-    category: questionCategory1,
+    id: 4,
+    category: rootWord,
     question_text: "\u8A9E\u6839\u3068\u3001\u610F\u5473/\u7528\u4F8B\u306E\u7D44\u307F\u5408\u308F\u305B\u3092\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044",
     question_interaction: {
       type: "Association",
       data: [
-        { id: 9, left: "-geo-", right: "\u5730\u7403	/ geography, geology, geometric" },
-        { id: 10, left: "-graph- / -gram-", right: "\u66F8\u304F\u3001\u63CF\u304F\u3001\u8A18\u9332\u3059\u308B	/ photograph, telegram, graphic" },
-        { id: 11, left: "-hydr-", right: "\u6C34	/ hydrate, hydraulic, hydroplane" },
-        { id: 12, left: "-log- / -logy-", right: "\u8A00\u8449\u3001\u7814\u7A76	/ dialogue, biology, psychology" }
+        { id: 13, left: "-man- / -manu-", right: "\u624B	/ manual, manufacture, manipulate" },
+        { id: 14, left: "-meter- / -metr-", right: "\u6E2C\u308B	/ thermometer, metric, diameter" },
+        { id: 15, left: "-ped- / -pod-", right: "\u8DB3	/ pedal, pedestrian, tripod" },
+        { id: 16, left: "-phon-", right: "\u97F3	/ telephone, phonics, symphony" }
       ]
+    }
+  },
+  {
+    id: 5,
+    category: rootWord,
+    question_text: "\u8A9E\u6839\u3068\u3001\u610F\u5473/\u7528\u4F8B\u306E\u7D44\u307F\u5408\u308F\u305B\u3092\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044",
+    question_interaction: {
+      type: "Association",
+      data: [
+        { id: 17, left: "-photo-", right: "\u5149	/ photograph, photosynthesis, photon" },
+        { id: 18, left: "-port-", right: "\u904B\u3076	/ transport, portable, import" },
+        { id: 19, left: "-rupt-", right: "\u58CA\u3059	/ erupt, interrupt, bankrupt" },
+        { id: 20, left: "-scrib- / -script-", right: "\u66F8\u304F	/ scribble, describe, manuscript" }
+      ]
+    }
+  },
+  {
+    id: 6,
+    category: rootWord,
+    question_text: "\u8A9E\u6839\u3068\u3001\u610F\u5473/\u7528\u4F8B\u306E\u7D44\u307F\u5408\u308F\u305B\u3092\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044",
+    question_interaction: {
+      type: "Association",
+      data: [
+        { id: 21, left: "-spec- / -spect-", right: "\u898B\u308B	/ inspect, spectator, perspective" },
+        { id: 22, left: "-struct-", right: "\u5EFA\u3066\u308B	/ construct, structure, destruction" },
+        { id: 23, left: "-tele-", right: "\u9060\u3044	/ telephone, television, telescope" },
+        { id: 24, left: "-terr-", right: "\u5730\u3001\u571F\u5730	/ terrain, territory, terrestrial" }
+      ]
+    }
+  },
+  {
+    id: 7,
+    category: rootWord,
+    question_text: "\u8A9E\u6839\u3068\u3001\u610F\u5473/\u7528\u4F8B\u306E\u7D44\u307F\u5408\u308F\u305B\u3092\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044",
+    question_interaction: {
+      type: "Association",
+      data: [
+        { id: 25, left: "-therm-", right: "\u71B1	/ thermometer, thermal, thermostat" },
+        { id: 26, left: "-tract-", right: "\u5F15\u304F	/ attract, subtract, tractor" },
+        { id: 27, left: "-ven- / -vent-", right: "\u6765\u308B	/ convention, intervene, prevent" },
+        { id: 28, left: "-vert- / -vers-", right: "\u56DE\u3059	/ convert, reverse, versatile" }
+      ]
+    }
+  },
+  {
+    id: 8,
+    category: rootWord,
+    question_text: "\u8A9E\u6839\u3068\u3001\u610F\u5473/\u7528\u4F8B\u306E\u7D44\u307F\u5408\u308F\u305B\u3092\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044",
+    question_interaction: {
+      type: "Association",
+      data: [
+        { id: 29, left: "-vid- / -vis-", right: "\u898B\u308B	/ video, vision, visible" },
+        { id: 30, left: "-voc- / -vok-", right: "\u58F0\u3001\u547C\u3076	/ vocal, invoke, vocabulary" }
+      ]
+    }
+  },
+  {
+    id: 9,
+    category: prefix,
+    question_text: "\u63A5\u982D\u8A9E\u3068\u3001\u610F\u5473/\u7528\u4F8B\u306E\u7D44\u307F\u5408\u308F\u305B\u3092\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044",
+    question_interaction: {
+      type: "Association",
+      data: [
+        { id: 31, left: "a-/an-", right: "\u301C\u3067\u306A\u3044\u3001\u301C\u304C\u306A\u3044 / atypical, anarchy, atheist" },
+        { id: 32, left: "anti-", right: "\u53CD\u5BFE\u3001\u9006 / antisocial, antidote, anticlimax" },
+        { id: 33, left: "auto-", right: "\u81EA\u5DF1\u3001\u81EA\u52D5 / automatic, autobiography, autonomous" },
+        { id: 34, left: "bi-", right: "2\u3064\u306E / bicycle, bilingual, bimonthly" }
+      ]
+    }
+  },
+  {
+    id: 10,
+    category: prefix,
+    question_text: "\u63A5\u982D\u8A9E\u3068\u3001\u610F\u5473/\u7528\u4F8B\u306E\u7D44\u307F\u5408\u308F\u305B\u3092\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044",
+    question_interaction: {
+      type: "Association",
+      data: [
+        { id: 35, left: "co-/con-/com-", right: "\u5171\u306B\u3001\u4E00\u7DD2\u306B / cooperate, connect, combine" },
+        { id: 36, left: "de-", right: "\u4E0B\u3078\u3001\u96E2\u308C\u3066\u3001\u53CD\u5BFE / decrease, detach, decode" },
+        { id: 37, left: "dis-", right: "\u301C\u3067\u306A\u3044\u3001\u301C\u306E\u53CD\u5BFE / dishonest, disagree, disappear" },
+        { id: 38, left: "ex-", right: "\u5916\u3078\u3001\u5143\u306E / exit, exclude, ex-president" }
+      ]
+    }
+  },
+  {
+    id: 11,
+    category: prefix,
+    question_text: "\u63A5\u982D\u8A9E\u3068\u3001\u610F\u5473/\u7528\u4F8B\u306E\u7D44\u307F\u5408\u308F\u305B\u3092\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044",
+    question_interaction: {
+      type: "Association",
+      data: [
+        { id: 39, left: "fore-", right: "\u524D\u306B / forecast, foretell, foreword" },
+        { id: 40, left: "il-/im-/in-/ir-", right: "\u301C\u3067\u306A\u3044 / illegal, impossible, inactive, irregular" },
+        { id: 41, left: "inter-", right: "\u9593\u306B\u3001\u301C\u306E\u9593\u3067 / international, interact, interlude" },
+        { id: 42, left: "mal-", right: "\u60AA\u3044\u3001\u4E0D\u6B63\u306A / malfunction, malpractice, malnourished" }
+      ]
+    }
+  },
+  {
+    id: 12,
+    category: prefix,
+    question_text: "\u63A5\u982D\u8A9E\u3068\u3001\u610F\u5473/\u7528\u4F8B\u306E\u7D44\u307F\u5408\u308F\u305B\u3092\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044",
+    question_interaction: {
+      type: "Association",
+      data: [
+        { id: 43, left: "micro-", right: "\u5C0F\u3055\u3044 / microscope, microcosm, microwave" },
+        { id: 44, left: "mid-", right: "\u4E2D\u9593\u306E / midway, midnight, midterm" },
+        { id: 45, left: "mono-", right: "1\u3064\u306E / monologue, monotone, monopoly" },
+        { id: 46, left: "multi-", right: "\u591A\u304F\u306E / multicolor, multimedia, multiple" }
+      ]
+    }
+  },
+  {
+    id: 13,
+    category: prefix,
+    question_text: "\u63A5\u982D\u8A9E\u3068\u3001\u610F\u5473/\u7528\u4F8B\u306E\u7D44\u307F\u5408\u308F\u305B\u3092\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044",
+    question_interaction: {
+      type: "Association",
+      data: [
+        { id: 47, left: "non-", right: "\u301C\u3067\u306A\u3044 / nonstop, nonsense, non-profit" },
+        { id: 48, left: "over-", right: "\u301C\u3057\u3059\u304E\u308B\u3001\u4E0A\u306B / overcook, overflow, overcome" },
+        { id: 49, left: "post-", right: "\u5F8C\u306B / postpone, postgraduate, post-mortem" },
+        { id: 50, left: "pre-", right: "\u524D\u306B / preview, preheat, prepare" }
+      ]
+    }
+  },
+  {
+    id: 14,
+    category: prefix,
+    question_text: "\u63A5\u982D\u8A9E\u3068\u3001\u610F\u5473/\u7528\u4F8B\u306E\u7D44\u307F\u5408\u308F\u305B\u3092\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044",
+    question_interaction: {
+      type: "Association",
+      data: [
+        { id: 51, left: "re-", right: "\u518D\u3073\u3001\u5F8C\u308D\u3078 / rewrite, return, rebuild" },
+        { id: 52, left: "sub-", right: "\u4E0B\u306B / subway, submarine, submerge" },
+        { id: 53, left: "super-", right: "\u4E0A\u306B\u3001\u8D85\u3048\u3066 / superhuman, supersonic, supervise" },
+        { id: 54, left: "trans-", right: "\u6A2A\u5207\u3063\u3066\u3001\u901A\u3057\u3066 / transport, transatlantic, translate" }
+      ]
+    }
+  },
+  {
+    id: 15,
+    category: prefix,
+    question_text: "\u63A5\u982D\u8A9E\u3068\u3001\u610F\u5473/\u7528\u4F8B\u306E\u7D44\u307F\u5408\u308F\u305B\u3092\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044",
+    question_interaction: {
+      type: "Association",
+      data: [
+        { id: 55, left: "tri-", right: "3\u3064\u306E / tricycle, triangle, tripod" },
+        { id: 56, left: "un-", right: "\u301C\u3067\u306A\u3044\u3001\u301C\u306E\u53CD\u5BFE / unhappy, undo, unfair" },
+        { id: 57, left: "uni-", right: "1\u3064\u306E / unicycle, uniform, unique" },
+        { id: 58, left: "under-", right: "\u301C\u304C\u8DB3\u308A\u306A\u3044\u3001\u4E0B\u306B / undercooked, underestimate, undergo" }
+      ]
+    }
+  },
+  ///語根 四択問題
+  {
+    id: 16,
+    category: rootWord,
+    question_text: "'-aud- / -audi-' \u306E\u610F\u5473/\u7528\u4F8B\u3068\u3057\u3066\u6700\u3082\u9069\u5207\u306A\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+    question_interaction: {
+      type: "MultipleChoice",
+      data: {
+        texts: ["\u6642\u9593", "\u898B\u308B", "\u805E\u304F", "\u904B\u3076"],
+        correct_answer_index: 3
+      }
+    }
+  },
+  {
+    id: 17,
+    category: rootWord,
+    question_text: "'-auto-' \u306E\u610F\u5473/\u7528\u4F8B\u3068\u3057\u3066\u6700\u3082\u9069\u5207\u306A\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+    question_interaction: {
+      type: "MultipleChoice",
+      data: {
+        texts: ["\u624B", "\u81EA\u5DF1", "\u8DB3", "\u751F\u547D"],
+        correct_answer_index: 2
+      }
+    }
+  },
+  {
+    id: 18,
+    category: rootWord,
+    question_text: "'-bene-' \u306E\u610F\u5473/\u7528\u4F8B\u3068\u3057\u3066\u6700\u3082\u9069\u5207\u306A\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+    question_interaction: {
+      type: "MultipleChoice",
+      data: {
+        texts: ["\u5EFA\u3066\u308B", "\u5F15\u304F", "\u826F\u3044\u3001\u3046\u307E\u304F", "\u58CA\u3059"],
+        correct_answer_index: 3
+      }
+    }
+  },
+  {
+    id: 19,
+    category: rootWord,
+    question_text: "'-bio-' \u306E\u610F\u5473/\u7528\u4F8B\u3068\u3057\u3066\u6700\u3082\u9069\u5207\u306A\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+    question_interaction: {
+      type: "MultipleChoice",
+      data: {
+        texts: ["\u5C0E\u304F", "\u751F\u547D", "\u5730\u7403", "\u8A00\u3046\u3001\u8A71\u3059"],
+        correct_answer_index: 2
+      }
+    }
+  },
+  {
+    id: 20,
+    category: rootWord,
+    question_text: "'-chron-' \u306E\u610F\u5473/\u7528\u4F8B\u3068\u3057\u3066\u6700\u3082\u9069\u5207\u306A\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+    question_interaction: {
+      type: "MultipleChoice",
+      data: {
+        texts: ["\u5149", "\u6642\u9593", "\u6C34", "\u97F3"],
+        correct_answer_index: 2
+      }
+    }
+  },
+  //接頭語　四択問題
+  {
+    id: 21,
+    category: prefix,
+    question_text: "'a-/an-' \u306E\u610F\u5473/\u7528\u4F8B\u3068\u3057\u3066\u6700\u3082\u9069\u5207\u306A\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+    question_interaction: {
+      type: "MultipleChoice",
+      data: {
+        texts: ["\u301C\u3067\u306A\u3044\u3001\u301C\u304C\u306A\u3044", "\u518D\u3073\u3001\u5F8C\u308D\u3078", "\u301C\u3057\u3059\u304E\u308B\u3001\u4E0A\u306B", "\u60AA\u3044\u3001\u4E0D\u6B63\u306A"],
+        correct_answer_index: 1
+      }
+    }
+  },
+  {
+    id: 22,
+    category: prefix,
+    question_text: "'anti-' \u306E\u610F\u5473/\u7528\u4F8B\u3068\u3057\u3066\u6700\u3082\u9069\u5207\u306A\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+    question_interaction: {
+      type: "MultipleChoice",
+      data: {
+        texts: ["\u301C\u3067\u306A\u3044", "\u53CD\u5BFE\u3001\u9006", "\u4E2D\u9593\u306E", "1\u3064\u306E"],
+        correct_answer_index: 2
+      }
+    }
+  },
+  {
+    id: 23,
+    category: prefix,
+    question_text: "'auto-' \u306E\u610F\u5473/\u7528\u4F8B\u3068\u3057\u3066\u6700\u3082\u9069\u5207\u306A\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+    question_interaction: {
+      type: "MultipleChoice",
+      data: {
+        texts: ["\u81EA\u5DF1\u3001\u81EA\u52D5", "2\u3064\u306E", "\u5171\u306B\u3001\u4E00\u7DD2\u306B", "\u4E0B\u3078\u3001\u96E2\u308C\u3066\u3001\u53CD\u5BFE"],
+        correct_answer_index: 1
+      }
+    }
+  },
+  {
+    id: 24,
+    category: prefix,
+    question_text: "'bi-' \u306E\u610F\u5473/\u7528\u4F8B\u3068\u3057\u3066\u6700\u3082\u9069\u5207\u306A\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+    question_interaction: {
+      type: "MultipleChoice",
+      data: {
+        texts: ["\u301C\u3067\u306A\u3044\u3001\u301C\u306E\u53CD\u5BFE", "\u5916\u3078\u3001\u5143\u306E", "\u524D\u306B", "2\u3064\u306E"],
+        correct_answer_index: 4
+      }
+    }
+  },
+  {
+    id: 25,
+    category: prefix,
+    question_text: "'co-/con-/com-' \u306E\u610F\u5473/\u7528\u4F8B\u3068\u3057\u3066\u6700\u3082\u9069\u5207\u306A\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
+    question_interaction: {
+      type: "MultipleChoice",
+      data: {
+        texts: ["\u5171\u306B\u3001\u4E00\u7DD2\u306B", "\u301C\u3067\u306A\u3044", "\u9593\u306B\u3001\u301C\u306E\u9593\u3067", "\u5C0F\u3055\u3044"],
+        correct_answer_index: 1
+      }
     }
   }
 ];
-var extra_data_default = { categories, questions };
+var extra_data_default = {
+  categories,
+  questions
+};
 
 // build/dev/javascript/study_app/interface/indexedDB_ffi.mjs
 var CATEGORY_STORE = "categories";
@@ -11122,11 +11408,11 @@ function update_at(list4, at, fun) {
     }
   );
 }
-function update_if(list4, prefix, fun) {
+function update_if(list4, prefix2, fun) {
   return map(
     list4,
     (x) => {
-      let $ = prefix(x);
+      let $ = prefix2(x);
       if ($) {
         return fun(x);
       } else {

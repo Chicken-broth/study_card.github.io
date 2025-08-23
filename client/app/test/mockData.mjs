@@ -3,6 +3,7 @@ export function validCategory() {
   return {
     id: 1,
     name: "Gleam基礎",
+    sub: [{ id: 1, name: "", }]
   };
 }
 
@@ -11,6 +12,8 @@ export function invalidCategoryMissingName() {
   return {
     id: 2,
     nam: "Lustre基礎", // 'name' のタイポ
+    sub: [{ id: 1, name: "", }]
+
   };
 }
 
@@ -19,6 +22,8 @@ export function invalidCategoryIdAsString() {
   return {
     id: "1",
     name: "Gleam基礎",
+    sub: [{ id: 1, name: "", }]
+
   };
 }
 
@@ -28,7 +33,7 @@ export function validMultipleChoiceQuestion() {
     id: 1,
     category: {
       id: 1,
-      name: "Gleam基礎",
+      name: "Gleam基礎", sub_id: 1, sub_name: "",
     },
     question_text: "Gleamの型で、不変なデータ構造を表現するものはどれ？",
     question_interaction: {
@@ -47,7 +52,7 @@ export function validAssociationQuestion() {
     id: 2,
     category: {
       id: 2,
-      name: "Lustre基礎",
+      name: "Lustre基礎", sub_id: 1, sub_name: "",
     },
     question_text: "LustreのTEA（The Elm Architecture）の構成要素を対応付けなさい。",
     question_interaction: {
@@ -67,7 +72,7 @@ export function invalidQuestionWrongInteractionType() {
     id: 3,
     category: {
       id: 1,
-      name: "Gleam基礎",
+      name: "Gleam基礎", sub_id: 1, sub_name: "",
     },
     question_text: "Gleamの型で、不変なデータ構造を表現するものはどれ？",
     question_interaction: {
@@ -86,7 +91,7 @@ export function invalidQuestionWrongAnswerIndexType() {
     id: 4,
     category: {
       id: 1,
-      name: "Gleam基礎",
+      name: "Gleam基礎", sub_id: 1, sub_name: "",
     },
     question_text: "Gleamの型で、不変なデータ構造を表現するものはどれ？",
     question_interaction: {
