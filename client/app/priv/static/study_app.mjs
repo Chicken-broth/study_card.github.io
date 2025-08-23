@@ -3441,6 +3441,9 @@ function h3(attrs, children) {
 function div(attrs, children) {
   return element2("div", attrs, children);
 }
+function hr(attrs) {
+  return element2("hr", attrs, empty_list);
+}
 function li(attrs, children) {
   return element2("li", attrs, children);
 }
@@ -3449,6 +3452,9 @@ function p(attrs, children) {
 }
 function ul(attrs, children) {
   return element2("ul", attrs, children);
+}
+function span(attrs, children) {
+  return element2("span", attrs, children);
 }
 function table(attrs, children) {
   return element2("table", attrs, children);
@@ -5381,7 +5387,7 @@ var Config2 = class extends CustomType {
   }
 };
 function new$6(options) {
-  let init5 = new Config2(
+  let init6 = new Config2(
     true,
     true,
     false,
@@ -5395,7 +5401,7 @@ function new$6(options) {
   );
   return fold(
     options,
-    init5,
+    init6,
     (config, option2) => {
       return option2.apply(config);
     }
@@ -5405,8 +5411,8 @@ function new$6(options) {
 // build/dev/javascript/lustre/lustre/runtime/client/spa.ffi.mjs
 var Spa = class {
   #runtime;
-  constructor(root3, [init5, effects], update9, view10) {
-    this.#runtime = new Runtime(root3, [init5, effects], view10, update9);
+  constructor(root3, [init6, effects], update9, view10) {
+    this.#runtime = new Runtime(root3, [init6, effects], view10, update9);
   }
   send(message) {
     switch (message.constructor) {
@@ -5429,18 +5435,18 @@ var Spa = class {
     this.#runtime.emit(event4, data);
   }
 };
-var start = ({ init: init5, update: update9, view: view10 }, selector, flags) => {
+var start = ({ init: init6, update: update9, view: view10 }, selector, flags) => {
   if (!is_browser()) return new Error(new NotABrowser());
   const root3 = selector instanceof HTMLElement ? selector : document().querySelector(selector);
   if (!root3) return new Error(new ElementNotFound(selector));
-  return new Ok(new Spa(root3, init5(flags), update9, view10));
+  return new Ok(new Spa(root3, init6(flags), update9, view10));
 };
 
 // build/dev/javascript/lustre/lustre.mjs
 var App = class extends CustomType {
-  constructor(init5, update9, view10, config) {
+  constructor(init6, update9, view10, config) {
     super();
-    this.init = init5;
+    this.init = init6;
     this.update = update9;
     this.view = view10;
     this.config = config;
@@ -5454,8 +5460,8 @@ var ElementNotFound = class extends CustomType {
 };
 var NotABrowser = class extends CustomType {
 };
-function application(init5, update9, view10) {
-  return new App(init5, update9, view10, new$6(empty_list));
+function application(init6, update9, view10) {
+  return new App(init6, update9, view10, new$6(empty_list));
 }
 function start3(app, selector, start_args) {
   return guard(
@@ -5724,6 +5730,32 @@ var Model = class extends CustomType {
     this.answer = answer;
   }
 };
+function init(pairs) {
+  let left = map(
+    pairs,
+    (p2) => {
+      return new Item(p2.id, p2.left, new NotFocused(), new NotYetMatched());
+    }
+  );
+  let _block;
+  let _pipe = map(
+    pairs,
+    (p2) => {
+      return new Item(p2.id, p2.right, new NotFocused(), new NotYetMatched());
+    }
+  );
+  _block = shuffle(_pipe);
+  let right = _block;
+  return new Model(
+    pairs,
+    left,
+    right,
+    new None(),
+    new None(),
+    toList([]),
+    new NotAnswered()
+  );
+}
 function reset_item_states(items) {
   return map(
     items,
@@ -5981,29 +6013,6 @@ function view2(model) {
     ])
   );
 }
-function pair_to_model(pairs) {
-  let left = map(
-    pairs,
-    (p2) => {
-      return new Item(p2.id, p2.left, new NotFocused(), new NotYetMatched());
-    }
-  );
-  let right = map(
-    pairs,
-    (p2) => {
-      return new Item(p2.id, p2.right, new NotFocused(), new NotYetMatched());
-    }
-  );
-  return new Model(
-    pairs,
-    left,
-    right,
-    new None(),
-    new None(),
-    toList([]),
-    new NotAnswered()
-  );
-}
 function decoder3() {
   let decode_pair = list2(
     field(
@@ -6029,7 +6038,7 @@ function decoder3() {
   return then$(
     decode_pair,
     (pairs) => {
-      let _pipe = pair_to_model(pairs);
+      let _pipe = init(pairs);
       return success(_pipe);
     }
   );
@@ -10846,10 +10855,10 @@ var questions = [
     question_interaction: {
       type: "Association",
       data: [
-        { id: 1, left: "-aud- / -audi-", right: "\u805E\u304F	/ audience, audible, audition" },
-        { id: 2, left: "-auto-", right: "\u81EA\u5DF1	/ automatic, autobiography, automobile" },
-        { id: 3, left: "-bene-", right: "\u826F\u3044\u3001\u3046\u307E\u304F	/ benefit, benevolent, benign" },
-        { id: 4, left: "-bio-", right: "\u751F\u547D	/ biology, biography, biodegradable" }
+        { id: 1, left: "-aud- / -audi-", right: "\u805E\u304F" },
+        { id: 2, left: "-auto-", right: "\u81EA\u5DF1" },
+        { id: 3, left: "-bene-", right: "\u826F\u3044\u3001\u3046\u307E\u304F" },
+        { id: 4, left: "-bio-", right: "\u751F\u547D" }
       ]
     }
   },
@@ -10860,10 +10869,10 @@ var questions = [
     question_interaction: {
       type: "Association",
       data: [
-        { id: 5, left: "-chron-", right: "\u6642\u9593	/ chronological, synchronize, chronic" },
-        { id: 6, left: "-dict-", right: "\u8A00\u3046\u3001\u8A71\u3059	/ dictionary, predict, dictate" },
-        { id: 7, left: "-duc- / -duct-", right: "\u5C0E\u304F	/ educate, conduct, introduce" },
-        { id: 8, left: "-gen-", right: "\u751F\u3080\u3001\u751F\u7523\u3059\u308B\u3001\u7A2E\u985E	/ generate, genetic, genus" }
+        { id: 5, left: "-chron-", right: "\u6642\u9593" },
+        { id: 6, left: "-dict-", right: "\u8A00\u3046\u3001\u8A71\u3059" },
+        { id: 7, left: "-duc- / -duct-", right: "\u5C0E\u304F" },
+        { id: 8, left: "-gen-", right: "\u751F\u3080\u3001\u751F\u7523\u3059\u308B\u3001\u7A2E\u985E" }
       ]
     }
   },
@@ -10874,10 +10883,10 @@ var questions = [
     question_interaction: {
       type: "Association",
       data: [
-        { id: 9, left: "-geo-", right: "\u5730\u7403	/ geography, geology, geometric" },
-        { id: 10, left: "-graph- / -gram-", right: "\u66F8\u304F\u3001\u63CF\u304F\u3001\u8A18\u9332\u3059\u308B	/ photograph, telegram, graphic" },
-        { id: 11, left: "-hydr-", right: "\u6C34	/ hydrate, hydraulic, hydroplane" },
-        { id: 12, left: "-log- / -logy-", right: "\u8A00\u8449\u3001\u7814\u7A76	/ dialogue, biology, psychology" }
+        { id: 9, left: "-geo-", right: "\u5730\u7403" },
+        { id: 10, left: "-graph- / -gram-", right: "\u66F8\u304F\u3001\u63CF\u304F\u3001\u8A18\u9332\u3059\u308B" },
+        { id: 11, left: "-hydr-", right: "\u6C34" },
+        { id: 12, left: "-log- / -logy-", right: "\u8A00\u8449\u3001\u7814\u7A76" }
       ]
     }
   },
@@ -10888,10 +10897,10 @@ var questions = [
     question_interaction: {
       type: "Association",
       data: [
-        { id: 13, left: "-man- / -manu-", right: "\u624B	/ manual, manufacture, manipulate" },
-        { id: 14, left: "-meter- / -metr-", right: "\u6E2C\u308B	/ thermometer, metric, diameter" },
-        { id: 15, left: "-ped- / -pod-", right: "\u8DB3	/ pedal, pedestrian, tripod" },
-        { id: 16, left: "-phon-", right: "\u97F3	/ telephone, phonics, symphony" }
+        { id: 13, left: "-man- / -manu-", right: "\u624B" },
+        { id: 14, left: "-meter- / -metr-", right: "\u6E2C\u308B" },
+        { id: 15, left: "-ped- / -pod-", right: "\u8DB3" },
+        { id: 16, left: "-phon-", right: "\u97F3" }
       ]
     }
   },
@@ -10902,10 +10911,10 @@ var questions = [
     question_interaction: {
       type: "Association",
       data: [
-        { id: 17, left: "-photo-", right: "\u5149	/ photograph, photosynthesis, photon" },
-        { id: 18, left: "-port-", right: "\u904B\u3076	/ transport, portable, import" },
-        { id: 19, left: "-rupt-", right: "\u58CA\u3059	/ erupt, interrupt, bankrupt" },
-        { id: 20, left: "-scrib- / -script-", right: "\u66F8\u304F	/ scribble, describe, manuscript" }
+        { id: 17, left: "-photo-", right: "\u5149" },
+        { id: 18, left: "-port-", right: "\u904B\u3076" },
+        { id: 19, left: "-rupt-", right: "\u58CA\u3059" },
+        { id: 20, left: "-scrib- / -script-", right: "\u66F8\u304F" }
       ]
     }
   },
@@ -10916,10 +10925,10 @@ var questions = [
     question_interaction: {
       type: "Association",
       data: [
-        { id: 21, left: "-spec- / -spect-", right: "\u898B\u308B	/ inspect, spectator, perspective" },
-        { id: 22, left: "-struct-", right: "\u5EFA\u3066\u308B	/ construct, structure, destruction" },
-        { id: 23, left: "-tele-", right: "\u9060\u3044	/ telephone, television, telescope" },
-        { id: 24, left: "-terr-", right: "\u5730\u3001\u571F\u5730	/ terrain, territory, terrestrial" }
+        { id: 21, left: "-spec- / -spect-", right: "\u898B\u308B" },
+        { id: 22, left: "-struct-", right: "\u5EFA\u3066\u308B" },
+        { id: 23, left: "-tele-", right: "\u9060\u3044" },
+        { id: 24, left: "-terr-", right: "\u5730\u3001\u571F\u5730" }
       ]
     }
   },
@@ -10930,10 +10939,10 @@ var questions = [
     question_interaction: {
       type: "Association",
       data: [
-        { id: 25, left: "-therm-", right: "\u71B1	/ thermometer, thermal, thermostat" },
-        { id: 26, left: "-tract-", right: "\u5F15\u304F	/ attract, subtract, tractor" },
-        { id: 27, left: "-ven- / -vent-", right: "\u6765\u308B	/ convention, intervene, prevent" },
-        { id: 28, left: "-vert- / -vers-", right: "\u56DE\u3059	/ convert, reverse, versatile" }
+        { id: 25, left: "-therm-", right: "\u71B1" },
+        { id: 26, left: "-tract-", right: "\u5F15\u304F" },
+        { id: 27, left: "-ven- / -vent-", right: "\u6765\u308B" },
+        { id: 28, left: "-vert- / -vers-", right: "\u56DE\u3059" }
       ]
     }
   },
@@ -10944,8 +10953,8 @@ var questions = [
     question_interaction: {
       type: "Association",
       data: [
-        { id: 29, left: "-vid- / -vis-", right: "\u898B\u308B	/ video, vision, visible" },
-        { id: 30, left: "-voc- / -vok-", right: "\u58F0\u3001\u547C\u3076	/ vocal, invoke, vocabulary" }
+        { id: 29, left: "-vid- / -vis-", right: "\u898B\u308B" },
+        { id: 30, left: "-voc- / -vok-", right: "\u58F0\u3001\u547C\u3076" }
       ]
     }
   },
@@ -10956,10 +10965,10 @@ var questions = [
     question_interaction: {
       type: "Association",
       data: [
-        { id: 31, left: "a-/an-", right: "\u301C\u3067\u306A\u3044\u3001\u301C\u304C\u306A\u3044 / atypical, anarchy, atheist" },
-        { id: 32, left: "anti-", right: "\u53CD\u5BFE\u3001\u9006 / antisocial, antidote, anticlimax" },
-        { id: 33, left: "auto-", right: "\u81EA\u5DF1\u3001\u81EA\u52D5 / automatic, autobiography, autonomous" },
-        { id: 34, left: "bi-", right: "2\u3064\u306E / bicycle, bilingual, bimonthly" }
+        { id: 31, left: "a-/an-", right: "\u301C\u3067\u306A\u3044\u3001\u301C\u304C\u306A\u3044" },
+        { id: 32, left: "anti-", right: "\u53CD\u5BFE\u3001\u9006" },
+        { id: 33, left: "auto-", right: "\u81EA\u5DF1\u3001\u81EA\u52D5" },
+        { id: 34, left: "bi-", right: "2\u3064\u306E" }
       ]
     }
   },
@@ -10970,10 +10979,10 @@ var questions = [
     question_interaction: {
       type: "Association",
       data: [
-        { id: 35, left: "co-/con-/com-", right: "\u5171\u306B\u3001\u4E00\u7DD2\u306B / cooperate, connect, combine" },
-        { id: 36, left: "de-", right: "\u4E0B\u3078\u3001\u96E2\u308C\u3066\u3001\u53CD\u5BFE / decrease, detach, decode" },
-        { id: 37, left: "dis-", right: "\u301C\u3067\u306A\u3044\u3001\u301C\u306E\u53CD\u5BFE / dishonest, disagree, disappear" },
-        { id: 38, left: "ex-", right: "\u5916\u3078\u3001\u5143\u306E / exit, exclude, ex-president" }
+        { id: 35, left: "co-/con-/com-", right: "\u5171\u306B\u3001\u4E00\u7DD2\u306B" },
+        { id: 36, left: "de-", right: "\u4E0B\u3078\u3001\u96E2\u308C\u3066\u3001\u53CD\u5BFE" },
+        { id: 37, left: "dis-", right: "\u301C\u3067\u306A\u3044\u3001\u301C\u306E\u53CD\u5BFE" },
+        { id: 38, left: "ex-", right: "\u5916\u3078\u3001\u5143\u306E" }
       ]
     }
   },
@@ -10984,10 +10993,10 @@ var questions = [
     question_interaction: {
       type: "Association",
       data: [
-        { id: 39, left: "fore-", right: "\u524D\u306B / forecast, foretell, foreword" },
-        { id: 40, left: "il-/im-/in-/ir-", right: "\u301C\u3067\u306A\u3044 / illegal, impossible, inactive, irregular" },
-        { id: 41, left: "inter-", right: "\u9593\u306B\u3001\u301C\u306E\u9593\u3067 / international, interact, interlude" },
-        { id: 42, left: "mal-", right: "\u60AA\u3044\u3001\u4E0D\u6B63\u306A / malfunction, malpractice, malnourished" }
+        { id: 39, left: "fore-", right: "\u524D\u306B" },
+        { id: 40, left: "il-/im-/in-/ir-", right: "\u301C\u3067\u306A\u3044" },
+        { id: 41, left: "inter-", right: "\u9593\u306B\u3001\u301C\u306E\u9593\u3067" },
+        { id: 42, left: "mal-", right: "\u60AA\u3044\u3001\u4E0D\u6B63\u306A" }
       ]
     }
   },
@@ -10998,10 +11007,10 @@ var questions = [
     question_interaction: {
       type: "Association",
       data: [
-        { id: 43, left: "micro-", right: "\u5C0F\u3055\u3044 / microscope, microcosm, microwave" },
-        { id: 44, left: "mid-", right: "\u4E2D\u9593\u306E / midway, midnight, midterm" },
-        { id: 45, left: "mono-", right: "1\u3064\u306E / monologue, monotone, monopoly" },
-        { id: 46, left: "multi-", right: "\u591A\u304F\u306E / multicolor, multimedia, multiple" }
+        { id: 43, left: "micro-", right: "\u5C0F\u3055\u3044" },
+        { id: 44, left: "mid-", right: "\u4E2D\u9593\u306E" },
+        { id: 45, left: "mono-", right: "1\u3064\u306E" },
+        { id: 46, left: "multi-", right: "\u591A\u304F\u306E" }
       ]
     }
   },
@@ -11012,10 +11021,10 @@ var questions = [
     question_interaction: {
       type: "Association",
       data: [
-        { id: 47, left: "non-", right: "\u301C\u3067\u306A\u3044 / nonstop, nonsense, non-profit" },
-        { id: 48, left: "over-", right: "\u301C\u3057\u3059\u304E\u308B\u3001\u4E0A\u306B / overcook, overflow, overcome" },
-        { id: 49, left: "post-", right: "\u5F8C\u306B / postpone, postgraduate, post-mortem" },
-        { id: 50, left: "pre-", right: "\u524D\u306B / preview, preheat, prepare" }
+        { id: 47, left: "non-", right: "\u301C\u3067\u306A\u3044" },
+        { id: 48, left: "over-", right: "\u301C\u3057\u3059\u304E\u308B\u3001\u4E0A\u306B" },
+        { id: 49, left: "post-", right: "\u5F8C\u306B" },
+        { id: 50, left: "pre-", right: "\u524D\u306B" }
       ]
     }
   },
@@ -11026,10 +11035,10 @@ var questions = [
     question_interaction: {
       type: "Association",
       data: [
-        { id: 51, left: "re-", right: "\u518D\u3073\u3001\u5F8C\u308D\u3078 / rewrite, return, rebuild" },
-        { id: 52, left: "sub-", right: "\u4E0B\u306B / subway, submarine, submerge" },
-        { id: 53, left: "super-", right: "\u4E0A\u306B\u3001\u8D85\u3048\u3066 / superhuman, supersonic, supervise" },
-        { id: 54, left: "trans-", right: "\u6A2A\u5207\u3063\u3066\u3001\u901A\u3057\u3066 / transport, transatlantic, translate" }
+        { id: 51, left: "re-", right: "\u518D\u3073\u3001\u5F8C\u308D\u3078" },
+        { id: 52, left: "sub-", right: "\u4E0B\u306B" },
+        { id: 53, left: "super-", right: "\u4E0A\u306B\u3001\u8D85\u3048\u3066" },
+        { id: 54, left: "trans-", right: "\u6A2A\u5207\u3063\u3066\u3001\u901A\u3057\u3066" }
       ]
     }
   },
@@ -11040,10 +11049,10 @@ var questions = [
     question_interaction: {
       type: "Association",
       data: [
-        { id: 55, left: "tri-", right: "3\u3064\u306E / tricycle, triangle, tripod" },
-        { id: 56, left: "un-", right: "\u301C\u3067\u306A\u3044\u3001\u301C\u306E\u53CD\u5BFE / unhappy, undo, unfair" },
-        { id: 57, left: "uni-", right: "1\u3064\u306E / unicycle, uniform, unique" },
-        { id: 58, left: "under-", right: "\u301C\u304C\u8DB3\u308A\u306A\u3044\u3001\u4E0B\u306B / undercooked, underestimate, undergo" }
+        { id: 55, left: "tri-", right: "3\u3064\u306E" },
+        { id: 56, left: "un-", right: "\u301C\u3067\u306A\u3044\u3001\u301C\u306E\u53CD\u5BFE" },
+        { id: 57, left: "uni-", right: "1\u3064\u306E" },
+        { id: 58, left: "under-", right: "\u301C\u304C\u8DB3\u308A\u306A\u3044\u3001\u4E0B\u306B" }
       ]
     }
   },
@@ -11243,7 +11252,7 @@ function setup(dbName, version, data) {
           historyStore.add({
             id: q.id,
             category: q.category,
-            answer: "NotAnswered"
+            answer: ["NotAnswered"]
           });
         });
       }
@@ -11571,7 +11580,7 @@ function get_initial_data_effects(db) {
     toList([get_categories, get_question_id_and_category_list, get_history])
   );
 }
-function init(db) {
+function init2(db) {
   return [
     new Model4(
       db,
@@ -11984,79 +11993,123 @@ function view_error(error) {
     return text3("");
   }
 }
-function view_shuffle(shuffle3) {
-  return div(
-    toList([]),
+function section_container_style() {
+  return styles(
     toList([
-      input(
-        toList([
-          type_("checkbox"),
-          checked(shuffle3),
-          on_check((checked2) => {
-            return new SwitchShuffle(checked2);
-          })
-        ])
-      )
+      ["display", "inline-flex"],
+      ["flex-direction", "column"],
+      ["padding", "0.5rem"],
+      ["border-radius", "0.5rem"],
+      ["background-color", "#f0f0f0"]
     ])
   );
 }
-function view_all_category_selection(checked2) {
-  return div(
+function section_container_row_style() {
+  return styles(
     toList([
-      styles(
-        toList([
-          ["padding", "0.5rem"],
-          ["border-radius", "0.5rem"],
-          ["background-color", "#f0f0f0"],
-          ["display", "inline-flex"],
-          ["align-items", "center"],
-          ["cursor", "pointer"],
-          ["box-shadow", "0 2px 4px rgba(0, 0, 0, 0.1)"],
-          ["transition", "background-color 0.3s ease"]
-        ])
-      )
-    ]),
+      ["display", "inline-flex"],
+      ["padding", "0.5rem"],
+      ["border-radius", "0.5rem"],
+      ["background-color", "#f0f0f0"]
+    ])
+  );
+}
+function view_checkbox_label(checked2, label2, handler) {
+  return label(
+    toList([styles(toList([["cursor", "pointer"]]))]),
     toList([
       input(
         toList([
           type_("checkbox"),
           checked(checked2),
-          on_check(
-            (checked3) => {
-              return new SWitchAllCategory(checked3);
-            }
-          )
+          on_check((checked3) => {
+            return handler(checked3);
+          })
         ])
       ),
-      label(toList([]), toList([text3("switch all select")]))
+      span(
+        toList([styles(toList([["margin-left", "0.5rem"]]))]),
+        toList([text3(label2)])
+      )
     ])
   );
 }
-function view_category_selection(selected_categories) {
+function view_shuffle(shuffle3) {
   return div(
-    toList([styles(toList([["margin-left", "1rem"]]))]),
-    map(
-      selected_categories,
-      (c) => {
-        return div(
-          toList([styles(toList([["margin-right", "1rem"]]))]),
-          toList([
-            input(
-              toList([
-                type_("checkbox"),
-                checked(c.is_selected),
-                on_check(
-                  (checked2) => {
-                    return new SelectCategory(c.category.id, checked2);
-                  }
-                )
-              ])
-            ),
-            label(toList([]), toList([text3(c.category.name)]))
-          ])
-        );
-      }
-    )
+    toList([section_container_style()]),
+    toList([
+      view_checkbox_label(
+        shuffle3,
+        "\u30B7\u30E3\u30C3\u30D5\u30EB\u3059\u308B",
+        (var0) => {
+          return new SwitchShuffle(var0);
+        }
+      )
+    ])
+  );
+}
+function view_radio_with_label(checked2, label2, handler) {
+  return label(
+    toList([styles(toList([["cursor", "pointer"]]))]),
+    toList([
+      input(
+        toList([
+          on_check(handler),
+          type_("radio"),
+          name("count"),
+          value(label2),
+          checked(checked2)
+        ])
+      ),
+      span(
+        toList([styles(toList([["margin-left", "0.5rem"]]))]),
+        toList([text3(label2)])
+      )
+    ])
+  );
+}
+function view_category_selection(selected_categories, checked2) {
+  return div(
+    toList([section_container_style()]),
+    toList([
+      view_checkbox_label(
+        checked2,
+        "switch all select",
+        (var0) => {
+          return new SWitchAllCategory(var0);
+        }
+      ),
+      hr(
+        toList([
+          styles(
+            toList([["border", "1px solid #ccc"], ["margin", "0.5rem 0"]])
+          )
+        ])
+      ),
+      div(
+        toList([
+          styles(
+            toList([
+              ["display", "flex"],
+              ["flex-direction", "column"],
+              ["margin-left", "1rem"]
+            ])
+          )
+        ]),
+        map(
+          selected_categories,
+          (c) => {
+            return view_checkbox_label(
+              c.is_selected,
+              c.category.name,
+              (_capture) => {
+                return new SelectCategory(c.category.id, _capture);
+              }
+            );
+          }
+        )
+      )
+    ])
   );
 }
 function view_count_selection(quest_count) {
@@ -12077,54 +12130,66 @@ function view_count_selection(quest_count) {
     }
   };
   return div(
-    toList([]),
+    toList([section_container_row_style()]),
     map(
       counts,
       (count) => {
         let is_selected = isEqual(quest_count, count);
-        return label(
-          toList([]),
-          toList([
-            input(
-              toList([
-                on_check((_) => {
-                  return new SelectCount(count);
-                }),
-                type_("radio"),
-                name("count"),
-                value(to_s(count)),
-                checked(is_selected)
-              ])
-            ),
-            text3(to_s(count))
-          ])
+        return view_radio_with_label(
+          is_selected,
+          to_s(count),
+          (_) => {
+            return new SelectCount(count);
+          }
         );
       }
     )
   );
 }
-function view_actions(is_start_quiz_enabled, show_history, quiz_result) {
+function view_actions(is_start_quiz_enabled, show_history) {
+  let button_style = (is_primary) => {
+    return toList([
+      styles(
+        toList([
+          ["padding", "0.5rem 1rem"],
+          ["border", "none"],
+          ["border-radius", "0.5rem"],
+          [
+            "color",
+            (() => {
+              if (is_primary) {
+                return "#393944ff";
+              } else {
+                return "#6c757d";
+              }
+            })()
+          ],
+          ["box-shadow", "0 2px 4px rgba(0, 0, 0, 0.1"],
+          ["transition", "background-color 0.2s ease"]
+        ])
+      )
+    ]);
+  };
   return div(
-    toList([]),
+    toList([styles(toList([["display", "flex"], ["gap", "1rem"]]))]),
     toList([
       button(
-        toList([
-          on_click(new StartQuiz()),
-          disabled(negate(is_start_quiz_enabled))
-        ]),
+        (() => {
+          let _pipe = toList([
+            on_click(new StartQuiz()),
+            disabled(negate(is_start_quiz_enabled))
+          ]);
+          return append(_pipe, button_style(is_start_quiz_enabled));
+        })(),
         toList([text3("\u30AF\u30A4\u30BA\u958B\u59CB")])
       ),
       button(
-        toList([on_click(new ViewHistory())]),
+        (() => {
+          let _pipe = toList([on_click(new ViewHistory())]);
+          return append(_pipe, button_style(true));
+        })(),
         toList([text3("\u5B66\u7FD2\u5C65\u6B74")])
-      ),
-      (() => {
-        if (show_history) {
-          return view5(quiz_result);
-        } else {
-          return text3("");
-        }
-      })()
+      )
     ])
   );
 }
@@ -12137,9 +12202,8 @@ function view_loading(loading) {
 }
 function view_db_selection(data_set_list2, selected_db) {
   return div(
-    toList([]),
+    toList([section_container_row_style()]),
     toList([
-      label(toList([]), toList([text3("\u554F\u984C\u96C6\u9078\u629E")])),
       select(
         toList([on_change((var0) => {
           return new SelectDb(var0);
@@ -12175,22 +12239,45 @@ function view6(model) {
   return div(
     toList([]),
     toList([
-      h1(toList([]), toList([text3("Quiz App")])),
+      h1(
+        toList([styles(toList([["text-align", "center"]]))]),
+        toList([text3("Quiz App")])
+      ),
       view_error(model.error),
+      h2(
+        toList([styles(toList([["margin-top", "1rem"]]))]),
+        toList([text3("\u554F\u984C\u96C6\u9078\u629E")])
+      ),
       view_db_selection(model.data_set_list, model.data_set_name),
-      h2(toList([]), toList([text3("\u30AB\u30C6\u30B4\u30EA")])),
-      view_all_category_selection(checked2),
-      view_category_selection(model.selected_category),
-      h2(toList([]), toList([text3("shuffle")])),
+      h2(
+        toList([styles(toList([["margin-top", "1rem"]]))]),
+        toList([text3("\u30AB\u30C6\u30B4\u30EA")])
+      ),
+      view_category_selection(model.selected_category, checked2),
+      h2(
+        toList([styles(toList([["margin-top", "1rem"]]))]),
+        toList([text3("\u30AA\u30D7\u30B7\u30E7\u30F3")])
+      ),
       view_shuffle(model.shuffle_or_not),
-      h2(toList([]), toList([text3("\u51FA\u984C\u6570\u9078\u629E")])),
+      h2(
+        toList([styles(toList([["margin-top", "1rem"]]))]),
+        toList([text3("\u51FA\u984C\u6570\u9078\u629E")])
+      ),
       view_count_selection(model.selected_count),
       div(
-        toList([]),
-        toList([text3("Loaded questions:" + to_string(qty))])
+        toList([styles(toList([["margin-top", "1rem"]]))]),
+        toList([text3("\u9078\u629E\u4E2D\u306E\u554F\u984C\u6570: " + to_string(qty))])
       ),
-      view_actions(is_start_quiz_enabled, model.show_history, model.quiz_result),
-      view_loading(model.loading)
+      view_actions(is_start_quiz_enabled, model.show_history),
+      view_loading(model.loading),
+      (() => {
+        let $ = model.show_history;
+        if ($) {
+          return view5(model.quiz_result);
+        } else {
+          return text3("");
+        }
+      })()
     ])
   );
 }
@@ -12366,7 +12453,7 @@ var OutCome2 = class extends CustomType {
 };
 var GoToResultScreen = class extends CustomType {
 };
-function init2(db, questions2) {
+function init3(db, questions2) {
   let _pipe = map(questions2, (q) => {
     return q.id;
   });
@@ -12787,7 +12874,7 @@ var GoToHome = class extends CustomType {
 };
 var OutCome3 = class extends CustomType {
 };
-function init3(db, score, total_questions, quiz_result) {
+function init4(db, score, total_questions, quiz_result) {
   echo4(quiz_result, "src/pages/result_screen.gleam", 33);
   return [new Model6(db, score, total_questions, quiz_result), none2()];
 }
@@ -13031,7 +13118,7 @@ var DataInitialized = class extends CustomType {
     this[0] = $0;
   }
 };
-function init4(_) {
+function init5(_) {
   return [
     new Loading(),
     (() => {
@@ -13050,7 +13137,7 @@ function update8(model, msg) {
     if (msg instanceof DataInitialized) {
       let db = msg[0];
       echo5("DataInitialized", "src/study_app.gleam", 49);
-      let $ = init(db);
+      let $ = init2(db);
       let home_model = $[0];
       let home_effect = $[1];
       return [
@@ -13072,7 +13159,7 @@ function update8(model, msg) {
       if (home_msg instanceof OutCome) {
         let questions2 = home_msg[0];
         echo5("Home -> QuizScreen", "src/study_app.gleam", 65);
-        let screen_ini = init2(new_home.db, questions2);
+        let screen_ini = init3(new_home.db, questions2);
         if (screen_ini instanceof Ok) {
           let quiz_model = screen_ini[0];
           return [new QuizScreen(quiz_model), none2()];
@@ -13098,7 +13185,7 @@ function update8(model, msg) {
       let new_quiz_model = $[0];
       let quiz_eff = $[1];
       if (quiz_msg instanceof OutCome2) {
-        let $1 = init3(
+        let $1 = init4(
           new_quiz_model.db,
           new_quiz_model.score,
           new_quiz_model.questions_count,
@@ -13134,7 +13221,7 @@ function update8(model, msg) {
       let new_model = $[0];
       let eff = $[1];
       if (result_msg instanceof OutCome3) {
-        let $1 = init(quiz_model.db);
+        let $1 = init2(quiz_model.db);
         let new_modek = $1[0];
         let new_eff = $1[1];
         return [
@@ -13184,7 +13271,7 @@ function view9(model) {
   }
 }
 function main() {
-  let app = application(init4, update8, view9);
+  let app = application(init5, update8, view9);
   let $ = start3(app, "#app", void 0);
   if (!($ instanceof Ok)) {
     throw makeError(

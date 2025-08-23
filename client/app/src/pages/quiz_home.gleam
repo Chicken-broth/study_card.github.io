@@ -345,72 +345,92 @@ fn view_error(error: Option(db.Err)) -> Element(Msg) {
   }
 }
 
-fn view_shuffle(shuffle: Bool) -> Element(Msg) {
-  html.div([], [
-    html.input([
-      attr.type_("checkbox"),
-      attr.checked(shuffle),
-      event.on_check(fn(checked) { SwitchShuffle(checked) }),
-    ]),
+// style関数
+//　背景は灰色、丸角、縦並び
+fn section_container_style() {
+  attr.styles([
+    #("display", "inline-flex"),
+    #("flex-direction", "column"),
+    #("padding", "0.5rem"),
+    #("border-radius", "0.5rem"),
+    #("background-color", "#f0f0f0"),
   ])
 }
 
-///全カテゴリを選択/未選択にするボタン
-fn view_all_category_selection(checked: Bool) -> Element(Msg) {
-  html.div(
-    [
-      attr.styles([
-        // #("margin", "1rem"),
-        #("padding", "0.5rem"),
-        #("border-radius", "0.5rem"),
-        #("background-color", "#f0f0f0"),
-        #("display", "inline-flex"),
-        #("align-items", "center"),
-        #("cursor", "pointer"),
-        #("box-shadow", "0 2px 4px rgba(0, 0, 0, 0.1)"),
-        #("transition", "background-color 0.3s ease"),
-      ]),
-      // event.on_click(SWitchAllCategory(checked)),
-    ],
-    [
-      html.input([
-        attr.type_("checkbox"),
-        attr.checked(checked),
-        event.on_check(fn(checked) { SWitchAllCategory(checked) }),
-      ]),
-      html.label([], [html.text("switch all select")]),
-    ],
-  )
+//横並び
+fn section_container_row_style() {
+  attr.styles([
+    #("display", "inline-flex"),
+    #("padding", "0.5rem"),
+    #("border-radius", "0.5rem"),
+    #("background-color", "#f0f0f0"),
+  ])
 }
 
-///角を丸くする
-///ボタンの背景色を灰色に
-///モダンなボタン
-/// カテゴリ選択UIをレンダリングする。
+fn view_shuffle(shuffle: Bool) -> Element(Msg) {
+  html.div([section_container_style()], [
+    view_checkbox_label(shuffle, "シャッフルする", SwitchShuffle),
+  ])
+}
+
+fn view_checkbox_label(
+  checked: Bool,
+  label: String,
+  handler: fn(Bool) -> Msg,
+) -> Element(Msg) {
+  html.label([attr.styles([#("cursor", "pointer")])], [
+    html.input([
+      attr.type_("checkbox"),
+      attr.checked(checked),
+      event.on_check(fn(checked) { handler(checked) }),
+    ]),
+    html.span([attr.styles([#("margin-left", "0.5rem")])], [html.text(label)]),
+  ])
+}
+
+fn view_radio_with_label(
+  checked: Bool,
+  label: String,
+  handler: fn(Bool) -> Msg,
+) -> Element(Msg) {
+  html.label([attr.styles([#("cursor", "pointer")])], [
+    html.input([
+      event.on_check(handler),
+      attr.type_("radio"),
+      attr.name("count"),
+      attr.value(label),
+      attr.checked(checked),
+    ]),
+    html.span([attr.styles([#("margin-left", "0.5rem")])], [html.text(label)]),
+  ])
+}
+
 fn view_category_selection(
   selected_categories: List(SelectedCategory),
+  checked: Bool,
 ) -> Element(Msg) {
-  html.div(
-    [attr.styles([#("margin-left", "1rem")])],
-    list.map(selected_categories, fn(c) {
-      html.div(
-        [
-          attr.styles([#("margin-right", "1rem")]),
-          // event.on_click(SelectCategory(c.category.id, c.is_selected)),
-        ],
-        [
-          html.input([
-            attr.type_("checkbox"),
-            attr.checked(c.is_selected),
-            event.on_check(fn(checked) {
-              SelectCategory(c.category.id, checked)
-            }),
-          ]),
-          html.label([], [html.text(c.category.name)]),
-        ],
-      )
-    }),
-  )
+  html.div([section_container_style()], [
+    view_checkbox_label(checked, "switch all select", SWitchAllCategory),
+    //ボーダーラインを追加
+    html.hr([
+      attr.styles([#("border", "1px solid #ccc"), #("margin", "0.5rem 0")]),
+    ]),
+    html.div(
+      [
+        attr.styles([
+          #("display", "flex"),
+          #("flex-direction", "column"),
+          #("margin-left", "1rem"),
+        ]),
+      ],
+      list.map(selected_categories, fn(c) {
+        view_checkbox_label(c.is_selected, c.category.name, SelectCategory(
+          c.category.id,
+          _,
+        ))
+      }),
+    ),
+  ])
 }
 
 /// 問題数選択UIをレンダリングする。
@@ -423,43 +443,59 @@ fn view_count_selection(quest_count: QuestionCount) -> Element(Msg) {
     }
   }
   html.div(
-    [],
+    [section_container_row_style()],
     list.map(counts, fn(count) {
       let is_selected = quest_count == count
-      html.label([], [
-        html.input([
-          event.on_check(fn(_) { SelectCount(count) }),
-          attr.type_("radio"),
-          attr.name("count"),
-          attr.value(to_s(count)),
-          attr.checked(is_selected),
-        ]),
-        html.text(to_s(count)),
-      ])
+      view_radio_with_label(is_selected, to_s(count), fn(_) {
+        SelectCount(count)
+      })
     }),
   )
 }
 
 /// アクションボタン（クイズ開始、学習履歴）をレンダリングする。
-fn view_actions(
-  is_start_quiz_enabled: Bool,
-  show_history: Bool,
-  quiz_result: QuizResults,
-) -> Element(Msg) {
-  html.div([], [
-    html.button(
-      [
-        event.on_click(StartQuiz),
-        attr.disabled(bool.negate(is_start_quiz_enabled)),
-      ],
-      [html.text("クイズ開始")],
-    ),
-    html.button([event.on_click(ViewHistory)], [html.text("学習履歴")]),
-    case show_history {
-      True -> quiz_result.view(quiz_result)
-      False -> html.text("")
-    },
-  ])
+fn view_actions(is_start_quiz_enabled: Bool, show_history: Bool) -> Element(Msg) {
+  let button_style = fn(is_primary) {
+    [
+      attr.styles([
+        #("padding", "0.5rem 1rem"),
+        #("border", "none"),
+        #("border-radius", "0.5rem"),
+        // #("color", "white"),
+        // #("font-weight", "bold"),
+        #("color", case is_primary {
+          True -> "#393944ff"
+          //黒
+          False -> "#6c757d"
+        }),
+        #("box-shadow", "0 2px 4px rgba(0, 0, 0, 0.1"),
+        #("transition", "background-color 0.2s ease"),
+      ]),
+    ]
+  }
+  html.div(
+    [
+      attr.styles([
+        // #("margin-right", "1rem"),
+        #("display", "flex"),
+        #("gap", "1rem"),
+      ]),
+    ],
+    [
+      html.button(
+        [
+          event.on_click(StartQuiz),
+          attr.disabled(bool.negate(is_start_quiz_enabled)),
+        ]
+          |> list.append(button_style(is_start_quiz_enabled)),
+        [html.text("クイズ開始")],
+      ),
+      html.button(
+        [event.on_click(ViewHistory)] |> list.append(button_style(True)),
+        [html.text("学習履歴")],
+      ),
+    ],
+  )
 }
 
 /// ローディングメッセージを表示する。
@@ -474,8 +510,7 @@ fn view_db_selection(
   data_set_list: List(String),
   selected_db: String,
 ) -> Element(Msg) {
-  html.div([], [
-    html.label([], [html.text("問題集選択")]),
+  html.div([section_container_row_style()], [
     html.select(
       [event.on_change(SelectDb)],
       list.map(data_set_list, fn(data_set_name) {
@@ -498,22 +533,27 @@ pub fn view(model: Model) -> Element(Msg) {
   let checked =
     list.map(model.selected_category, fn(c) { c.is_selected })
     |> list.any(function.identity)
-  // list.length(model.categories) > 0
-  // && list.length(model.question_id_categories) > 0
   let qty = list.length(model.selected_question_ids)
   html.div([], [
-    html.h1([], [html.text("Quiz App")]),
+    html.h1([attr.styles([#("text-align", "center")])], [html.text("Quiz App")]),
     view_error(model.error),
+    html.h2([attr.styles([#("margin-top", "1rem")])], [html.text("問題集選択")]),
     view_db_selection(model.data_set_list, model.data_set_name),
-    html.h2([], [html.text("カテゴリ")]),
-    view_all_category_selection(checked),
-    view_category_selection(model.selected_category),
-    html.h2([], [html.text("shuffle")]),
+    html.h2([attr.styles([#("margin-top", "1rem")])], [html.text("カテゴリ")]),
+    // view_all_category_selection(checked),
+    view_category_selection(model.selected_category, checked),
+    html.h2([attr.styles([#("margin-top", "1rem")])], [html.text("オプション")]),
     view_shuffle(model.shuffle_or_not),
-    html.h2([], [html.text("出題数選択")]),
+    html.h2([attr.styles([#("margin-top", "1rem")])], [html.text("出題数選択")]),
     view_count_selection(model.selected_count),
-    html.div([], [html.text("Loaded questions:" <> int.to_string(qty))]),
-    view_actions(is_start_quiz_enabled, model.show_history, model.quiz_result),
+    html.div([attr.styles([#("margin-top", "1rem")])], [
+      html.text("選択中の問題数: " <> int.to_string(qty)),
+    ]),
+    view_actions(is_start_quiz_enabled, model.show_history),
     view_loading(model.loading),
+    case model.show_history {
+      True -> quiz_result.view(model.quiz_result)
+      False -> html.text("")
+    },
   ])
 }

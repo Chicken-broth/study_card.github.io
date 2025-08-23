@@ -1,4 +1,4 @@
-import "fake-indexeddb/auto";
+// import "fake-indexeddb/auto";
 import default_data from './data.mjs'
 import extra_data from './extra_data.mjs';
 import { Ok, Error } from "../gleam.mjs";
