@@ -104,6 +104,7 @@ const categories = [
  *   - `correct_answer_index`: 正解の選択肢のインデックスを **1-based** で指定します (例: 1, 2, 3, ...)。
  * 　　　各問題で正解以外の選択肢（ダミー選択肢）が、他の問題の答えからランダムに選ばれるように変更し、クイズの予測可能性を低減させます。
  */
+// type : question[] 
 const questions = [
   {
     id: 1,
@@ -112,10 +113,10 @@ const questions = [
     question_interaction: {
       type: "Association",
       data: [
-        { id: 1, left: "-aud- / -audi-", right: "聞く	/ audience, audible, audition" },
-        { id: 2, left: "-auto-", right: "自己	/ automatic, autobiography, automobile" },
-        { id: 3, left: "-bene-", right: "良い、うまく	/ benefit, benevolent, benign" },
-        { id: 4, left: "-bio-", right: "生命	/ biology, biography, biodegradable" },
+        { id: 1, left: "-aud- / -audi-", right: "聞く" },
+        { id: 2, left: "-auto-", right: "自己" },
+        { id: 3, left: "-bene-", right: "良い、うまく" },
+        { id: 4, left: "-bio-", right: "生命" },
       ],
     },
   },
@@ -126,10 +127,10 @@ const questions = [
     question_interaction: {
       type: "Association",
       data: [
-        { id: 5, left: "-chron-", right: "時間	/ chronological, synchronize, chronic" },
-        { id: 6, left: "-dict-", right: "言う、話す	/ dictionary, predict, dictate" },
-        { id: 7, left: "-duc- / -duct-", right: "導く	/ educate, conduct, introduce" },
-        { id: 8, left: "-gen-", right: "生む、生産する、種類	/ generate, genetic, genus" },
+        { id: 5, left: "-chron-", right: "時間" },
+        { id: 6, left: "-dict-", right: "言う、話す" },
+        { id: 7, left: "-duc- / -duct-", right: "導く" },
+        { id: 8, left: "-gen-", right: "生む、生産する、種類" },
       ],
     },
   },
@@ -140,10 +141,10 @@ const questions = [
     question_interaction: {
       type: "Association",
       data: [
-        { id: 9, left: "-geo-", right: "地球	/ geography, geology, geometric" },
-        { id: 10, left: "-graph- / -gram-", right: "書く、描く、記録する	/ photograph, telegram, graphic" },
-        { id: 11, left: "-hydr-", right: "水	/ hydrate, hydraulic, hydroplane" },
-        { id: 12, left: "-log- / -logy-", right: "言葉、研究	/ dialogue, biology, psychology" },
+        { id: 9, left: "-geo-", right: "地球" },
+        { id: 10, left: "-graph- / -gram-", right: "書く、描く、記録する" },
+        { id: 11, left: "-hydr-", right: "水" },
+        { id: 12, left: "-log- / -logy-", right: "言葉、研究" },
       ],
     },
   },
@@ -154,10 +155,10 @@ const questions = [
     question_interaction: {
       type: "Association",
       data: [
-        { id: 13, left: "-man- / -manu-", right: "手	/ manual, manufacture, manipulate" },
-        { id: 14, left: "-meter- / -metr-", right: "測る	/ thermometer, metric, diameter" },
-        { id: 15, left: "-ped- / -pod-", right: "足	/ pedal, pedestrian, tripod" },
-        { id: 16, left: "-phon-", right: "音	/ telephone, phonics, symphony" },
+        { id: 13, left: "-man- / -manu-", right: "手" },
+        { id: 14, left: "-meter- / -metr-", right: "測る" },
+        { id: 15, left: "-ped- / -pod-", right: "足" },
+        { id: 16, left: "-phon-", right: "音" },
       ],
     },
   },
@@ -168,10 +169,10 @@ const questions = [
     question_interaction: {
       type: "Association",
       data: [
-        { id: 17, left: "-photo-", right: "光	/ photograph, photosynthesis, photon" },
-        { id: 18, left: "-port-", right: "運ぶ	/ transport, portable, import" },
-        { id: 19, left: "-rupt-", right: "壊す	/ erupt, interrupt, bankrupt" },
-        { id: 20, left: "-scrib- / -script-", right: "書く	/ scribble, describe, manuscript" },
+        { id: 17, left: "-photo-", right: "光" },
+        { id: 18, left: "-port-", right: "運ぶ" },
+        { id: 19, left: "-rupt-", right: "壊す" },
+        { id: 20, left: "-scrib- / -script-", right: "書く" },
       ],
     },
   },
@@ -182,10 +183,10 @@ const questions = [
     question_interaction: {
       type: "Association",
       data: [
-        { id: 21, left: "-spec- / -spect-", right: "見る	/ inspect, spectator, perspective" },
-        { id: 22, left: "-struct-", right: "建てる	/ construct, structure, destruction" },
-        { id: 23, left: "-tele-", right: "遠い	/ telephone, television, telescope" },
-        { id: 24, left: "-terr-", right: "地、土地	/ terrain, territory, terrestrial" },
+        { id: 21, left: "-spec- / -spect-", right: "見る" },
+        { id: 22, left: "-struct-", right: "建てる" },
+        { id: 23, left: "-tele-", right: "遠い" },
+        { id: 24, left: "-terr-", right: "地、土地" },
       ],
     },
   },
@@ -196,10 +197,10 @@ const questions = [
     question_interaction: {
       type: "Association",
       data: [
-        { id: 25, left: "-therm-", right: "熱	/ thermometer, thermal, thermostat" },
-        { id: 26, left: "-tract-", right: "引く	/ attract, subtract, tractor" },
-        { id: 27, left: "-ven- / -vent-", right: "来る	/ convention, intervene, prevent" },
-        { id: 28, left: "-vert- / -vers-", right: "回す	/ convert, reverse, versatile" },
+        { id: 25, left: "-therm-", right: "熱" },
+        { id: 26, left: "-tract-", right: "引く" },
+        { id: 27, left: "-ven- / -vent-", right: "来る" },
+        { id: 28, left: "-vert- / -vers-", right: "回す" },
       ],
     },
   },
@@ -210,8 +211,8 @@ const questions = [
     question_interaction: {
       type: "Association",
       data: [
-        { id: 29, left: "-vid- / -vis-", right: "見る	/ video, vision, visible" },
-        { id: 30, left: "-voc- / -vok-", right: "声、呼ぶ	/ vocal, invoke, vocabulary" },
+        { id: 29, left: "-vid- / -vis-", right: "見る" },
+        { id: 30, left: "-voc- / -vok-", right: "声、呼ぶ" },
       ],
     },
   },
@@ -222,10 +223,10 @@ const questions = [
     question_interaction: {
       type: "Association",
       data: [
-        { id: 31, left: "a-/an-", right: "〜でない、〜がない / atypical, anarchy, atheist" },
-        { id: 32, left: "anti-", right: "反対、逆 / antisocial, antidote, anticlimax" },
-        { id: 33, left: "auto-", right: "自己、自動 / automatic, autobiography, autonomous" },
-        { id: 34, left: "bi-", right: "2つの / bicycle, bilingual, bimonthly" },
+        { id: 31, left: "a-/an-", right: "〜でない、〜がない" },
+        { id: 32, left: "anti-", right: "反対、逆" },
+        { id: 33, left: "auto-", right: "自己、自動" },
+        { id: 34, left: "bi-", right: "2つの" },
       ],
     },
   },
@@ -236,10 +237,10 @@ const questions = [
     question_interaction: {
       type: "Association",
       data: [
-        { id: 35, left: "co-/con-/com-", right: "共に、一緒に / cooperate, connect, combine" },
-        { id: 36, left: "de-", right: "下へ、離れて、反対 / decrease, detach, decode" },
-        { id: 37, left: "dis-", right: "〜でない、〜の反対 / dishonest, disagree, disappear" },
-        { id: 38, left: "ex-", right: "外へ、元の / exit, exclude, ex-president" },
+        { id: 35, left: "co-/con-/com-", right: "共に、一緒に" },
+        { id: 36, left: "de-", right: "下へ、離れて、反対" },
+        { id: 37, left: "dis-", right: "〜でない、〜の反対" },
+        { id: 38, left: "ex-", right: "外へ、元の" },
       ],
     },
   },
@@ -250,10 +251,10 @@ const questions = [
     question_interaction: {
       type: "Association",
       data: [
-        { id: 39, left: "fore-", right: "前に / forecast, foretell, foreword" },
-        { id: 40, left: "il-/im-/in-/ir-", right: "〜でない / illegal, impossible, inactive, irregular" },
-        { id: 41, left: "inter-", right: "間に、〜の間で / international, interact, interlude" },
-        { id: 42, left: "mal-", right: "悪い、不正な / malfunction, malpractice, malnourished" },
+        { id: 39, left: "fore-", right: "前に" },
+        { id: 40, left: "il-/im-/in-/ir-", right: "〜でない" },
+        { id: 41, left: "inter-", right: "間に、〜の間で" },
+        { id: 42, left: "mal-", right: "悪い、不正な" },
       ],
     },
   },
@@ -264,10 +265,10 @@ const questions = [
     question_interaction: {
       type: "Association",
       data: [
-        { id: 43, left: "micro-", right: "小さい / microscope, microcosm, microwave" },
-        { id: 44, left: "mid-", right: "中間の / midway, midnight, midterm" },
-        { id: 45, left: "mono-", right: "1つの / monologue, monotone, monopoly" },
-        { id: 46, left: "multi-", right: "多くの / multicolor, multimedia, multiple" },
+        { id: 43, left: "micro-", right: "小さい" },
+        { id: 44, left: "mid-", right: "中間の" },
+        { id: 45, left: "mono-", right: "1つの" },
+        { id: 46, left: "multi-", right: "多くの" },
       ],
     },
   },
@@ -278,10 +279,10 @@ const questions = [
     question_interaction: {
       type: "Association",
       data: [
-        { id: 47, left: "non-", right: "〜でない / nonstop, nonsense, non-profit" },
-        { id: 48, left: "over-", right: "〜しすぎる、上に / overcook, overflow, overcome" },
-        { id: 49, left: "post-", right: "後に / postpone, postgraduate, post-mortem" },
-        { id: 50, left: "pre-", right: "前に / preview, preheat, prepare" },
+        { id: 47, left: "non-", right: "〜でない" },
+        { id: 48, left: "over-", right: "〜しすぎる、上に" },
+        { id: 49, left: "post-", right: "後に" },
+        { id: 50, left: "pre-", right: "前に" },
       ],
     },
   },
@@ -292,10 +293,10 @@ const questions = [
     question_interaction: {
       type: "Association",
       data: [
-        { id: 51, left: "re-", right: "再び、後ろへ / rewrite, return, rebuild" },
-        { id: 52, left: "sub-", right: "下に / subway, submarine, submerge" },
-        { id: 53, left: "super-", right: "上に、超えて / superhuman, supersonic, supervise" },
-        { id: 54, left: "trans-", right: "横切って、通して / transport, transatlantic, translate" },
+        { id: 51, left: "re-", right: "再び、後ろへ" },
+        { id: 52, left: "sub-", right: "下に" },
+        { id: 53, left: "super-", right: "上に、超えて" },
+        { id: 54, left: "trans-", right: "横切って、通して" },
       ],
     },
   },
@@ -306,10 +307,10 @@ const questions = [
     question_interaction: {
       type: "Association",
       data: [
-        { id: 55, left: "tri-", right: "3つの / tricycle, triangle, tripod" },
-        { id: 56, left: "un-", right: "〜でない、〜の反対 / unhappy, undo, unfair" },
-        { id: 57, left: "uni-", right: "1つの / unicycle, uniform, unique" },
-        { id: 58, left: "under-", right: "〜が足りない、下に / undercooked, underestimate, undergo" },
+        { id: 55, left: "tri-", right: "3つの" },
+        { id: 56, left: "un-", right: "〜でない、〜の反対" },
+        { id: 57, left: "uni-", right: "1つの" },
+        { id: 58, left: "under-", right: "〜が足りない、下に" },
       ],
     },
   },
@@ -438,3 +439,8 @@ const questions = [
 
 
 ];
+
+export default {
+  categories,
+  questions,
+}
