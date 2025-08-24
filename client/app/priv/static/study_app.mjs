@@ -13068,7 +13068,7 @@ function setup_db() {
     } else {
       let first = data_sets.head;
       let second = $.head;
-      let _pipe = setup2(data_sets, second, db_name$1, 1);
+      let _pipe = setup2(data_sets, first, db_name$1, 1);
       return to_effect_simple(
         _pipe,
         (var0) => {
@@ -13094,10 +13094,10 @@ function main() {
       "Pattern match failed, no pattern matched the value.",
       {
         value: $,
-        start: 4547,
-        end: 4596,
-        pattern_start: 4558,
-        pattern_end: 4563
+        start: 4546,
+        end: 4595,
+        pattern_start: 4557,
+        pattern_end: 4562
       }
     );
   }

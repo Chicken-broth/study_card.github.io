@@ -41,7 +41,7 @@ fn setup_db() -> Effect(Msg) {
   echo data_sets
   case data_sets {
     [first, second, ..] ->
-      indexed_db.setup(data_sets, second, db_name, 1)
+      indexed_db.setup(data_sets, first, db_name, 1)
       |> promise_.to_effect_simple(DataInitialized)
     _ -> effect_.perform(Miss)
   }
