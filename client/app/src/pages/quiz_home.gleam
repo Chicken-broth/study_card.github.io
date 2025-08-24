@@ -24,8 +24,6 @@ type ID =
 pub type Model {
   Model(
     db: DB,
-    data_set_name: String,
-    data_set_list: List(String),
     /// 利用可能なすべてのカテゴリのリスト。
     categories: List(Category),
     /// データベースから取得したすべての問題IDとカテゴリのリスト。
@@ -88,17 +86,14 @@ pub type Msg {
 fn get_initial_data_effects(db: DB) -> Effect(Msg) {
   let get_categories =
     db.get_categories(db)
-    |> promise.map(db.get_categories_decode)
     |> promise_.to_effect(GetCategories, ErrScreen)
 
   let get_question_id_and_category_list =
     db.get_question_id_and_category_list(db)
-    |> promise.map(db.decode_question_id_and_category_list)
     |> promise_.to_effect(GetQuestionIdAndCategoryList, ErrScreen)
 
   let get_history =
     db.get_quiz_historys(db)
-    |> promise.map(db.decode_quiz_historys)
     |> promise_.to_effect(GetQuizHistory, ErrScreen)
 
   effect.batch([get_categories, get_question_id_and_category_list, get_history])
@@ -110,8 +105,6 @@ pub fn init(db: DB) -> #(Model, Effect(Msg)) {
   #(
     Model(
       db: db,
-      data_set_name: db.default_data_set,
-      data_set_list: db.data_set_list,
       categories: [],
       question_id_categories: [],
       shuffle_or_not: False,
@@ -127,28 +120,16 @@ pub fn init(db: DB) -> #(Model, Effect(Msg)) {
   )
 }
 
-fn db_setup(data_set: String) -> promise.Promise(DB) {
-  let data_set_name = case data_set {
-    d if db.extra_data_set == d -> {
-      "extra"
-    }
-    _ -> "default"
-  }
-  db.setup(data_set_name, 1, data_set)
-}
-
 /// 受信したメッセージに基づいてモデルを更新し、新しい状態と副作用（Effect）を返す。
 pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
     SelectDb(data_set_name) -> {
+      let new_db = db.DB(..model.db, data_set: data_set_name)
       let setup_db_effect =
-        db_setup(data_set_name)
-        |> promise_.to_effect_no_decode(DbChanged)
+        db.switch(new_db, data_set_name)
+        |> promise_.to_effect_simple(DbChanged)
 
-      #(
-        Model(..model, data_set_name: data_set_name, loading: True),
-        setup_db_effect,
-      )
+      #(Model(..model, db: new_db, loading: True), setup_db_effect)
     }
     DbChanged(new_db) -> {
       #(
@@ -278,7 +259,6 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       echo "Start Quiz"
       let eff =
         db.get_question_by_ids(model.db, model.selected_question_ids)
-        |> promise.map(db.get_question_by_ids_decode)
         |> promise_.to_effect(OutCome, ErrScreen)
       #(model, eff)
     }
@@ -542,7 +522,7 @@ pub fn view(model: Model) -> Element(Msg) {
         [attr.styles([#("margin-right", "1rem"), #("font-size", "1.17em")])],
         [html.text("問題集選択")],
       ),
-      view_db_selection(model.data_set_list, model.data_set_name),
+      view_db_selection(model.db.data_set_list, model.db.data_set),
     ]),
     html.h2([attr.styles([#("margin-top", "1rem")])], [html.text("カテゴリ")]),
     // view_all_category_selection(checked),

@@ -1345,6 +1345,14 @@ var Dict = class _Dict {
 };
 var unequalDictSymbol = /* @__PURE__ */ Symbol();
 
+// build/dev/javascript/gleam_stdlib/gleam/order.mjs
+var Lt = class extends CustomType {
+};
+var Eq = class extends CustomType {
+};
+var Gt = class extends CustomType {
+};
+
 // build/dev/javascript/gleam_stdlib/gleam/option.mjs
 var Some = class extends CustomType {
   constructor($0) {
@@ -1354,29 +1362,6 @@ var Some = class extends CustomType {
 };
 var None = class extends CustomType {
 };
-
-// build/dev/javascript/gleam_stdlib/gleam/order.mjs
-var Lt = class extends CustomType {
-};
-var Eq = class extends CustomType {
-};
-var Gt = class extends CustomType {
-};
-
-// build/dev/javascript/gleam_stdlib/gleam/float.mjs
-function compare(a, b) {
-  let $ = a === b;
-  if ($) {
-    return new Eq();
-  } else {
-    let $1 = a < b;
-    if ($1) {
-      return new Lt();
-    } else {
-      return new Gt();
-    }
-  }
-}
 
 // build/dev/javascript/gleam_stdlib/gleam/list.mjs
 var Ascending = class extends CustomType {
@@ -2370,6 +2355,31 @@ function int(data) {
 function string(data) {
   if (typeof data === "string") return new Ok(data);
   return new Error("");
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/float.mjs
+function compare(a, b) {
+  let $ = a === b;
+  if ($) {
+    return new Eq();
+  } else {
+    let $1 = a < b;
+    if ($1) {
+      return new Lt();
+    } else {
+      return new Gt();
+    }
+  }
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/result.mjs
+function unwrap(result, default$) {
+  if (result instanceof Ok) {
+    let v = result[0];
+    return v;
+  } else {
+    return default$;
+  }
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/bool.mjs
@@ -5473,6 +5483,16 @@ function start3(app, selector, start_args) {
   );
 }
 
+// build/dev/javascript/study_app/extra/effect_.mjs
+function perform(msg) {
+  return from(
+    (dispatch) => {
+      dispatch(msg);
+      return void 0;
+    }
+  );
+}
+
 // build/dev/javascript/gleam_javascript/gleam_javascript_ffi.mjs
 var PromiseLayer = class _PromiseLayer {
   constructor(promise) {
@@ -5525,7 +5545,7 @@ function to_effect(promise, to_success_msg, to_err_msg) {
     }
   );
 }
-function to_effect_no_decode(promise, to_msg) {
+function to_effect_simple(promise, to_msg) {
   return from(
     (dispatch) => {
       let _pipe = map_promise(promise, to_msg);
@@ -10918,128 +10938,6 @@ var questions = [
         { id: 58, left: "under-", right: "\u301C\u304C\u8DB3\u308A\u306A\u3044\u3001\u4E0B\u306B" }
       ]
     }
-  },
-  ///語根 四択問題
-  {
-    id: 16,
-    category: rootWord,
-    question_text: "'-aud- / -audi-' \u306E\u610F\u5473/\u7528\u4F8B\u3068\u3057\u3066\u6700\u3082\u9069\u5207\u306A\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
-    question_interaction: {
-      type: "MultipleChoice",
-      data: {
-        texts: ["\u6642\u9593", "\u898B\u308B", "\u805E\u304F", "\u904B\u3076"],
-        correct_answer_index: 3
-      }
-    }
-  },
-  {
-    id: 17,
-    category: rootWord,
-    question_text: "'-auto-' \u306E\u610F\u5473/\u7528\u4F8B\u3068\u3057\u3066\u6700\u3082\u9069\u5207\u306A\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
-    question_interaction: {
-      type: "MultipleChoice",
-      data: {
-        texts: ["\u624B", "\u81EA\u5DF1", "\u8DB3", "\u751F\u547D"],
-        correct_answer_index: 2
-      }
-    }
-  },
-  {
-    id: 18,
-    category: rootWord,
-    question_text: "'-bene-' \u306E\u610F\u5473/\u7528\u4F8B\u3068\u3057\u3066\u6700\u3082\u9069\u5207\u306A\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
-    question_interaction: {
-      type: "MultipleChoice",
-      data: {
-        texts: ["\u5EFA\u3066\u308B", "\u5F15\u304F", "\u826F\u3044\u3001\u3046\u307E\u304F", "\u58CA\u3059"],
-        correct_answer_index: 3
-      }
-    }
-  },
-  {
-    id: 19,
-    category: rootWord,
-    question_text: "'-bio-' \u306E\u610F\u5473/\u7528\u4F8B\u3068\u3057\u3066\u6700\u3082\u9069\u5207\u306A\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
-    question_interaction: {
-      type: "MultipleChoice",
-      data: {
-        texts: ["\u5C0E\u304F", "\u751F\u547D", "\u5730\u7403", "\u8A00\u3046\u3001\u8A71\u3059"],
-        correct_answer_index: 2
-      }
-    }
-  },
-  {
-    id: 20,
-    category: rootWord,
-    question_text: "'-chron-' \u306E\u610F\u5473/\u7528\u4F8B\u3068\u3057\u3066\u6700\u3082\u9069\u5207\u306A\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
-    question_interaction: {
-      type: "MultipleChoice",
-      data: {
-        texts: ["\u5149", "\u6642\u9593", "\u6C34", "\u97F3"],
-        correct_answer_index: 2
-      }
-    }
-  },
-  //接頭語　四択問題
-  {
-    id: 21,
-    category: prefix,
-    question_text: "'a-/an-' \u306E\u610F\u5473/\u7528\u4F8B\u3068\u3057\u3066\u6700\u3082\u9069\u5207\u306A\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
-    question_interaction: {
-      type: "MultipleChoice",
-      data: {
-        texts: ["\u301C\u3067\u306A\u3044\u3001\u301C\u304C\u306A\u3044", "\u518D\u3073\u3001\u5F8C\u308D\u3078", "\u301C\u3057\u3059\u304E\u308B\u3001\u4E0A\u306B", "\u60AA\u3044\u3001\u4E0D\u6B63\u306A"],
-        correct_answer_index: 1
-      }
-    }
-  },
-  {
-    id: 22,
-    category: prefix,
-    question_text: "'anti-' \u306E\u610F\u5473/\u7528\u4F8B\u3068\u3057\u3066\u6700\u3082\u9069\u5207\u306A\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
-    question_interaction: {
-      type: "MultipleChoice",
-      data: {
-        texts: ["\u301C\u3067\u306A\u3044", "\u53CD\u5BFE\u3001\u9006", "\u4E2D\u9593\u306E", "1\u3064\u306E"],
-        correct_answer_index: 2
-      }
-    }
-  },
-  {
-    id: 23,
-    category: prefix,
-    question_text: "'auto-' \u306E\u610F\u5473/\u7528\u4F8B\u3068\u3057\u3066\u6700\u3082\u9069\u5207\u306A\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
-    question_interaction: {
-      type: "MultipleChoice",
-      data: {
-        texts: ["\u81EA\u5DF1\u3001\u81EA\u52D5", "2\u3064\u306E", "\u5171\u306B\u3001\u4E00\u7DD2\u306B", "\u4E0B\u3078\u3001\u96E2\u308C\u3066\u3001\u53CD\u5BFE"],
-        correct_answer_index: 1
-      }
-    }
-  },
-  {
-    id: 24,
-    category: prefix,
-    question_text: "'bi-' \u306E\u610F\u5473/\u7528\u4F8B\u3068\u3057\u3066\u6700\u3082\u9069\u5207\u306A\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
-    question_interaction: {
-      type: "MultipleChoice",
-      data: {
-        texts: ["\u301C\u3067\u306A\u3044\u3001\u301C\u306E\u53CD\u5BFE", "\u5916\u3078\u3001\u5143\u306E", "\u524D\u306B", "2\u3064\u306E"],
-        correct_answer_index: 4
-      }
-    }
-  },
-  {
-    id: 25,
-    category: prefix,
-    question_text: "'co-/con-/com-' \u306E\u610F\u5473/\u7528\u4F8B\u3068\u3057\u3066\u6700\u3082\u9069\u5207\u306A\u3082\u306E\u306F\u3069\u308C\u3067\u3059\u304B\uFF1F",
-    question_interaction: {
-      type: "MultipleChoice",
-      data: {
-        texts: ["\u5171\u306B\u3001\u4E00\u7DD2\u306B", "\u301C\u3067\u306A\u3044", "\u9593\u306B\u3001\u301C\u306E\u9593\u3067", "\u5C0F\u3055\u3044"],
-        correct_answer_index: 1
-      }
-    }
   }
 ];
 var extra_data_default = {
@@ -11048,9 +10946,15 @@ var extra_data_default = {
 };
 
 // build/dev/javascript/study_app/interface/indexedDB_ffi.mjs
+var DATADEFAULT = "\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3";
+var DATAEXTRA = "\u82F1\u8A9E\u8A9E\u6839";
+var dataSet = [DATADEFAULT, DATAEXTRA];
 var CATEGORY_STORE = "categories";
 var QUESTION_STORE = "questions";
 var HISTORY_STORE = "history";
+function getDataSetName() {
+  return dataSet;
+}
 var STORE_CONFIGS = [
   {
     storeName: CATEGORY_STORE,
@@ -11065,15 +10969,22 @@ var STORE_CONFIGS = [
     keyPath: { keyPath: "id" }
   }
 ];
-function setupDefaultDB(dbName, version) {
-  return setup(dbName, version, data_default);
-}
-function setupExtraDB(dbName, version) {
-  return setup(dbName, version, extra_data_default);
-}
-function setup(dbName, version, data) {
+function setup(dbName, version, dataSetName) {
+  console.log("setup db:", dbName, version, dataSetName);
   return new Promise((resolve2, reject) => {
-    const request = indexedDB.open(dbName, version);
+    let data;
+    let name2;
+    switch (dataSetName) {
+      case DATAEXTRA:
+        data = extra_data_default;
+        name2 = dbName + "_" + DATAEXTRA;
+        break;
+      default:
+        data = data_default;
+        name2 = dbName + "_" + DATADEFAULT;
+        break;
+    }
+    const request = indexedDB.open(name2, version);
     request.onerror = (event4) => {
       console.error("Database error:", event4.target.error);
       reject(event4.target.error);
@@ -11215,14 +11126,53 @@ function getQuizHistory(db) {
 }
 
 // build/dev/javascript/study_app/interface/indexed_db.mjs
-function get_categories_decode(dynamic2) {
-  return run(dynamic2, list2(decoder()));
+var DB = class extends CustomType {
+  constructor(db, data_set_list, data_set, name2, version) {
+    super();
+    this.db = db;
+    this.data_set_list = data_set_list;
+    this.data_set = data_set;
+    this.name = name2;
+    this.version = version;
+  }
+};
+function get_data_set_name() {
+  let _pipe = getDataSetName();
+  let _pipe$1 = run(_pipe, list2(string2));
+  return unwrap(_pipe$1, toList([]));
 }
-function get_question_by_ids_decode(dynamic2) {
-  return run(dynamic2, list2(decoder5()));
+function setup2(data_set_list, data_set, name2, version) {
+  let _pipe = setup(name2, version, data_set);
+  return map_promise(
+    _pipe,
+    (db) => {
+      return new DB(db, data_set_list, data_set, name2, version);
+    }
+  );
 }
-function decode_question_id_and_category_list(dynamic2) {
-  let id_and_category_decoder = field(
+function switch$(db, data_set) {
+  return setup2(db.data_set_list, data_set, db.name, db.version);
+}
+function get_categories(db) {
+  let _pipe = getCategories(db.db);
+  return map_promise(
+    _pipe,
+    (dynamic2) => {
+      return run(dynamic2, list2(decoder()));
+    }
+  );
+}
+function get_question_by_ids(db, id) {
+  let _pipe = getQuestionByIds(db.db, id);
+  return map_promise(
+    _pipe,
+    (dynamic2) => {
+      return run(dynamic2, list2(decoder5()));
+    }
+  );
+}
+function get_question_id_and_category_list(db) {
+  let decoder7 = field(
     "id",
     int2,
     (id) => {
@@ -11235,25 +11185,35 @@ function decode_question_id_and_category_list(dynamic2) {
       );
     }
   );
-  return run(dynamic2, list2(id_and_category_decoder));
+  let _pipe = getQuestionIdAndCategoryList(db.db);
+  return map_promise(
+    _pipe,
+    (dynamic2) => {
+      return run(dynamic2, list2(decoder7));
+    }
+  );
 }
-function decode_quiz_historys(dynamic2) {
-  return run(dynamic2, decoder6());
+function save_quiz_history(db, results) {
+  let _pipe = results;
+  let _pipe$1 = to_json7(_pipe);
+  let _pipe$2 = ((_capture) => {
+    return saveQuizHistory(db.db, _capture);
+  })(
+    _pipe$1
+  );
+  return map_promise(_pipe$2, (_) => {
+    return new Ok(void 0);
+  });
 }
-var default_data_set = "default_db";
-var extra_data_set = "extra_db";
-function setup2(db_name2, version, data_set) {
-  let d = data_set;
-  if ("extra_db" === d) {
-    return setupExtraDB(db_name2, version);
-  } else {
-    return setupDefaultDB(db_name2, version);
-  }
+function get_quiz_historys(db) {
+  let _pipe = getQuizHistory(db.db);
+  return map_promise(
+    _pipe,
+    (dynamic2) => {
+      return run(dynamic2, decoder6());
+    }
+  );
 }
-var data_set_list = /* @__PURE__ */ toList([
-  default_data_set,
-  extra_data_set
-]);
 
 // build/dev/javascript/study_app/extra/list_.mjs
 function get_at(list4, at) {
@@ -11296,11 +11256,9 @@ function update_if(list4, prefix2, fun) {
 
 // build/dev/javascript/study_app/pages/quiz_home.mjs
 var Model4 = class extends CustomType {
-  constructor(db, data_set_name, data_set_list2, categories2, question_id_categories, shuffle_or_not, selected_category, selected_count, selected_question_ids, loading, error, quiz_result, show_history) {
+  constructor(db, categories2, question_id_categories, shuffle_or_not, selected_category, selected_count, selected_question_ids, loading, error, quiz_result, show_history) {
     super();
     this.db = db;
-    this.data_set_name = data_set_name;
-    this.data_set_list = data_set_list2;
     this.categories = categories2;
     this.question_id_categories = question_id_categories;
     this.shuffle_or_not = shuffle_or_not;
@@ -11401,10 +11359,9 @@ var ErrScreen = class extends CustomType {
 };
 function get_initial_data_effects(db) {
   let _block;
-  let _pipe = getCategories(db);
-  let _pipe$1 = map_promise(_pipe, get_categories_decode);
+  let _pipe = get_categories(db);
   _block = to_effect(
-    _pipe$1,
+    _pipe,
     (var0) => {
       return new GetCategories(var0);
     },
@@ -11412,12 +11369,11 @@ function get_initial_data_effects(db) {
       return new ErrScreen(var0);
     }
   );
-  let get_categories = _block;
+  let get_categories2 = _block;
   let _block$1;
-  let _pipe$2 = getQuestionIdAndCategoryList(db);
-  let _pipe$3 = map_promise(_pipe$2, decode_question_id_and_category_list);
+  let _pipe$1 = get_question_id_and_category_list(db);
   _block$1 = to_effect(
-    _pipe$3,
+    _pipe$1,
     (var0) => {
       return new GetQuestionIdAndCategoryList(var0);
     },
@@ -11425,12 +11381,11 @@ function get_initial_data_effects(db) {
       return new ErrScreen(var0);
     }
   );
-  let get_question_id_and_category_list = _block$1;
+  let get_question_id_and_category_list2 = _block$1;
   let _block$2;
-  let _pipe$4 = getQuizHistory(db);
-  let _pipe$5 = map_promise(_pipe$4, decode_quiz_historys);
+  let _pipe$2 = get_quiz_historys(db);
   _block$2 = to_effect(
-    _pipe$5,
+    _pipe$2,
     (var0) => {
       return new GetQuizHistory(var0);
     },
@@ -11440,15 +11395,13 @@ function get_initial_data_effects(db) {
   );
   let get_history = _block$2;
   return batch(
-    toList([get_categories, get_question_id_and_category_list, get_history])
+    toList([get_categories2, get_question_id_and_category_list2, get_history])
   );
 }
 function init2(db) {
   return [
     new Model4(
       db,
-      default_data_set,
-      data_set_list,
       toList([]),
       toList([]),
       false,
@@ -11462,17 +11415,6 @@ function init2(db) {
     ),
     get_initial_data_effects(db)
   ];
-}
-function db_setup(data_set) {
-  let _block;
-  let d = data_set;
-  if (extra_data_set === d) {
-    _block = "extra";
-  } else {
-    _block = "default";
-  }
-  let data_set_name = _block;
-  return setup2(data_set_name, 1, data_set);
 }
 function shuffle2(xs, is_shuffle) {
   if (is_shuffle) {
@@ -11518,31 +11460,39 @@ function update5(model, msg) {
   if (msg instanceof SelectDb) {
     let data_set_name = msg[0];
     let _block;
-    let _pipe = db_setup(data_set_name);
-    _block = to_effect_no_decode(
+    let _record = model.db;
+    _block = new DB(
+      _record.db,
+      _record.data_set_list,
+      data_set_name,
+      _record.name,
+      _record.version
+    );
+    let new_db = _block;
+    let _block$1;
+    let _pipe = switch$(new_db, data_set_name);
+    _block$1 = to_effect_simple(
       _pipe,
       (var0) => {
         return new DbChanged(var0);
       }
     );
-    let setup_db_effect = _block;
+    let setup_db_effect = _block$1;
     return [
       (() => {
-        let _record = model;
+        let _record$1 = model;
         return new Model4(
-          _record.db,
-          data_set_name,
-          _record.data_set_list,
-          _record.categories,
-          _record.question_id_categories,
-          _record.shuffle_or_not,
-          _record.selected_category,
-          _record.selected_count,
-          _record.selected_question_ids,
+          new_db,
+          _record$1.categories,
+          _record$1.question_id_categories,
+          _record$1.shuffle_or_not,
+          _record$1.selected_category,
+          _record$1.selected_count,
+          _record$1.selected_question_ids,
           true,
-          _record.error,
-          _record.quiz_result,
-          _record.show_history
+          _record$1.error,
+          _record$1.quiz_result,
+          _record$1.show_history
         );
       })(),
       setup_db_effect
@@ -11554,8 +11504,6 @@ function update5(model, msg) {
         let _record = model;
         return new Model4(
           new_db,
-          _record.data_set_name,
-          _record.data_set_list,
           _record.categories,
           _record.question_id_categories,
           _record.shuffle_or_not,
@@ -11593,8 +11541,6 @@ function update5(model, msg) {
         let _record = model;
         return new Model4(
           _record.db,
-          _record.data_set_name,
-          _record.data_set_list,
           _record.categories,
           _record.question_id_categories,
           _record.shuffle_or_not,
@@ -11622,8 +11568,6 @@ function update5(model, msg) {
         let _record = model;
         return new Model4(
           _record.db,
-          _record.data_set_name,
-          _record.data_set_list,
           _record.categories,
           _record.question_id_categories,
           _record.shuffle_or_not,
@@ -11646,8 +11590,6 @@ function update5(model, msg) {
         let _record = model;
         return new Model4(
           _record.db,
-          _record.data_set_name,
-          _record.data_set_list,
           _record.categories,
           _record.question_id_categories,
           is_shuffle,
@@ -11664,7 +11606,7 @@ function update5(model, msg) {
     ];
   } else if (msg instanceof SWitchAllCategory) {
     let is_selected = msg[0];
-    echo("SWitchAllCategory", "src/pages/quiz_home.gleam", 213);
+    echo("SWitchAllCategory", "src/pages/quiz_home.gleam", 194);
     let new_select_category = map(
       model.selected_category,
       (c) => {
@@ -11682,8 +11624,6 @@ function update5(model, msg) {
         let _record = model;
         return new Model4(
           _record.db,
-          _record.data_set_name,
-          _record.data_set_list,
           _record.categories,
           _record.question_id_categories,
           _record.shuffle_or_not,
@@ -11699,14 +11639,12 @@ function update5(model, msg) {
       none2()
     ];
   } else if (msg instanceof ViewHistory) {
-    echo("View History", "src/pages/quiz_home.gleam", 235);
+    echo("View History", "src/pages/quiz_home.gleam", 216);
     return [
       (() => {
         let _record = model;
         return new Model4(
           _record.db,
-          _record.data_set_name,
-          _record.data_set_list,
           _record.categories,
           _record.question_id_categories,
           _record.shuffle_or_not,
@@ -11723,7 +11661,7 @@ function update5(model, msg) {
     ];
   } else if (msg instanceof GetCategories) {
     let categories2 = msg[0];
-    echo("GetCategories", "src/pages/quiz_home.gleam", 242);
+    echo("GetCategories", "src/pages/quiz_home.gleam", 223);
     let new_selected_category = map(
       categories2,
       (_capture) => {
@@ -11735,8 +11673,6 @@ function update5(model, msg) {
         let _record = model;
         return new Model4(
           _record.db,
-          _record.data_set_name,
-          _record.data_set_list,
           categories2,
           _record.question_id_categories,
           _record.shuffle_or_not,
@@ -11753,14 +11689,12 @@ function update5(model, msg) {
     ];
   } else if (msg instanceof GetQuestionIdAndCategoryList) {
     let id_and_category_list = msg[0];
-    echo("GetQuestionIdAndCategoryList", "src/pages/quiz_home.gleam", 257);
+    echo("GetQuestionIdAndCategoryList", "src/pages/quiz_home.gleam", 238);
     return [
       (() => {
         let _record = model;
         return new Model4(
           _record.db,
-          _record.data_set_name,
-          _record.data_set_list,
           _record.categories,
           id_and_category_list,
           _record.shuffle_or_not,
@@ -11779,14 +11713,12 @@ function update5(model, msg) {
     ];
   } else if (msg instanceof GetQuizHistory) {
     let quiz_result = msg[0];
-    echo("GetQuizHistory", "src/pages/quiz_home.gleam", 269);
+    echo("GetQuizHistory", "src/pages/quiz_home.gleam", 250);
     return [
       (() => {
         let _record = model;
         return new Model4(
           _record.db,
-          _record.data_set_name,
-          _record.data_set_list,
           _record.categories,
           _record.question_id_categories,
           _record.shuffle_or_not,
@@ -11802,12 +11734,11 @@ function update5(model, msg) {
       none2()
     ];
   } else if (msg instanceof StartQuiz) {
-    echo("Start Quiz", "src/pages/quiz_home.gleam", 278);
+    echo("Start Quiz", "src/pages/quiz_home.gleam", 259);
     let _block;
-    let _pipe = getQuestionByIds(model.db, model.selected_question_ids);
-    let _pipe$1 = map_promise(_pipe, get_question_by_ids_decode);
+    let _pipe = get_question_by_ids(model.db, model.selected_question_ids);
     _block = to_effect(
-      _pipe$1,
+      _pipe,
       (var0) => {
         return new OutCome(var0);
       },
@@ -11825,14 +11756,12 @@ function update5(model, msg) {
     return [model, none2()];
   } else {
     let json_err = msg[0];
-    echo("err screen", "src/pages/quiz_home.gleam", 274);
+    echo("err screen", "src/pages/quiz_home.gleam", 255);
     return [
       (() => {
         let _record = model;
         return new Model4(
           _record.db,
-          _record.data_set_name,
-          _record.data_set_list,
           _record.categories,
           _record.question_id_categories,
           _record.shuffle_or_not,
@@ -12063,7 +11992,7 @@ function view_loading(loading) {
     return text3("");
   }
 }
-function view_db_selection(data_set_list2, selected_db) {
+function view_db_selection(data_set_list, selected_db) {
   return div(
     toList([section_container_row_style()]),
     toList([
@@ -12072,7 +12001,7 @@ function view_db_selection(data_set_list2, selected_db) {
           return new SelectDb(var0);
         })]),
         map(
-          data_set_list2,
+          data_set_list,
           (data_set_name) => {
             return option(
               toList([
@@ -12120,7 +12049,7 @@ function view6(model) {
             ]),
             toList([text3("\u554F\u984C\u96C6\u9078\u629E")])
           ),
-          view_db_selection(model.data_set_list, model.data_set_name)
+          view_db_selection(model.db.data_set_list, model.db.data_set)
         ])
       ),
       h2(
@@ -12290,16 +12219,6 @@ function echo$isDict(value2) {
   } catch {
     return false;
   }
-}
-
-// build/dev/javascript/study_app/extra/effect_.mjs
-function perform(msg) {
-  return from(
-    (dispatch) => {
-      dispatch(msg);
-      return void 0;
-    }
-  );
 }
 
 // build/dev/javascript/study_app/pages/quiz_screen.mjs
@@ -12762,12 +12681,11 @@ function update7(model, msg) {
     echo3("GoToHome", "src/pages/result_screen.gleam", 57);
     let _block;
     let _pipe = model.quiz_result;
-    let _pipe$1 = to_json7(_pipe);
-    let _pipe$2 = ((_capture) => {
-      return saveQuizHistory(model.db, _capture);
-    })(_pipe$1);
-    _block = to_effect_no_decode(
-      _pipe$2,
+    let _pipe$1 = ((_capture) => {
+      return save_quiz_history(model.db, _capture);
+    })(_pipe);
+    _block = to_effect_simple(
+      _pipe$1,
       (_) => {
         return new OutCome3();
       }
@@ -12775,7 +12693,7 @@ function update7(model, msg) {
     let eff = _block;
     return [model, eff];
   } else {
-    echo3("result -> home", "src/pages/result_screen.gleam", 78);
+    echo3("result -> home", "src/pages/result_screen.gleam", 77);
     return [model, none2()];
   }
 }
@@ -12992,11 +12910,13 @@ var DataInitialized = class extends CustomType {
     this[0] = $0;
   }
 };
+var Miss = class extends CustomType {
+};
 function update8(model, msg) {
   if (model instanceof Loading) {
     if (msg instanceof DataInitialized) {
       let db = msg[0];
-      echo4("DataInitialized", "src/study_app.gleam", 49);
+      echo4("DataInitialized", "src/study_app.gleam", 62);
       let $ = init2(db);
       let home_model = $[0];
       let home_effect = $[1];
@@ -13006,6 +12926,9 @@ function update8(model, msg) {
           return new HomeMsg(var0);
         })
       ];
+    } else if (msg instanceof Miss) {
+      echo4("setup err", "src/study_app.gleam", 67);
+      return [new ErrScreen2(), none2()];
     } else {
       return [model, none2()];
     }
@@ -13018,7 +12941,7 @@ function update8(model, msg) {
       let home_effect = $[1];
       if (home_msg instanceof OutCome) {
         let questions2 = home_msg[0];
-        echo4("Home -> QuizScreen", "src/study_app.gleam", 65);
+        echo4("Home -> QuizScreen", "src/study_app.gleam", 81);
         let screen_ini = init3(new_home.db, questions2);
         if (screen_ini instanceof Ok) {
           let quiz_model = screen_ini[0];
@@ -13130,25 +13053,33 @@ function view9(model) {
     return text3("\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F");
   }
 }
-var db_name = "default";
 var db_version = 1;
-function init5(_) {
-  return [
-    new Loading(),
-    (() => {
-      let _pipe = setup2(
-        db_name,
-        db_version,
-        default_data_set
-      );
-      return to_effect_no_decode(
+function setup_db() {
+  let data_sets = get_data_set_name();
+  let db_name$1 = "db" + to_string(db_version);
+  echo4("lustre setup_db", "src/study_app.gleam", 40);
+  echo4(data_sets, "src/study_app.gleam", 41);
+  if (data_sets instanceof Empty) {
+    return perform(new Miss());
+  } else {
+    let $ = data_sets.tail;
+    if ($ instanceof Empty) {
+      return perform(new Miss());
+    } else {
+      let first = data_sets.head;
+      let second = $.head;
+      let _pipe = setup2(data_sets, second, db_name$1, 1);
+      return to_effect_simple(
         _pipe,
         (var0) => {
           return new DataInitialized(var0);
         }
       );
-    })()
-  ];
+    }
+  }
+}
+function init5(_) {
+  return [new Loading(), setup_db()];
 }
 function main() {
   let app = application(init5, update8, view9);
@@ -13158,15 +13089,15 @@ function main() {
       "let_assert",
       FILEPATH,
       "study_app",
-      147,
+      163,
       "main",
       "Pattern match failed, no pattern matched the value.",
       {
         value: $,
-        start: 4154,
-        end: 4203,
-        pattern_start: 4165,
-        pattern_end: 4170
+        start: 4547,
+        end: 4596,
+        pattern_start: 4558,
+        pattern_end: 4563
       }
     );
   }

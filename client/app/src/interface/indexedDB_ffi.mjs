@@ -3,10 +3,16 @@ import default_data from './data.mjs'
 import extra_data from './extra_data.mjs';
 import { Ok, Error } from "../gleam.mjs";
 
+const DATADEFAULT = "セキュリティ"
+const DATAEXTRA = "英語語根"
+const dataSet = [DATADEFAULT, DATAEXTRA]
 const CATEGORY_STORE = "categories";
 const QUESTION_STORE = "questions";
 const HISTORY_STORE = "history";
 
+export function getDataSetName() {
+  return dataSet
+}
 
 /**
  * @typedef {Object} StoreConfig
@@ -34,12 +40,12 @@ const STORE_CONFIGS = [
   }
 ];
 
-export function setupDefaultDB(dbName, version) {
-  return setup(dbName, version, default_data);
-}
-export function setupExtraDB(dbName, version) {
-  return setup(dbName, version, extra_data);
-}
+// export function setupDefaultDB(dbName, version) {
+//   return setup(dbName, version, default_data);
+// }
+// export function setupExtraDB(dbName, version) {
+//   return setup(dbName, version, extra_data);
+// }
 
 /**
  * IndexedDBデータベースを初期化し、接続を確立します。
@@ -47,11 +53,23 @@ export function setupExtraDB(dbName, version) {
  * @param {number} version データベースのバージョン。
  * @returns {Promise<IDBDatabase>} 成功時にはデータベース接続オブジェクト、失敗時にはエラーでrejectされるPromise。
 */
-function setup(dbName, version, data) {
-  // console.log("data",data);
+export function setup(dbName, version, dataSetName) {
+  console.log("setup db:", dbName, version, dataSetName);
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(dbName, version);
-    
+    let data;
+    let name;
+    switch (dataSetName) {
+      case DATAEXTRA:
+        data = extra_data;
+        name = dbName + "_" + DATAEXTRA;
+        break;
+      default:
+        data = default_data;
+        name = dbName + "_" + DATADEFAULT;
+        break;
+    }
+
+    const request = indexedDB.open(name, version);
     request.onerror = (event) => {
       console.error("Database error:", event.target.error);
       reject(event.target.error);

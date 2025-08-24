@@ -31,7 +31,7 @@ pub fn to_effect(
   Nil
 }
 
-pub fn to_effect_no_decode(
+pub fn to_effect_simple(
   promise: Promise(a),
   to_msg: fn(a) -> msg,
 ) -> Effect(msg) {

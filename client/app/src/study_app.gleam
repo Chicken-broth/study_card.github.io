@@ -1,4 +1,7 @@
+import extra/effect_
 import extra/promise_
+import gleam/int
+import gleam/list
 import interface/indexed_db.{type DB}
 import lustre
 import lustre/effect.{type Effect, none}
@@ -28,15 +31,25 @@ pub type Msg {
   QuizResultMsg(result_screen.Msg)
   StartQuiz
   DataInitialized(DB)
+  Miss
+}
+
+fn setup_db() -> Effect(Msg) {
+  let data_sets = indexed_db.get_data_set_name()
+  let db_name = "db" <> int.to_string(db_version)
+  echo "lustre setup_db"
+  echo data_sets
+  case data_sets {
+    [first, second, ..] ->
+      indexed_db.setup(data_sets, second, db_name, 1)
+      |> promise_.to_effect_simple(DataInitialized)
+    _ -> effect_.perform(Miss)
+  }
 }
 
 /// アプリケーション全体の初期化
 pub fn init(_) -> #(Model, Effect(Msg)) {
-  #(
-    Loading,
-    indexed_db.setup(db_name, db_version, indexed_db.default_data_set)
-      |> promise_.to_effect_no_decode(DataInitialized),
-  )
+  #(Loading, setup_db())
 }
 
 /// アプリケーション全体の更新ロジック
@@ -50,7 +63,10 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           let #(home_model, home_effect) = quiz_home.init(db)
           #(Home(home_model), effect.map(home_effect, HomeMsg))
         }
-
+        Miss -> {
+          echo "setup err"
+          #(ErrScreen, effect.none())
+        }
         _ -> #(model, none())
         // Ignore other messages while loading
       }

@@ -58,9 +58,8 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       let eff =
         // effect_.perform(OutCome)
         model.quiz_result
-        |> quiz_result.to_json
         |> db.save_quiz_history(model.db, _)
-        |> promise_.to_effect_no_decode(fn(_) { OutCome })
+        |> promise_.to_effect_simple(fn(_) { OutCome })
       #(model, eff)
     }
     // GetHistory(quiz_result) -> {
