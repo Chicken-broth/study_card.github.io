@@ -17,13 +17,13 @@ const QUESTION_STORE = "questions";
 
 // Firebaseプロジェクト設定
 const firebaseConfig = {
-  apiKey: "AIzaSyA6QnYLnYMMLfKB_JBcJb8OrMb3KplEmpY",
-  authDomain: "studyapp-9dcc6.firebaseapp.com",
-  databaseURL: "https://studyapp-9dcc6-default-rtdb.firebaseio.com",
-  projectId: "studyapp-9dcc6",
-  storageBucket: "studyapp-9dcc6.firebasestorage.app",
-  messagingSenderId: "116129945561",
-  appId: "1:116129945561:web:c21a0440f87618734d2bc8"
+  apiKey: "",
+  authDomain: "",
+  databaseURL: "",
+  projectId: "",
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: ""
 };
 
 /**
