@@ -1,14 +1,14 @@
+import db/indexed_db.{type DB}
 import extra/effect_
 import extra/promise_
 import gleam/option.{None}
-import interface/indexed_db.{type DB}
 import lustre
 import lustre/effect.{type Effect, none}
 import lustre/element.{type Element}
 import lustre/element/html
 import pages/quiz_home
+import pages/quiz_result
 import pages/quiz_screen
-import pages/result_screen
 
 const db_version = "1"
 
@@ -17,7 +17,7 @@ pub type Model {
   Loading
   Home(quiz_home.Model)
   QuizScreen(quiz_home.Model, quiz_screen.Model)
-  QuizResult(quiz_home.Model, result_screen.Model)
+  QuizResult(quiz_home.Model, quiz_result.Model)
   ErrScreen
 }
 
@@ -25,7 +25,7 @@ pub type Model {
 pub type Msg {
   HomeMsg(quiz_home.Msg)
   QuizMsg(quiz_screen.Msg)
-  QuizResultMsg(result_screen.Msg)
+  QuizResultMsg(quiz_result.Msg)
   StartQuiz
   DataInitialized(DB)
   Miss
@@ -99,7 +99,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           case quiz_msg {
             quiz_screen.OutCome -> {
               let #(result_model, result_effect) =
-                result_screen.init(
+                quiz_result.init(
                   new_quiz_model.db,
                   new_quiz_model.score,
                   new_quiz_model.questions_count,
@@ -124,10 +124,10 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     QuizResult(home_model, result_model) -> {
       case msg {
         QuizResultMsg(result_msg) -> {
-          let #(new_model, eff) = result_screen.update(result_model, result_msg)
+          let #(new_model, eff) = quiz_result.update(result_model, result_msg)
 
           case result_msg {
-            result_screen.OutCome -> {
+            quiz_result.OutCome -> {
               // 保持していたhome_modelを再利用し、最新の学習履歴を取得するEffectを発行する
               let get_results_effect =
                 result_model.db
@@ -165,7 +165,7 @@ pub fn view(model: Model) -> Element(Msg) {
       quiz_screen.view(quiz_model)
       |> element.map(QuizMsg)
     QuizResult(_, result_model) ->
-      result_screen.view(result_model)
+      quiz_result.view(result_model)
       |> element.map(QuizResultMsg)
     ErrScreen -> html.text("エラーが発生しました")
   }

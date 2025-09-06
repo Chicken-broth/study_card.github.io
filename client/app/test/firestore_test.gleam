@@ -1,7 +1,7 @@
 // import gleam/javascript/promise
 // import gleeunit
 // import gleeunit/should
-// import interface/firestore
+// import db/firestore
 
 // pub fn main() {
 //   gleeunit.main()

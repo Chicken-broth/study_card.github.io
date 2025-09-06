@@ -2690,6 +2690,15 @@ function class$(name2) {
 function none() {
   return class$("");
 }
+function style(property3, value2) {
+  if (property3 === "") {
+    return class$("");
+  } else if (value2 === "") {
+    return class$("");
+  } else {
+    return attribute2("style", property3 + ":" + value2 + ";");
+  }
+}
 function do_styles(loop$properties, loop$styles) {
   while (true) {
     let properties = loop$properties;
@@ -5500,16 +5509,6 @@ function start3(app, selector, start_args) {
   );
 }
 
-// build/dev/javascript/study_app/extra/effect_.mjs
-function perform(msg) {
-  return from(
-    (dispatch) => {
-      dispatch(msg);
-      return void 0;
-    }
-  );
-}
-
 // build/dev/javascript/gleam_javascript/gleam_javascript_ffi.mjs
 var PromiseLayer = class _PromiseLayer {
   constructor(promise) {
@@ -5540,39 +5539,7 @@ function tap(promise, callback) {
   );
 }
 
-// build/dev/javascript/study_app/extra/promise_.mjs
-function to_effect(promise, to_success_msg, to_err_msg) {
-  return from(
-    (dispatch) => {
-      let _pipe = promise;
-      let _pipe$1 = map_promise(
-        _pipe,
-        (result) => {
-          if (result instanceof Ok) {
-            let a = result[0];
-            return to_success_msg(a);
-          } else {
-            let err = result[0];
-            return to_err_msg(err);
-          }
-        }
-      );
-      tap(_pipe$1, dispatch);
-      return void 0;
-    }
-  );
-}
-function to_effect_simple(promise, to_msg) {
-  return from(
-    (dispatch) => {
-      let _pipe = map_promise(promise, to_msg);
-      tap(_pipe, dispatch);
-      return void 0;
-    }
-  );
-}
-
-// build/dev/javascript/study_app/core/category.mjs
+// build/dev/javascript/app/core/category.mjs
 var Category = class extends CustomType {
   constructor(id, name2) {
     super();
@@ -5596,7 +5563,7 @@ function decoder() {
   );
 }
 
-// build/dev/javascript/study_app/core/answer.mjs
+// build/dev/javascript/app/core/answer.mjs
 var Correct = class extends CustomType {
 };
 var Incorrect = class extends CustomType {
@@ -5715,7 +5682,7 @@ function on_check(msg) {
   );
 }
 
-// build/dev/javascript/study_app/core/association_question.mjs
+// build/dev/javascript/app/core/association_question.mjs
 var SelectLeft = class extends CustomType {
   constructor($0) {
     super();
@@ -6081,7 +6048,7 @@ function decoder3() {
   );
 }
 
-// build/dev/javascript/study_app/core/multiple_choice_question.mjs
+// build/dev/javascript/app/core/multiple_choice_question.mjs
 var Select = class extends CustomType {
   constructor($0) {
     super();
@@ -6275,7 +6242,7 @@ function decoder4() {
   );
 }
 
-// build/dev/javascript/study_app/extra/json_.mjs
+// build/dev/javascript/app/extra/json_.mjs
 function custom_type_docoder(tab_string, decoder7) {
   return field(
     "type",
@@ -6297,7 +6264,7 @@ function custom_type_docoder(tab_string, decoder7) {
   );
 }
 
-// build/dev/javascript/study_app/core/question.mjs
+// build/dev/javascript/app/core/question.mjs
 var Model3 = class extends CustomType {
   constructor(id, category, question_text, question_interaction) {
     super();
@@ -6502,7 +6469,7 @@ function decoder5() {
   );
 }
 
-// build/dev/javascript/study_app/core/quiz_result.mjs
+// build/dev/javascript/app/core/quiz_result.mjs
 var Record = class extends CustomType {
   constructor(id, category, answer) {
     super();
@@ -6623,7 +6590,7 @@ function view5(quiz_result) {
   );
 }
 
-// build/dev/javascript/study_app/interface/data.mjs
+// build/dev/javascript/app/db/data.mjs
 var data_default = {
   "categories": [
     {
@@ -10748,7 +10715,7 @@ var data_default = {
   ]
 };
 
-// build/dev/javascript/study_app/interface/extra_data.mjs
+// build/dev/javascript/app/db/extra_data.mjs
 var rootWord = {
   id: 1,
   name: "\u8A9E\u6839",
@@ -10980,7 +10947,7 @@ var extra_data_default = {
   questions
 };
 
-// build/dev/javascript/study_app/interface/indexedDB_ffi.mjs
+// build/dev/javascript/app/db/indexedDB_ffi.mjs
 var DATADEFAULT = "\u30BB\u30AD\u30E5\u30EA\u30C6\u30A3";
 var DATAEXTRA = "\u82F1\u8A9E\u8A9E\u6839";
 var dataSet = [DATADEFAULT, DATAEXTRA];
@@ -11004,19 +10971,19 @@ var STORE_CONFIGS = [
     keyPath: { keyPath: "id" }
   }
 ];
-function setup(dbName, version, dataSetName) {
-  console.log("\nsetup db:", dbName, version, dataSetName);
+function setup(prefix2, dbName, version) {
+  console.log("\nsetup db:", prefix2, dbName, version);
   return new Promise((resolve2, reject) => {
     let data;
     let name2;
-    switch (dataSetName) {
+    switch (dbName) {
       case DATAEXTRA:
         data = extra_data_default;
-        name2 = dbName + "_" + DATAEXTRA;
+        name2 = prefix2 + dbName;
         break;
       default:
         data = data_default;
-        name2 = dbName + "_" + DATADEFAULT;
+        name2 = prefix2 + dbName;
         break;
     }
     const request = indexedDB.open(name2, version);
@@ -11181,13 +11148,13 @@ function addAnswers(base, new_) {
   return combined.slice(0, 3);
 }
 
-// build/dev/javascript/study_app/interface/indexed_db.mjs
+// build/dev/javascript/app/db/indexed_db.mjs
 var DB = class extends CustomType {
-  constructor(db, data_set_list, data_set, name2, version) {
+  constructor(db, names, prefix2, name2, version) {
     super();
     this.db = db;
-    this.data_set_list = data_set_list;
-    this.data_set = data_set;
+    this.names = names;
+    this.prefix = prefix2;
     this.name = name2;
     this.version = version;
   }
@@ -11209,17 +11176,30 @@ function get_data_set_name() {
   let _pipe$1 = run(_pipe, list2(string2));
   return unwrap(_pipe$1, toList([]));
 }
-function setup2(data_set_list, data_set, name2, version) {
-  let _pipe = setup(name2, version, data_set);
+function setup2(names, prefix2, name2, version) {
+  let _pipe = setup(prefix2, name2, version);
   return map_promise(
     _pipe,
     (db) => {
-      return new DB(db, data_set_list, data_set, name2, version);
+      return new DB(db, names, prefix2, name2, version);
     }
   );
 }
-function switch$(db, data_set) {
-  return setup2(db.data_set_list, data_set, db.name, db.version);
+function setup_from_db(db) {
+  let _pipe = setup(db.prefix, db.name, db.version);
+  return map_promise(
+    _pipe,
+    (dynamic2) => {
+      let _record = db;
+      return new DB(
+        dynamic2,
+        _record.names,
+        _record.prefix,
+        _record.name,
+        _record.version
+      );
+    }
+  );
 }
 function get_categories(db) {
   let _pipe = getCategories(db.db);
@@ -11320,7 +11300,154 @@ function save_quiz_results(db, results) {
   );
 }
 
-// build/dev/javascript/study_app/extra/list_.mjs
+// build/dev/javascript/app/extra/effect_.mjs
+function perform(msg) {
+  return from(
+    (dispatch) => {
+      dispatch(msg);
+      return void 0;
+    }
+  );
+}
+
+// build/dev/javascript/app/extra/promise_.mjs
+function to_effect(promise, to_success_msg, to_err_msg) {
+  return from(
+    (dispatch) => {
+      let _pipe = promise;
+      let _pipe$1 = map_promise(
+        _pipe,
+        (result) => {
+          if (result instanceof Ok) {
+            let a = result[0];
+            return to_success_msg(a);
+          } else {
+            let err = result[0];
+            return to_err_msg(err);
+          }
+        }
+      );
+      tap(_pipe$1, dispatch);
+      return void 0;
+    }
+  );
+}
+function to_effect_simple(promise, to_msg) {
+  return from(
+    (dispatch) => {
+      let _pipe = map_promise(promise, to_msg);
+      tap(_pipe, dispatch);
+      return void 0;
+    }
+  );
+}
+
+// build/dev/javascript/app/core/filter.mjs
+var SelectedCategory = class extends CustomType {
+  constructor(is_selected, category) {
+    super();
+    this.is_selected = is_selected;
+    this.category = category;
+  }
+};
+var Limit = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var Full = class extends CustomType {
+};
+var FilterOptions = class extends CustomType {
+  constructor(selected_categories, selected_count, do_shuffle, quiz_results, unanswered_only) {
+    super();
+    this.selected_categories = selected_categories;
+    this.selected_count = selected_count;
+    this.do_shuffle = do_shuffle;
+    this.quiz_results = quiz_results;
+    this.unanswered_only = unanswered_only;
+  }
+};
+function default_options() {
+  return new FilterOptions(toList([]), new Full(), false, toList([]), false);
+}
+function filter_by_category(all_questions, selected_categories) {
+  let _block;
+  let _pipe = selected_categories;
+  let _pipe$1 = filter(_pipe, (c) => {
+    return c.is_selected;
+  });
+  _block = map(_pipe$1, (c) => {
+    return c.category.id;
+  });
+  let selected_category_ids = _block;
+  let _pipe$2 = all_questions;
+  let _pipe$3 = filter(
+    _pipe$2,
+    (q) => {
+      return contains(selected_category_ids, q.category.id);
+    }
+  );
+  return map(_pipe$3, (q) => {
+    return q.id;
+  });
+}
+function filter_unanswered(question_ids, quiz_results, unanswered_only) {
+  return guard(
+    negate(unanswered_only),
+    question_ids,
+    () => {
+      let _block;
+      let _pipe = filter_exist_answers(quiz_results);
+      _block = map(_pipe, (r) => {
+        return r.id;
+      });
+      let answered_ids = _block;
+      return filter(
+        question_ids,
+        (id) => {
+          let _pipe$1 = contains(answered_ids, id);
+          return negate(_pipe$1);
+        }
+      );
+    }
+  );
+}
+function shuffle2(xs, is_shuffle) {
+  if (is_shuffle) {
+    return shuffle(xs);
+  } else {
+    return xs;
+  }
+}
+function apply_count_and_shuffle(question_ids, selected_count, do_shuffle) {
+  let shuffled_ids = shuffle2(question_ids, do_shuffle);
+  let _block;
+  if (selected_count instanceof Limit) {
+    let count = selected_count[0];
+    _block = count;
+  } else {
+    _block = length(shuffled_ids);
+  }
+  let limit_count = _block;
+  return take(shuffled_ids, limit_count);
+}
+function filter_question_ids(all_questions, options) {
+  let _pipe = all_questions;
+  let _pipe$1 = filter_by_category(_pipe, options.selected_categories);
+  let _pipe$2 = filter_unanswered(
+    _pipe$1,
+    options.quiz_results,
+    options.unanswered_only
+  );
+  return apply_count_and_shuffle(
+    _pipe$2,
+    options.selected_count,
+    options.do_shuffle
+  );
+}
+
+// build/dev/javascript/app/extra/list_.mjs
 function get_at(list4, at) {
   let _pipe = drop(list4, at);
   return ((xs) => {
@@ -11359,38 +11486,19 @@ function update_if(list4, prefix2, fun) {
   );
 }
 
-// build/dev/javascript/study_app/pages/quiz_home.mjs
+// build/dev/javascript/app/pages/quiz_home.mjs
 var Model4 = class extends CustomType {
-  constructor(db, categories2, question_id_categories, shuffle_or_not, selected_category, selected_count, selected_question_ids, loading, error, quiz_result, show_results, unanswered_only) {
+  constructor(db, categories2, question_id_categories, filter_options, selected_question_ids, loading, error, show_results) {
     super();
     this.db = db;
     this.categories = categories2;
     this.question_id_categories = question_id_categories;
-    this.shuffle_or_not = shuffle_or_not;
-    this.selected_category = selected_category;
-    this.selected_count = selected_count;
+    this.filter_options = filter_options;
     this.selected_question_ids = selected_question_ids;
     this.loading = loading;
     this.error = error;
-    this.quiz_result = quiz_result;
     this.show_results = show_results;
-    this.unanswered_only = unanswered_only;
   }
-};
-var SelectedCategory = class extends CustomType {
-  constructor(is_selected, category) {
-    super();
-    this.is_selected = is_selected;
-    this.category = category;
-  }
-};
-var Limit = class extends CustomType {
-  constructor($0) {
-    super();
-    this[0] = $0;
-  }
-};
-var Full = class extends CustomType {
 };
 var SelectDb = class extends CustomType {
   constructor($0) {
@@ -11506,7 +11614,7 @@ function get_initial_data_effects(db) {
     }
   );
   let get_results = _block$2;
-  echo("get_initial_data_effects", "src/pages/quiz_home.gleam", 103);
+  echo("get_initial_data_effects", "src/pages/quiz_home.gleam", 86);
   return batch(
     toList([get_categories2, get_question_id_and_category_list2, get_results])
   );
@@ -11517,105 +11625,50 @@ function init2(db) {
       db,
       toList([]),
       toList([]),
-      false,
-      toList([]),
-      new Full(),
+      default_options(),
       toList([]),
       false,
       new None(),
-      toList([]),
-      false,
       false
     ),
     get_initial_data_effects(db)
   ];
 }
-function filter_by_category(all_questions, selected_categories) {
-  let _block;
-  let _pipe = selected_categories;
-  let _pipe$1 = filter(_pipe, (c) => {
-    return c.is_selected;
-  });
-  _block = map(_pipe$1, (c) => {
-    return c.category.id;
-  });
-  let selected_category_ids = _block;
-  let _pipe$2 = all_questions;
-  let _pipe$3 = filter(
-    _pipe$2,
-    (q) => {
-      return contains(selected_category_ids, q.category.id);
-    }
+function update_filtered_questions(model) {
+  let new_question_ids = filter_question_ids(
+    model.question_id_categories,
+    model.filter_options
   );
-  return map(_pipe$3, (q) => {
-    return q.id;
-  });
-}
-function filter_unanswered(question_ids, quiz_results, unanswered_only) {
-  echo("filter_unanswered", "src/pages/quiz_home.gleam", 354);
-  echo(unanswered_only, "src/pages/quiz_home.gleam", 355);
-  return guard(
-    negate(unanswered_only),
-    question_ids,
-    () => {
-      let _block;
-      let _pipe = filter_exist_answers(quiz_results);
-      _block = map(_pipe, (r) => {
-        return r.id;
-      });
-      let answered_ids = _block;
-      return filter(
-        question_ids,
-        (id) => {
-          let _pipe$1 = contains(answered_ids, id);
-          return negate(_pipe$1);
-        }
-      );
-    }
+  let _record = model;
+  return new Model4(
+    _record.db,
+    _record.categories,
+    _record.question_id_categories,
+    _record.filter_options,
+    new_question_ids,
+    _record.loading,
+    _record.error,
+    _record.show_results
   );
-}
-function shuffle2(xs, is_shuffle) {
-  if (is_shuffle) {
-    return shuffle(xs);
-  } else {
-    return xs;
-  }
-}
-function apply_count_and_shuffle(question_ids, selected_count, do_shuffle) {
-  let shuffled_ids = shuffle2(question_ids, do_shuffle);
-  let _block;
-  if (selected_count instanceof Limit) {
-    let count = selected_count[0];
-    _block = count;
-  } else {
-    _block = length(shuffled_ids);
-  }
-  let limit_count = _block;
-  return take(shuffled_ids, limit_count);
-}
-function filtering_question_id(id_categorie_list, selected_category_ids, selected_count, do_shuffle, quiz_results, unanswered_only) {
-  let _pipe = id_categorie_list;
-  let _pipe$1 = filter_by_category(_pipe, selected_category_ids);
-  let _pipe$2 = filter_unanswered(_pipe$1, quiz_results, unanswered_only);
-  return apply_count_and_shuffle(_pipe$2, selected_count, do_shuffle);
 }
 function update5(model, msg) {
   if (msg instanceof SelectDb) {
-    let data_set_name = msg[0];
+    let name2 = msg[0];
     let _block;
     let _record = model.db;
     _block = new DB(
       _record.db,
-      _record.data_set_list,
-      data_set_name,
-      _record.name,
+      _record.names,
+      _record.prefix,
+      name2,
       _record.version
     );
     let new_db = _block;
     let _block$1;
-    let _pipe = switch$(new_db, data_set_name);
+    let _pipe = new_db;
+    let _pipe$1 = setup_from_db(_pipe);
     _block$1 = to_effect_simple(
-      _pipe,
+      _pipe$1,
       (var0) => {
         return new DbChanged(var0);
       }
@@ -11628,15 +11681,11 @@ function update5(model, msg) {
           new_db,
           _record$1.categories,
           _record$1.question_id_categories,
-          _record$1.shuffle_or_not,
-          _record$1.selected_category,
-          _record$1.selected_count,
+          _record$1.filter_options,
           _record$1.selected_question_ids,
           true,
           _record$1.error,
-          _record$1.quiz_result,
-          _record$1.show_results,
-          _record$1.unanswered_only
+          _record$1.show_results
         );
       })(),
       setup_db_effect
@@ -11650,15 +11699,11 @@ function update5(model, msg) {
           new_db,
           _record.categories,
           _record.question_id_categories,
-          _record.shuffle_or_not,
-          _record.selected_category,
-          _record.selected_count,
+          _record.filter_options,
           _record.selected_question_ids,
           false,
           _record.error,
-          _record.quiz_result,
-          _record.show_results,
-          _record.unanswered_only
+          _record.show_results
         );
       })(),
       get_initial_data_effects(new_db)
@@ -11667,7 +11712,7 @@ function update5(model, msg) {
     let id = msg[0];
     let is_selected = msg[1];
     let new_select_category = update_if(
-      model.selected_category,
+      model.filter_options.selected_categories,
       (c) => {
         return c.category.id === id;
       },
@@ -11675,163 +11720,153 @@ function update5(model, msg) {
         return new SelectedCategory(is_selected, c.category);
       }
     );
-    let new_question_ids = filtering_question_id(
-      model.question_id_categories,
-      new_select_category,
-      model.selected_count,
-      model.shuffle_or_not,
-      model.quiz_result,
-      model.unanswered_only
-    );
-    return [
+    let _block;
+    let _block$1;
+    let _record = model;
+    _block$1 = new Model4(
+      _record.db,
+      _record.categories,
+      _record.question_id_categories,
       (() => {
-        let _record = model;
-        return new Model4(
-          _record.db,
-          _record.categories,
-          _record.question_id_categories,
-          _record.shuffle_or_not,
+        let _record$1 = model.filter_options;
+        return new FilterOptions(
           new_select_category,
-          _record.selected_count,
-          new_question_ids,
-          _record.loading,
-          _record.error,
-          _record.quiz_result,
-          _record.show_results,
-          _record.unanswered_only
+          _record$1.selected_count,
+          _record$1.do_shuffle,
+          _record$1.quiz_results,
+          _record$1.unanswered_only
         );
       })(),
-      none2()
-    ];
+      _record.selected_question_ids,
+      _record.loading,
+      _record.error,
+      _record.show_results
+    );
+    let _pipe = _block$1;
+    _block = update_filtered_questions(_pipe);
+    let new_model = _block;
+    return [new_model, none2()];
   } else if (msg instanceof SelectCount) {
     let quest_count = msg[0];
-    let new_question_ids = filtering_question_id(
-      model.question_id_categories,
-      model.selected_category,
-      quest_count,
-      model.shuffle_or_not,
-      model.quiz_result,
-      model.unanswered_only
-    );
-    return [
+    let _block;
+    let _block$1;
+    let _record = model;
+    _block$1 = new Model4(
+      _record.db,
+      _record.categories,
+      _record.question_id_categories,
       (() => {
-        let _record = model;
-        return new Model4(
-          _record.db,
-          _record.categories,
-          _record.question_id_categories,
-          _record.shuffle_or_not,
-          _record.selected_category,
+        let _record$1 = model.filter_options;
+        return new FilterOptions(
+          _record$1.selected_categories,
           quest_count,
-          new_question_ids,
-          _record.loading,
-          _record.error,
-          _record.quiz_result,
-          _record.show_results,
-          _record.unanswered_only
+          _record$1.do_shuffle,
+          _record$1.quiz_results,
+          _record$1.unanswered_only
         );
       })(),
-      none2()
-    ];
+      _record.selected_question_ids,
+      _record.loading,
+      _record.error,
+      _record.show_results
+    );
+    let _pipe = _block$1;
+    _block = update_filtered_questions(_pipe);
+    let new_model = _block;
+    return [new_model, none2()];
   } else if (msg instanceof SwitchShuffle) {
     let is_shuffle = msg[0];
-    let new_question_ids = filtering_question_id(
-      model.question_id_categories,
-      model.selected_category,
-      model.selected_count,
-      is_shuffle,
-      model.quiz_result,
-      model.unanswered_only
-    );
-    return [
+    let _block;
+    let _block$1;
+    let _record = model;
+    _block$1 = new Model4(
+      _record.db,
+      _record.categories,
+      _record.question_id_categories,
       (() => {
-        let _record = model;
-        return new Model4(
-          _record.db,
-          _record.categories,
-          _record.question_id_categories,
+        let _record$1 = model.filter_options;
+        return new FilterOptions(
+          _record$1.selected_categories,
+          _record$1.selected_count,
           is_shuffle,
-          _record.selected_category,
-          _record.selected_count,
-          new_question_ids,
-          _record.loading,
-          _record.error,
-          _record.quiz_result,
-          _record.show_results,
-          _record.unanswered_only
+          _record$1.quiz_results,
+          _record$1.unanswered_only
         );
       })(),
-      none2()
-    ];
+      _record.selected_question_ids,
+      _record.loading,
+      _record.error,
+      _record.show_results
+    );
+    let _pipe = _block$1;
+    _block = update_filtered_questions(_pipe);
+    let new_model = _block;
+    return [new_model, none2()];
   } else if (msg instanceof SwitchUnansweredOnly) {
     let is_unanswered_only = msg[0];
-    let new_question_ids = filtering_question_id(
-      model.question_id_categories,
-      model.selected_category,
-      model.selected_count,
-      model.shuffle_or_not,
-      model.quiz_result,
-      is_unanswered_only
-    );
-    return [
+    let _block;
+    let _block$1;
+    let _record = model;
+    _block$1 = new Model4(
+      _record.db,
+      _record.categories,
+      _record.question_id_categories,
       (() => {
-        let _record = model;
-        return new Model4(
-          _record.db,
-          _record.categories,
-          _record.question_id_categories,
-          _record.shuffle_or_not,
-          _record.selected_category,
-          _record.selected_count,
-          echo(new_question_ids, "src/pages/quiz_home.gleam", 224),
-          _record.loading,
-          _record.error,
-          _record.quiz_result,
-          _record.show_results,
+        let _record$1 = model.filter_options;
+        return new FilterOptions(
+          _record$1.selected_categories,
+          _record$1.selected_count,
+          _record$1.do_shuffle,
+          _record$1.quiz_results,
           is_unanswered_only
         );
       })(),
-      none2()
-    ];
+      _record.selected_question_ids,
+      _record.loading,
+      _record.error,
+      _record.show_results
+    );
+    let _pipe = _block$1;
+    _block = update_filtered_questions(_pipe);
+    let new_model = _block;
+    return [new_model, none2()];
   } else if (msg instanceof SWitchAllCategory) {
     let is_selected = msg[0];
-    echo("SWitchAllCategory", "src/pages/quiz_home.gleam", 231);
+    echo("SWitchAllCategory", "src/pages/quiz_home.gleam", 192);
     let new_select_category = map(
-      model.selected_category,
+      model.filter_options.selected_categories,
       (c) => {
         return new SelectedCategory(is_selected, c.category);
       }
     );
-    let new_question_ids = filtering_question_id(
-      model.question_id_categories,
-      new_select_category,
-      model.selected_count,
-      model.shuffle_or_not,
-      model.quiz_result,
-      model.unanswered_only
-    );
-    return [
+    let _block;
+    let _block$1;
+    let _record = model;
+    _block$1 = new Model4(
+      _record.db,
+      _record.categories,
+      _record.question_id_categories,
       (() => {
-        let _record = model;
-        return new Model4(
-          _record.db,
-          _record.categories,
-          _record.question_id_categories,
-          _record.shuffle_or_not,
+        let _record$1 = model.filter_options;
+        return new FilterOptions(
           new_select_category,
-          _record.selected_count,
-          new_question_ids,
-          _record.loading,
-          _record.error,
-          _record.quiz_result,
-          _record.show_results,
-          _record.unanswered_only
+          _record$1.selected_count,
+          _record$1.do_shuffle,
+          _record$1.quiz_results,
+          _record$1.unanswered_only
         );
       })(),
-      none2()
-    ];
+      _record.selected_question_ids,
+      _record.loading,
+      _record.error,
+      _record.show_results
+    );
+    let _pipe = _block$1;
+    _block = update_filtered_questions(_pipe);
+    let new_model = _block;
+    return [new_model, none2()];
   } else if (msg instanceof ViewResults) {
-    echo("View History", "src/pages/quiz_home.gleam", 255);
+    echo("View History", "src/pages/quiz_home.gleam", 209);
     return [
       (() => {
         let _record = model;
@@ -11839,106 +11874,101 @@ function update5(model, msg) {
           _record.db,
           _record.categories,
           _record.question_id_categories,
-          _record.shuffle_or_not,
-          _record.selected_category,
-          _record.selected_count,
+          _record.filter_options,
           _record.selected_question_ids,
           _record.loading,
           _record.error,
-          _record.quiz_result,
-          negate(model.show_results),
-          _record.unanswered_only
+          negate(model.show_results)
         );
       })(),
       none2()
     ];
   } else if (msg instanceof GetCategories) {
     let categories2 = msg[0];
-    echo("GetCategories", "src/pages/quiz_home.gleam", 262);
+    echo("GetCategories", "src/pages/quiz_home.gleam", 216);
     let new_selected_category = map(
       categories2,
       (_capture) => {
         return new SelectedCategory(true, _capture);
       }
     );
-    return [
+    let _block;
+    let _block$1;
+    let _record = model;
+    _block$1 = new Model4(
+      _record.db,
+      categories2,
+      _record.question_id_categories,
       (() => {
-        let _record = model;
-        return new Model4(
-          _record.db,
-          categories2,
-          _record.question_id_categories,
-          _record.shuffle_or_not,
+        let _record$1 = model.filter_options;
+        return new FilterOptions(
           new_selected_category,
-          _record.selected_count,
-          _record.selected_question_ids,
-          _record.loading,
-          _record.error,
-          _record.quiz_result,
-          _record.show_results,
-          _record.unanswered_only
+          _record$1.selected_count,
+          _record$1.do_shuffle,
+          _record$1.quiz_results,
+          _record$1.unanswered_only
         );
       })(),
-      none2()
-    ];
+      _record.selected_question_ids,
+      _record.loading,
+      _record.error,
+      _record.show_results
+    );
+    let _pipe = _block$1;
+    _block = update_filtered_questions(_pipe);
+    let new_model = _block;
+    return [new_model, none2()];
   } else if (msg instanceof GetQuestionIdAndCategoryList) {
     let id_and_category_list = msg[0];
-    echo("GetQuestionIdAndCategoryList", "src/pages/quiz_home.gleam", 277);
-    return [
-      (() => {
-        let _record = model;
-        return new Model4(
-          _record.db,
-          _record.categories,
-          id_and_category_list,
-          _record.shuffle_or_not,
-          _record.selected_category,
-          _record.selected_count,
-          map(id_and_category_list, (x) => {
-            return x.id;
-          }),
-          _record.loading,
-          _record.error,
-          _record.quiz_result,
-          _record.show_results,
-          _record.unanswered_only
-        );
-      })(),
-      none2()
-    ];
+    echo("GetQuestionIdAndCategoryList", "src/pages/quiz_home.gleam", 233);
+    let _block;
+    let _block$1;
+    let _record = model;
+    _block$1 = new Model4(
+      _record.db,
+      _record.categories,
+      id_and_category_list,
+      _record.filter_options,
+      _record.selected_question_ids,
+      _record.loading,
+      _record.error,
+      _record.show_results
+    );
+    let _pipe = _block$1;
+    _block = update_filtered_questions(_pipe);
+    let new_model = _block;
+    return [new_model, none2()];
   } else if (msg instanceof GetQuizHistory) {
     let quiz_result = msg[0];
-    echo("GetQuizHistory", "src/pages/quiz_home.gleam", 289);
-    let new_question_ids = filtering_question_id(
-      model.question_id_categories,
-      model.selected_category,
-      model.selected_count,
-      model.shuffle_or_not,
-      quiz_result,
-      model.unanswered_only
-    );
-    return [
+    echo("GetQuizHistory", "src/pages/quiz_home.gleam", 240);
+    let _block;
+    let _block$1;
+    let _record = model;
+    _block$1 = new Model4(
+      _record.db,
+      _record.categories,
+      _record.question_id_categories,
       (() => {
-        let _record = model;
-        return new Model4(
-          _record.db,
-          _record.categories,
-          _record.question_id_categories,
-          _record.shuffle_or_not,
-          _record.selected_category,
-          _record.selected_count,
-          new_question_ids,
-          false,
-          _record.error,
+        let _record$1 = model.filter_options;
+        return new FilterOptions(
+          _record$1.selected_categories,
+          _record$1.selected_count,
+          _record$1.do_shuffle,
           quiz_result,
-          _record.show_results,
-          _record.unanswered_only
+          _record$1.unanswered_only
         );
       })(),
-      none2()
-    ];
+      _record.selected_question_ids,
+      false,
+      _record.error,
+      _record.show_results
+    );
+    let _pipe = _block$1;
+    _block = update_filtered_questions(_pipe);
+    let new_model = _block;
+    return [new_model, none2()];
   } else if (msg instanceof StartQuiz) {
-    echo("Start Quiz", "src/pages/quiz_home.gleam", 316);
+    echo("Start Quiz", "src/pages/quiz_home.gleam", 260);
     let _block;
     let _pipe = get_question_by_ids(model.db, model.selected_question_ids);
     _block = to_effect(
@@ -11960,7 +11990,7 @@ function update5(model, msg) {
     return [model, none2()];
   } else {
     let json_err = msg[0];
-    echo("err screen", "src/pages/quiz_home.gleam", 312);
+    echo("err screen", "src/pages/quiz_home.gleam", 256);
     return [
       (() => {
         let _record = model;
@@ -11968,15 +11998,11 @@ function update5(model, msg) {
           _record.db,
           _record.categories,
           _record.question_id_categories,
-          _record.shuffle_or_not,
-          _record.selected_category,
-          _record.selected_count,
+          _record.filter_options,
           _record.selected_question_ids,
           _record.loading,
           new Some(json_err),
-          _record.quiz_result,
-          _record.show_results,
-          _record.unanswered_only
+          _record.show_results
         );
       })(),
       none2()
@@ -12011,9 +12037,15 @@ function section_container_row_style() {
     ])
   );
 }
+function style_margin_left_1() {
+  return style("margin-left", "1rem");
+}
+function style_cursor_pointer() {
+  return style("cursor", "pointer");
+}
 function view_checkbox_label(checked2, label2, handler) {
   return label(
-    toList([styles(toList([["cursor", "pointer"]]))]),
+    toList([style_margin_left_1(), style_cursor_pointer()]),
     toList([
       input(
         toList([
@@ -12024,16 +12056,13 @@ function view_checkbox_label(checked2, label2, handler) {
           })
         ])
       ),
-      span(
-        toList([styles(toList([["margin-left", "0.5rem"]]))]),
-        toList([text3(label2)])
-      )
+      span(toList([style_cursor_pointer()]), toList([text3(label2)]))
     ])
   );
 }
 function view_options(shuffle3, unanswered_only) {
   return div(
-    toList([section_container_style()]),
+    toList([section_container_row_style()]),
     toList([
       view_checkbox_label(
         shuffle3,
@@ -12054,7 +12083,7 @@ function view_options(shuffle3, unanswered_only) {
 }
 function view_radio_with_label(checked2, label2, handler) {
   return label(
-    toList([styles(toList([["cursor", "pointer"]]))]),
+    toList([style_margin_left_1(), style_cursor_pointer()]),
     toList([
       input(
         toList([
@@ -12065,10 +12094,7 @@ function view_radio_with_label(checked2, label2, handler) {
           checked(checked2)
         ])
       ),
-      span(
-        toList([styles(toList([["margin-left", "0.5rem"]]))]),
-        toList([text3(label2)])
-      )
+      span(toList([]), toList([text3(label2)]))
     ])
   );
 }
@@ -12231,13 +12257,11 @@ function view_db_selection(data_set_list, selected_db) {
 function view6(model) {
   let is_start_quiz_enabled = length(model.selected_question_ids) > 0;
   let _block;
-  let _pipe = map(
-    model.selected_category,
-    (c) => {
-      return c.is_selected;
-    }
-  );
-  _block = any(_pipe, identity2);
+  let _pipe = model.filter_options.selected_categories;
+  let _pipe$1 = map(_pipe, (c) => {
+    return c.is_selected;
+  });
+  _block = any(_pipe$1, identity2);
   let checked2 = _block;
   let qty = length(model.selected_question_ids);
   return div(
@@ -12261,24 +12285,27 @@ function view6(model) {
             ]),
             toList([text3("\u554F\u984C\u96C6\u9078\u629E")])
           ),
-          view_db_selection(model.db.data_set_list, model.db.data_set)
+          view_db_selection(model.db.names, model.db.name)
         ])
       ),
       h2(
         toList([styles(toList([["margin-top", "1rem"]]))]),
         toList([text3("\u30AB\u30C6\u30B4\u30EA")])
       ),
-      view_category_selection(model.selected_category, checked2),
+      view_category_selection(model.filter_options.selected_categories, checked2),
       h2(
         toList([styles(toList([["margin-top", "1rem"]]))]),
         toList([text3("\u30AA\u30D7\u30B7\u30E7\u30F3")])
       ),
-      view_options(model.shuffle_or_not, model.unanswered_only),
+      view_options(
+        model.filter_options.do_shuffle,
+        model.filter_options.unanswered_only
+      ),
       h2(
         toList([styles(toList([["margin-top", "1rem"]]))]),
         toList([text3("\u51FA\u984C\u6570\u9078\u629E")])
       ),
-      view_count_selection(model.selected_count),
+      view_count_selection(model.filter_options.selected_count),
       div(
         toList([styles(toList([["margin-top", "1rem"]]))]),
         toList([text3("\u9078\u629E\u4E2D\u306E\u554F\u984C\u6570: " + to_string(qty))])
@@ -12288,7 +12315,7 @@ function view6(model) {
       (() => {
         let $ = model.show_results;
         if ($) {
-          return view5(model.quiz_result);
+          return view5(model.filter_options.quiz_results);
         } else {
           return text3("");
         }
@@ -12433,294 +12460,84 @@ function echo$isDict(value2) {
   }
 }
 
-// build/dev/javascript/study_app/pages/quiz_screen.mjs
+// build/dev/javascript/app/pages/quiz_result.mjs
 var Model5 = class extends CustomType {
-  constructor(db, questions2, questions_count, current_question_index, quiz_result, quiz_finished, score) {
+  constructor(db, score, total_questions, quiz_result) {
     super();
     this.db = db;
-    this.questions = questions2;
-    this.questions_count = questions_count;
-    this.current_question_index = current_question_index;
-    this.quiz_result = quiz_result;
-    this.quiz_finished = quiz_finished;
     this.score = score;
+    this.total_questions = total_questions;
+    this.quiz_result = quiz_result;
   }
 };
-var QuestionMsg = class extends CustomType {
+var Err = class extends CustomType {
   constructor($0) {
     super();
     this[0] = $0;
   }
 };
-var NextQuestion = class extends CustomType {
+var GoToHome = class extends CustomType {
 };
 var OutCome2 = class extends CustomType {
 };
-var GoToResultScreen = class extends CustomType {
-};
-function init3(db, questions2) {
-  let _pipe = map(questions2, (q) => {
-    return q.id;
-  });
-  echo2(_pipe, "src/pages/quiz_screen.gleam", 64);
-  let $ = is_empty2(questions2);
-  if ($) {
-    return new Error(void 0);
-  } else {
-    return new Ok(
-      new Model5(
-        db,
-        questions2,
-        length(questions2),
-        0,
-        from_questions(questions2),
-        false,
-        0
-      )
-    );
-  }
-}
-function update_quiz_result(model) {
-  let current_question = get_at(
-    model.questions,
-    model.current_question_index
-  );
-  if (current_question instanceof Some) {
-    let q = current_question[0];
-    let new_answer = check_answer2(q);
-    echo2(new_answer, "src/pages/quiz_screen.gleam", 156);
-    return update_if(
-      model.quiz_result,
-      (r) => {
-        return r.id === q.id;
-      },
-      (r) => {
-        let _record = r;
-        return new Record(_record.id, _record.category, toList([new_answer]));
-      }
-    );
-  } else {
-    return model.quiz_result;
-  }
-}
-function get_score(quiz_result) {
-  let _pipe = quiz_result;
-  let _pipe$1 = filter(
-    _pipe,
-    (r) => {
-      let $ = r.answer;
-      if ($ instanceof Empty) {
-        return false;
-      } else {
-        let $1 = $.head;
-        if ($1 instanceof Correct) {
-          return true;
-        } else {
-          return false;
-        }
-      }
-    }
-  );
-  return length(_pipe$1);
+function init3(db, score, total_questions, quiz_result) {
+  return [new Model5(db, score, total_questions, quiz_result), none2()];
 }
 function update6(model, msg) {
-  if (msg instanceof QuestionMsg) {
-    let q_msg = msg[0];
-    let new_questions = update_at(
-      model.questions,
-      model.current_question_index,
-      (_capture) => {
-        return update4(_capture, q_msg);
+  if (msg instanceof Err) {
+    let json_err = msg[0];
+    echo2("err screen", "src/pages/quiz_result.gleam", 47);
+    echo2(json_err, "src/pages/quiz_result.gleam", 48);
+    return [model, none2()];
+  } else if (msg instanceof GoToHome) {
+    echo2("GoToHome", "src/pages/quiz_result.gleam", 56);
+    let _block;
+    let _pipe = model.quiz_result;
+    let _pipe$1 = filter_exist_answers(_pipe);
+    echo2(_pipe$1, "src/pages/quiz_result.gleam", 61);
+    let _pipe$2 = ((_capture) => {
+      return save_quiz_results(model.db, _capture);
+    })(_pipe$1);
+    _block = to_effect_simple(
+      _pipe$2,
+      (_) => {
+        return new OutCome2();
       }
     );
-    return [
-      (() => {
-        let _record = model;
-        return new Model5(
-          _record.db,
-          new_questions,
-          _record.questions_count,
-          _record.current_question_index,
-          _record.quiz_result,
-          _record.quiz_finished,
-          _record.score
-        );
-      })(),
-      none2()
-    ];
-  } else if (msg instanceof NextQuestion) {
-    let new_quiz_result = update_quiz_result(model);
-    let new_score = get_score(new_quiz_result);
-    let next_index = model.current_question_index + 1;
-    let is_finished = next_index >= length(model.questions);
-    if (is_finished) {
-      return [
-        (() => {
-          let _record = model;
-          return new Model5(
-            _record.db,
-            _record.questions,
-            _record.questions_count,
-            _record.current_question_index,
-            new_quiz_result,
-            true,
-            new_score
-          );
-        })(),
-        perform(new GoToResultScreen())
-      ];
-    } else {
-      return [
-        (() => {
-          let _record = model;
-          return new Model5(
-            _record.db,
-            _record.questions,
-            _record.questions_count,
-            next_index,
-            new_quiz_result,
-            _record.quiz_finished,
-            new_score
-          );
-        })(),
-        none2()
-      ];
-    }
-  } else if (msg instanceof OutCome2) {
+    let eff = _block;
+    return [model, eff];
+  } else {
+    echo2("result -> home", "src/pages/quiz_result.gleam", 68);
     return [model, none2()];
-  } else {
-    return [model, perform(new OutCome2())];
   }
 }
-function view_progress2(current_index, total_questions) {
-  let progress = "Question " + to_string(current_index + 1) + " / " + to_string(
-    total_questions
-  );
-  return h2(toList([]), toList([text3(progress)]));
-}
-function view_question_header(current_question) {
-  return h3(
-    toList([]),
-    toList([
-      div(
-        toList([]),
-        toList([text3("id:" + to_string(current_question.id))])
-      ),
-      div(
-        toList([]),
-        toList([text3("category:" + current_question.category.name)])
-      ),
-      div(
-        toList([]),
-        toList([
-          text3("sub_category:" + current_question.category.sub_name)
-        ])
-      )
-    ])
-  );
-}
-function view_question_body(current_question) {
+function view7(model) {
   return div(
     toList([]),
     toList([
-      p(toList([]), toList([text3(current_question.question_text)])),
-      div(
-        toList([]),
-        toList([
-          (() => {
-            let _pipe = current_question;
-            let _pipe$1 = view4(_pipe);
-            return map4(
-              _pipe$1,
-              (var0) => {
-                return new QuestionMsg(var0);
-              }
-            );
-          })()
-        ])
-      )
-    ])
-  );
-}
-function view_navigation_buttons(current_question) {
-  return div(
-    toList([]),
-    toList([
-      div(
-        toList([]),
-        toList([
-          button(
-            toList([on_click(new NextQuestion())]),
-            toList([text3("Next")])
-          )
-        ])
-      ),
-      div(
-        toList([]),
-        toList([
-          button(
-            toList([
-              styles(toList([["margin-top", "1rem"]])),
-              on_click(new GoToResultScreen())
-            ]),
-            toList([text3("GoResult")])
-          )
-        ])
-      )
-    ])
-  );
-}
-function view_question(model) {
-  let $ = get_at(model.questions, model.current_question_index);
-  if ($ instanceof Some) {
-    let current_question = $[0];
-    return div(
-      toList([]),
-      toList([
-        view_progress2(
-          model.current_question_index,
-          length(model.questions)
-        ),
-        view_question_header(current_question),
-        view_question_body(current_question),
-        view_navigation_buttons(current_question)
-      ])
-    );
-  } else {
-    return text3("Error: Question not found.");
-  }
-}
-function view_quiz_finished(model) {
-  let score = get_score(model.quiz_result);
-  let total_questions = length(model.questions);
-  return div(
-    toList([]),
-    toList([
-      h2(toList([]), toList([text3("Quiz Finished!")])),
+      h2(toList([]), toList([text3("Quiz Results")])),
       p(
         toList([]),
         toList([
           text3(
-            "Your score: " + to_string(score) + "/" + to_string(
-              total_questions
+            "Your score: " + to_string(model.score) + "/" + to_string(
+              model.total_questions
             )
           )
         ])
       ),
       button(
-        toList([on_click(new GoToResultScreen())]),
-        toList([text3("View Results")])
+        toList([on_click(new GoToHome())]),
+        toList([text3("Go to Home")])
+      ),
+      h3(toList([]), toList([text3("Detailed Results:")])),
+      view5(model.quiz_result),
+      button(
+        toList([on_click(new GoToHome())]),
+        toList([text3("Go to Home")])
       )
     ])
   );
-}
-function view7(model) {
-  let $ = model.quiz_finished;
-  if ($) {
-    return view_quiz_finished(model);
-  } else {
-    return view_question(model);
-  }
 }
 function echo2(value2, file, line) {
   const grey = "\x1B[90m";
@@ -12859,84 +12676,314 @@ function echo$isDict2(value2) {
   }
 }
 
-// build/dev/javascript/study_app/pages/result_screen.mjs
+// build/dev/javascript/app/pages/quiz_screen.mjs
 var Model6 = class extends CustomType {
-  constructor(db, score, total_questions, quiz_result) {
+  constructor(db, questions2, questions_count, current_question_index, quiz_result, quiz_finished, score) {
     super();
     this.db = db;
-    this.score = score;
-    this.total_questions = total_questions;
+    this.questions = questions2;
+    this.questions_count = questions_count;
+    this.current_question_index = current_question_index;
     this.quiz_result = quiz_result;
+    this.quiz_finished = quiz_finished;
+    this.score = score;
   }
 };
-var Err = class extends CustomType {
+var QuestionMsg = class extends CustomType {
   constructor($0) {
     super();
     this[0] = $0;
   }
 };
-var GoToHome = class extends CustomType {
+var NextQuestion = class extends CustomType {
 };
 var OutCome3 = class extends CustomType {
 };
-function init4(db, score, total_questions, quiz_result) {
-  return [new Model6(db, score, total_questions, quiz_result), none2()];
-}
-function update7(model, msg) {
-  if (msg instanceof Err) {
-    let json_err = msg[0];
-    echo3("err screen", "src/pages/result_screen.gleam", 46);
-    echo3(json_err, "src/pages/result_screen.gleam", 47);
-    return [model, none2()];
-  } else if (msg instanceof GoToHome) {
-    echo3("GoToHome", "src/pages/result_screen.gleam", 55);
-    let _block;
-    let _pipe = model.quiz_result;
-    let _pipe$1 = filter_exist_answers(_pipe);
-    echo3(_pipe$1, "src/pages/result_screen.gleam", 60);
-    let _pipe$2 = ((_capture) => {
-      return save_quiz_results(model.db, _capture);
-    })(_pipe$1);
-    _block = to_effect_simple(
-      _pipe$2,
-      (_) => {
-        return new OutCome3();
-      }
-    );
-    let eff = _block;
-    return [model, eff];
+var GoToResultScreen = class extends CustomType {
+};
+function init4(db, questions2) {
+  let _pipe = map(questions2, (q) => {
+    return q.id;
+  });
+  echo3(_pipe, "src/pages/quiz_screen.gleam", 64);
+  let $ = is_empty2(questions2);
+  if ($) {
+    return new Error(void 0);
   } else {
-    echo3("result -> home", "src/pages/result_screen.gleam", 67);
-    return [model, none2()];
+    return new Ok(
+      new Model6(
+        db,
+        questions2,
+        length(questions2),
+        0,
+        from_questions(questions2),
+        false,
+        0
+      )
+    );
   }
 }
-function view8(model) {
+function update_quiz_result(model) {
+  let current_question = get_at(
+    model.questions,
+    model.current_question_index
+  );
+  if (current_question instanceof Some) {
+    let q = current_question[0];
+    let new_answer = check_answer2(q);
+    return update_if(
+      model.quiz_result,
+      (r) => {
+        return r.id === q.id;
+      },
+      (r) => {
+        let _record = r;
+        return new Record(_record.id, _record.category, toList([new_answer]));
+      }
+    );
+  } else {
+    return model.quiz_result;
+  }
+}
+function get_score(quiz_result) {
+  let _pipe = quiz_result;
+  let _pipe$1 = filter(
+    _pipe,
+    (r) => {
+      let $ = r.answer;
+      if ($ instanceof Empty) {
+        return false;
+      } else {
+        let $1 = $.head;
+        if ($1 instanceof Correct) {
+          return true;
+        } else {
+          return false;
+        }
+      }
+    }
+  );
+  return length(_pipe$1);
+}
+function update7(model, msg) {
+  if (msg instanceof QuestionMsg) {
+    let q_msg = msg[0];
+    let new_questions = update_at(
+      model.questions,
+      model.current_question_index,
+      (_capture) => {
+        return update4(_capture, q_msg);
+      }
+    );
+    return [
+      (() => {
+        let _record = model;
+        return new Model6(
+          _record.db,
+          new_questions,
+          _record.questions_count,
+          _record.current_question_index,
+          _record.quiz_result,
+          _record.quiz_finished,
+          _record.score
+        );
+      })(),
+      none2()
+    ];
+  } else if (msg instanceof NextQuestion) {
+    let new_quiz_result = update_quiz_result(model);
+    let new_score = get_score(new_quiz_result);
+    let next_index = model.current_question_index + 1;
+    let is_finished = next_index >= length(model.questions);
+    if (is_finished) {
+      return [
+        (() => {
+          let _record = model;
+          return new Model6(
+            _record.db,
+            _record.questions,
+            _record.questions_count,
+            _record.current_question_index,
+            new_quiz_result,
+            true,
+            new_score
+          );
+        })(),
+        perform(new GoToResultScreen())
+      ];
+    } else {
+      return [
+        (() => {
+          let _record = model;
+          return new Model6(
+            _record.db,
+            _record.questions,
+            _record.questions_count,
+            next_index,
+            new_quiz_result,
+            _record.quiz_finished,
+            new_score
+          );
+        })(),
+        none2()
+      ];
+    }
+  } else if (msg instanceof OutCome3) {
+    return [model, none2()];
+  } else {
+    let $ = model.quiz_finished;
+    if ($) {
+      return [model, perform(new OutCome3())];
+    } else {
+      let new_quiz_result = update_quiz_result(model);
+      let new_score = get_score(new_quiz_result);
+      return [
+        (() => {
+          let _record = model;
+          return new Model6(
+            _record.db,
+            _record.questions,
+            _record.questions_count,
+            _record.current_question_index,
+            new_quiz_result,
+            true,
+            new_score
+          );
+        })(),
+        perform(new OutCome3())
+      ];
+    }
+  }
+}
+function view_progress2(current_index, total_questions) {
+  let progress = "Question " + to_string(current_index + 1) + " / " + to_string(
+    total_questions
+  );
+  return h2(toList([]), toList([text3(progress)]));
+}
+function view_question_header(current_question) {
+  return h3(
+    toList([]),
+    toList([
+      div(
+        toList([]),
+        toList([text3("id:" + to_string(current_question.id))])
+      ),
+      div(
+        toList([]),
+        toList([text3("category:" + current_question.category.name)])
+      ),
+      div(
+        toList([]),
+        toList([
+          text3("sub_category:" + current_question.category.sub_name)
+        ])
+      )
+    ])
+  );
+}
+function view_question_body(current_question) {
   return div(
     toList([]),
     toList([
-      h2(toList([]), toList([text3("Quiz Results")])),
+      p(toList([]), toList([text3(current_question.question_text)])),
+      div(
+        toList([]),
+        toList([
+          (() => {
+            let _pipe = current_question;
+            let _pipe$1 = view4(_pipe);
+            return map4(
+              _pipe$1,
+              (var0) => {
+                return new QuestionMsg(var0);
+              }
+            );
+          })()
+        ])
+      )
+    ])
+  );
+}
+function view_navigation_buttons(current_question) {
+  return div(
+    toList([]),
+    toList([
+      div(
+        toList([]),
+        toList([
+          button(
+            toList([on_click(new NextQuestion())]),
+            toList([text3("Next")])
+          )
+        ])
+      ),
+      div(
+        toList([]),
+        toList([
+          button(
+            toList([
+              styles(toList([["margin-top", "1rem"]])),
+              on_click(new GoToResultScreen())
+            ]),
+            toList([text3("GoResult")])
+          )
+        ])
+      )
+    ])
+  );
+}
+function view_question(model) {
+  let $ = get_at(model.questions, model.current_question_index);
+  if ($ instanceof Some) {
+    let current_question = $[0];
+    return div(
+      toList([]),
+      toList([
+        view_progress2(
+          model.current_question_index,
+          length(model.questions)
+        ),
+        view_question_header(current_question),
+        view_question_body(current_question),
+        view_navigation_buttons(current_question)
+      ])
+    );
+  } else {
+    return text3("Error: Question not found.");
+  }
+}
+function view_quiz_finished(model) {
+  let score = get_score(model.quiz_result);
+  let total_questions = length(model.questions);
+  return div(
+    toList([]),
+    toList([
+      h2(toList([]), toList([text3("Quiz Finished!")])),
       p(
         toList([]),
         toList([
           text3(
-            "Your score: " + to_string(model.score) + "/" + to_string(
-              model.total_questions
+            "Your score: " + to_string(score) + "/" + to_string(
+              total_questions
             )
           )
         ])
       ),
       button(
-        toList([on_click(new GoToHome())]),
-        toList([text3("Go to Home")])
-      ),
-      h3(toList([]), toList([text3("Detailed Results:")])),
-      view5(model.quiz_result),
-      button(
-        toList([on_click(new GoToHome())]),
-        toList([text3("Go to Home")])
+        toList([on_click(new GoToResultScreen())]),
+        toList([text3("View Results")])
       )
     ])
   );
+}
+function view8(model) {
+  let $ = model.quiz_finished;
+  if ($) {
+    return view_quiz_finished(model);
+  } else {
+    return view_question(model);
+  }
 }
 function echo3(value2, file, line) {
   const grey = "\x1B[90m";
@@ -13075,8 +13122,8 @@ function echo$isDict3(value2) {
   }
 }
 
-// build/dev/javascript/study_app/study_app.mjs
-var FILEPATH = "src/study_app.gleam";
+// build/dev/javascript/app/app.mjs
+var FILEPATH = "src/app.gleam";
 var Loading = class extends CustomType {
 };
 var Home = class extends CustomType {
@@ -13131,7 +13178,7 @@ function update8(model, msg) {
   if (model instanceof Loading) {
     if (msg instanceof DataInitialized) {
       let db = msg[0];
-      echo4("DataInitialized", "src/study_app.gleam", 59);
+      echo4("DataInitialized", "src/app.gleam", 59);
       let $ = init2(db);
       let home_model = $[0];
       let home_effect = $[1];
@@ -13142,7 +13189,7 @@ function update8(model, msg) {
         })
       ];
     } else if (msg instanceof Miss) {
-      echo4("setup err", "src/study_app.gleam", 64);
+      echo4("setup err", "src/app.gleam", 64);
       return [new ErrScreen2(), none2()];
     } else {
       return [model, none2()];
@@ -13156,8 +13203,8 @@ function update8(model, msg) {
       let home_effect = $[1];
       if (home_msg instanceof OutCome) {
         let questions2 = home_msg[0];
-        echo4("Home -> QuizScreen", "src/study_app.gleam", 78);
-        let screen_ini = init3(new_home.db, questions2);
+        echo4("Home -> QuizScreen", "src/app.gleam", 78);
+        let screen_ini = init4(new_home.db, questions2);
         if (screen_ini instanceof Ok) {
           let quiz_model = screen_ini[0];
           return [new QuizScreen(new_home, quiz_model), none2()];
@@ -13180,11 +13227,11 @@ function update8(model, msg) {
     let quiz_model = model[1];
     if (msg instanceof QuizMsg) {
       let quiz_msg = msg[0];
-      let $ = update6(quiz_model, quiz_msg);
+      let $ = update7(quiz_model, quiz_msg);
       let new_quiz_model = $[0];
       let quiz_eff = $[1];
-      if (quiz_msg instanceof OutCome2) {
-        let $1 = init4(
+      if (quiz_msg instanceof OutCome3) {
+        let $1 = init3(
           new_quiz_model.db,
           new_quiz_model.score,
           new_quiz_model.questions_count,
@@ -13217,10 +13264,10 @@ function update8(model, msg) {
     let result_model = model[1];
     if (msg instanceof QuizResultMsg) {
       let result_msg = msg[0];
-      let $ = update7(result_model, result_msg);
+      let $ = update6(result_model, result_msg);
       let new_model = $[0];
       let eff = $[1];
-      if (result_msg instanceof OutCome3) {
+      if (result_msg instanceof OutCome2) {
         let _block;
         let _pipe = result_model.db;
         let _pipe$1 = get_quiz_results(_pipe);
@@ -13269,13 +13316,13 @@ function view9(model) {
     });
   } else if (model instanceof QuizScreen) {
     let quiz_model = model[1];
-    let _pipe = view7(quiz_model);
+    let _pipe = view8(quiz_model);
     return map4(_pipe, (var0) => {
       return new QuizMsg(var0);
     });
   } else if (model instanceof QuizResult) {
     let result_model = model[1];
-    let _pipe = view8(result_model);
+    let _pipe = view7(result_model);
     return map4(_pipe, (var0) => {
       return new QuizResultMsg(var0);
     });
@@ -13287,8 +13334,8 @@ var db_version = "1";
 function setup_db() {
   let data_sets = get_data_set_name();
   let db_name = "db" + db_version;
-  echo4("lustre setup_db", "src/study_app.gleam", 37);
-  echo4(data_sets, "src/study_app.gleam", 38);
+  echo4("lustre setup_db", "src/app.gleam", 37);
+  echo4(data_sets, "src/app.gleam", 38);
   if (data_sets instanceof Empty) {
     return perform(new Miss());
   } else {
@@ -13317,16 +13364,16 @@ function main() {
     throw makeError(
       "let_assert",
       FILEPATH,
-      "study_app",
+      "app",
       176,
       "main",
       "Pattern match failed, no pattern matched the value.",
       {
         value: $,
-        start: 5066,
-        end: 5115,
-        pattern_start: 5077,
-        pattern_end: 5082
+        start: 5045,
+        end: 5094,
+        pattern_start: 5056,
+        pattern_end: 5061
       }
     );
   }

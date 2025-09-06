@@ -1,7 +1,8 @@
+import core/filter
 import core/quiz_result.{type QuizResults}
+import db/indexed_db.{type DB} as db
 import extra/promise_
 import gleam/int
-import interface/indexed_db.{type DB} as db
 import lustre/effect.{type Effect, none}
 import lustre/element.{type Element}
 import lustre/element/html

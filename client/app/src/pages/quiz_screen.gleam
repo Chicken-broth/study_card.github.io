@@ -1,12 +1,12 @@
 import core/answer.{Correct}
 import core/question
 import core/quiz_result.{type QuizResults, Record}
+import db/indexed_db.{type DB}
 import extra/effect_
 import extra/list_
 import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
-import interface/indexed_db.{type DB}
 import lustre/attribute as attr
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
@@ -136,7 +136,26 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     }
 
     // 結果画面への遷移を親コンポーネントに依頼する
-    GoToResultScreen -> #(model, effect_.perform(OutCome))
+    GoToResultScreen -> {
+      // クイズが既に終了している場合は、そのまま画面遷移のみ行う。
+      // 途中で終了した場合は、現在の問題の回答を記録してから遷移する。
+      case model.quiz_finished {
+        True -> #(model, effect_.perform(OutCome))
+        False -> {
+          let new_quiz_result = update_quiz_result(model)
+          let new_score = get_score(new_quiz_result)
+          #(
+            Model(
+              ..model,
+              quiz_result: new_quiz_result,
+              quiz_finished: True,
+              score: new_score,
+            ),
+            effect_.perform(OutCome),
+          )
+        }
+      }
+    }
 
     // 親コンポーネントからの画面遷移完了通知（ここでは何もしない）
     OutCome -> #(model, effect.none())
@@ -153,7 +172,8 @@ pub fn update_quiz_result(model: Model) -> QuizResults {
     Some(q) -> {
       // 回答が正しいかチェックする
       let new_answer = question.check_answer(q)
-      echo new_answer
+      // echo "new_answer"
+      // echo new_answer
       // 結果リスト内の該当する問題の回答状況を更新する
       list_.update_if(model.quiz_result, fn(r) { r.id == q.id }, fn(r) {
         Record(..r, answer: [new_answer])

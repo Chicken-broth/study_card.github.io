@@ -1,4 +1,4 @@
-// import "fake-indexeddb/auto";
+import "fake-indexeddb/auto";
 import default_data from './data.mjs'
 import extra_data from './extra_data.mjs';
 import { Ok, Error } from "../gleam.mjs";
@@ -53,19 +53,19 @@ const STORE_CONFIGS = [
  * @param {number} version データベースのバージョン。
  * @returns {Promise<IDBDatabase>} 成功時にはデータベース接続オブジェクト、失敗時にはエラーでrejectされるPromise。
 */
-export function setup(dbName, version, dataSetName) {
-  console.log("\nsetup db:", dbName, version, dataSetName);
+export function setup(prefix, dbName, version) {
+  console.log("\nsetup db:", prefix, dbName, version);
   return new Promise((resolve, reject) => {
     let data;
     let name;
-    switch (dataSetName) {
+    switch (dbName) {
       case DATAEXTRA:
         data = extra_data;
-        name = dbName + "_" + DATAEXTRA;
+        name = prefix + dbName;
         break;
       default:
         data = default_data;
-        name = dbName + "_" + DATADEFAULT;
+        name = prefix + dbName;
         break;
     }
 
@@ -328,8 +328,8 @@ export function saveQuizResults(db, results) {
       requestUpdate.onsuccess = (event) => {
         // 成功 - データを更新しました!
         const base = event.target.result;
-        
-        const new_ans = addAnswers(base,quiz_result)
+
+        const new_ans = addAnswers(base, quiz_result)
         store.put({
           id: quiz_result.id,
           category: quiz_result.category,
@@ -356,7 +356,7 @@ export function saveQuizResults(db, results) {
 function addAnswers(base, new_) {
   // 既存の回答履歴を取得。存在しない、または配列でない場合は空配列を使用します。
   const baseAnswers = (base && Array.isArray(base.answer)) ? base.answer : [];
-  
+
   // 新しい回答を取得。存在しない、または配列でない、または空配列の場合はnullとします。
   const newAnswer = (new_ && Array.isArray(new_.answer) && new_.answer.length > 0) ? new_.answer[0] : null;
 
@@ -367,7 +367,7 @@ function addAnswers(base, new_) {
 
   // 新しい回答を履歴の先頭に追加します。
   const combined = [newAnswer, ...baseAnswers];
-  
+
   // 履歴を最大3件に制限して返します。
   return combined.slice(0, 3);
 }

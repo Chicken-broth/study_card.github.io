@@ -10,11 +10,15 @@ import gleam/result
 pub type DB {
   DB(
     db: Dynamic,
-    data_set_list: List(String),
-    data_set: String,
+    names: List(String),
+    prefix: String,
     name: String,
     version: Int,
   )
+}
+
+pub fn init() -> DB {
+  DB(db: dynamic.nil(), names: [], prefix: "", name: "", version: 0)
 }
 
 pub type Err {
@@ -33,21 +37,26 @@ pub fn get_data_set_name() -> List(String) {
 
 /// IndexedDBデータベースを初期化します。
 @external(javascript, "./indexedDB_ffi.mjs", "setup")
-fn setup_ffi(name: String, version: Int, data_set: String) -> Promise(Dynamic)
+fn setup_ffi(prefix: String, name: String, version: Int) -> Promise(Dynamic)
 
 pub fn setup(
-  data_set_list: List(String),
-  data_set: String,
+  names: List(String),
+  prefix: String,
   name: String,
   version: Int,
 ) -> Promise(DB) {
-  setup_ffi(name, version, data_set)
-  |> promise.map(fn(db) { DB(db, data_set_list, data_set, name, version) })
+  setup_ffi(prefix, name, version)
+  |> promise.map(fn(db) { DB(db, names, prefix, name, version) })
 }
 
-pub fn switch(db: DB, data_set: String) -> Promise(DB) {
-  setup(db.data_set_list, data_set, db.name, db.version)
+pub fn setup_from_db(db: DB) -> Promise(DB) {
+  setup_ffi(db.prefix, db.name, db.version)
+  |> promise.map(fn(dynamic) { DB(..db, db: dynamic) })
 }
+
+// pub fn switch(db: DB, name: String) -> Promise(DB) {
+//   setup(db.names, db.prefix, name, db.version)
+// }
 
 /// データベースからすべてのカテゴリを取得します。
 /// `indexedDB_ffi.mjs`の`getCategories`に対応します。

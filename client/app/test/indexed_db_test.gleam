@@ -4,29 +4,27 @@ import gleam/javascript/promise.{type Promise}
 import gleam/list
 
 // import gleam/result.{Error, Ok}
+import db/indexed_db.{type DB} as db
 import gleeunit
 import gleeunit/should
-import interface/indexed_db.{type DB} as db
 
 pub fn main() {
   gleeunit.main()
 }
 
-fn get_first_db(version: Int) -> Promise(DB) {
-  let data_sets = db.get_data_set_name()
-  let db_name = "db" <> int.to_string(version)
-  let assert Ok(data_set) = list.first(data_sets)
-  db.setup(data_sets, data_set, db_name, version)
+fn get_first_db(prefix: Int) -> Promise(DB) {
+  let db_names = db.get_data_set_name()
+  let assert Ok(db_name) = list.first(db_names)
+  db.setup(db_names, int.to_string(prefix), db_name, 1)
 }
 
-fn get_second_db(version: Int) -> Promise(DB) {
-  let data_sets = db.get_data_set_name()
-  let db_name = "db" <> int.to_string(version)
-  let assert Ok(data_set) = case data_sets {
+fn get_second_db(prefix: Int) -> Promise(DB) {
+  let db_names = db.get_data_set_name()
+  let assert Ok(db_name) = case db_names {
     [_, second, ..] -> Ok(second)
     _ -> Error(Nil)
   }
-  db.setup(data_sets, data_set, db_name, version)
+  db.setup(db_names, int.to_string(prefix), db_name, 1)
 }
 
 /// `setup`が正常に完了することをテストします

@@ -1,24 +1,24 @@
 import core/category.{type Category}
+import core/filter.{
+  type FilterOptions, type ID, type QuestionCount, type SelectedCategory,
+  FilterOptions, Full, Limit, SelectedCategory,
+}
 import core/question.{type IdAndCategory}
 import core/quiz_result.{type QuizResults}
+import db/indexed_db.{type DB} as db
 import extra/list_
 import extra/promise_
 import gleam/bool
 import gleam/function
 import gleam/int
 import gleam/io
-import gleam/javascript/promise
 import gleam/list
 import gleam/option.{type Option, None, Some}
-import interface/indexed_db.{type DB} as db
 import lustre/attribute as attr
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
-
-type ID =
-  Int
 
 /// Home画面のアプリケーションの状態を保持するモデル。
 pub type Model {
@@ -28,34 +28,17 @@ pub type Model {
     categories: List(Category),
     /// データベースから取得したすべての問題IDとカテゴリのリスト。
     question_id_categories: List(IdAndCategory),
-    /// 問題をシャッフルするかどうか。
-    shuffle_or_not: Bool,
-    /// ユーザーによって選択されたカテゴリのIDリスト。
-    selected_category: List(SelectedCategory),
-    /// ユーザーによって選択された問題数。
-    selected_count: QuestionCount,
+    /// フィルタリングオプション
+    filter_options: FilterOptions,
     /// 選択されたカテゴリと出題数に基づいてフィルタリングされた問題IDのリスト。
     selected_question_ids: List(Int),
     /// データのロード中かどうかを示すフラグ。
     loading: Bool,
     /// 処理中に発生したエラーメッセージ。
     error: Option(db.Err),
-    /// ユーザーの学習履歴。
-    quiz_result: QuizResults,
     /// 履歴表示のON/OFFを切り替えるフラグ。
     show_results: Bool,
-    /// 「未回答の問題のみ」フィルターが有効かどうか。
-    unanswered_only: Bool,
   )
-}
-
-pub type SelectedCategory {
-  SelectedCategory(is_selected: Bool, category: Category)
-}
-
-pub type QuestionCount {
-  Limit(Int)
-  Full
 }
 
 /// アプリケーションのモデルを更新するためにディスパッチされるメッセージ。
@@ -112,27 +95,34 @@ pub fn init(db: DB) -> #(Model, Effect(Msg)) {
       db: db,
       categories: [],
       question_id_categories: [],
-      shuffle_or_not: False,
-      selected_category: [],
+      filter_options: filter.default_options(),
       selected_question_ids: [],
-      selected_count: Full,
       loading: False,
       error: None,
-      quiz_result: [],
       show_results: False,
-      unanswered_only: False,
     ),
     get_initial_data_effects(db),
   )
 }
 
+/// フィルタリングオプションに基づいて問題IDリストを更新するヘルパー関数。
+fn update_filtered_questions(model: Model) -> Model {
+  let new_question_ids =
+    filter.filter_question_ids(
+      model.question_id_categories,
+      model.filter_options,
+    )
+  Model(..model, selected_question_ids: new_question_ids)
+}
+
 /// 受信したメッセージに基づいてモデルを更新し、新しい状態と副作用（Effect）を返す。
 pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
-    SelectDb(data_set_name) -> {
-      let new_db = db.DB(..model.db, data_set: data_set_name)
+    SelectDb(name) -> {
+      let new_db = db.DB(..model.db, name: name)
       let setup_db_effect =
-        db.switch(new_db, data_set_name)
+        new_db
+        |> db.setup_from_db
         |> promise_.to_effect_simple(DbChanged)
 
       #(Model(..model, db: new_db, loading: True), setup_db_effect)
@@ -146,110 +136,74 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     SelectCategory(id, is_selected) -> {
       let new_select_category: List(SelectedCategory) =
         list_.update_if(
-          model.selected_category,
+          model.filter_options.selected_categories,
           fn(c) { c.category.id == id },
           fn(c) { SelectedCategory(is_selected, c.category) },
         )
-      let new_question_ids: List(ID) =
-        filtering_question_id(
-          model.question_id_categories,
-          new_select_category,
-          model.selected_count,
-          model.shuffle_or_not,
-          model.quiz_result,
-          model.unanswered_only,
-        )
-      #(
+      let new_model =
         Model(
           ..model,
-          selected_category: new_select_category,
-          selected_question_ids: new_question_ids,
-        ),
-        effect.none(),
-      )
+          filter_options: FilterOptions(
+            ..model.filter_options,
+            selected_categories: new_select_category,
+          ),
+        )
+        |> update_filtered_questions
+      #(new_model, effect.none())
     }
     SelectCount(quest_count) -> {
-      let new_question_ids: List(ID) =
-        filtering_question_id(
-          model.question_id_categories,
-          model.selected_category,
-          quest_count,
-          model.shuffle_or_not,
-          model.quiz_result,
-          model.unanswered_only,
-        )
-
-      #(
+      let new_model =
         Model(
           ..model,
-          selected_count: quest_count,
-          selected_question_ids: new_question_ids,
-        ),
-        effect.none(),
-      )
+          filter_options: FilterOptions(
+            ..model.filter_options,
+            selected_count: quest_count,
+          ),
+        )
+        |> update_filtered_questions
+      #(new_model, effect.none())
     }
     SwitchShuffle(is_shuffle) -> {
-      let new_question_ids: List(ID) =
-        filtering_question_id(
-          model.question_id_categories,
-          model.selected_category,
-          model.selected_count,
-          is_shuffle,
-          model.quiz_result,
-          model.unanswered_only,
-        )
-      #(
+      let new_model =
         Model(
           ..model,
-          shuffle_or_not: is_shuffle,
-          selected_question_ids: new_question_ids,
-        ),
-        effect.none(),
-      )
+          filter_options: FilterOptions(
+            ..model.filter_options,
+            do_shuffle: is_shuffle,
+          ),
+        )
+        |> update_filtered_questions
+      #(new_model, effect.none())
     }
     SwitchUnansweredOnly(is_unanswered_only) -> {
-      let new_question_ids: List(ID) =
-        filtering_question_id(
-          model.question_id_categories,
-          model.selected_category,
-          model.selected_count,
-          model.shuffle_or_not,
-          model.quiz_result,
-          is_unanswered_only,
-        )
-      #(
+      let new_model =
         Model(
           ..model,
-          unanswered_only: is_unanswered_only,
-          selected_question_ids: echo new_question_ids,
-        ),
-        effect.none(),
-      )
+          filter_options: FilterOptions(
+            ..model.filter_options,
+            unanswered_only: is_unanswered_only,
+          ),
+        )
+        |> update_filtered_questions
+      #(new_model, effect.none())
     }
 
     SWitchAllCategory(is_selected) -> {
       echo "SWitchAllCategory"
       let new_select_category: List(SelectedCategory) =
-        list.map(model.selected_category, fn(c) {
+        list.map(model.filter_options.selected_categories, fn(c) {
           SelectedCategory(is_selected, c.category)
         })
-      let new_question_ids: List(ID) =
-        filtering_question_id(
-          model.question_id_categories,
-          new_select_category,
-          model.selected_count,
-          model.shuffle_or_not,
-          model.quiz_result,
-          model.unanswered_only,
-        )
-      #(
+      let new_model =
         Model(
           ..model,
-          selected_category: new_select_category,
-          selected_question_ids: new_question_ids,
-        ),
-        effect.none(),
-      )
+          filter_options: FilterOptions(
+            ..model.filter_options,
+            selected_categories: new_select_category,
+          ),
+        )
+        |> update_filtered_questions
+      #(new_model, effect.none())
     }
     ViewResults -> {
       echo "View History"
@@ -263,50 +217,40 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       let new_selected_category =
         list.map(categories, SelectedCategory(True, _))
 
-      #(
+      let new_model =
         Model(
           ..model,
           categories: categories,
-          selected_category: new_selected_category,
-          // loading: False,
-        ),
-        effect.none(),
-      )
+          filter_options: FilterOptions(
+            ..model.filter_options,
+            selected_categories: new_selected_category,
+          ),
+        )
+        |> update_filtered_questions
+      #(new_model, effect.none())
     }
     GetQuestionIdAndCategoryList(id_and_category_list) -> {
       echo "GetQuestionIdAndCategoryList"
-      #(
-        Model(
-          ..model,
-          question_id_categories: id_and_category_list,
-          selected_question_ids: list.map(id_and_category_list, fn(x) { x.id }),
-          // loading: False,
-        ),
-        effect.none(),
-      )
+      let new_model =
+        Model(..model, question_id_categories: id_and_category_list)
+        |> update_filtered_questions
+      #(new_model, effect.none())
     }
     GetQuizHistory(quiz_result) -> {
       echo "GetQuizHistory"
       // Update the model with the fetched quiz_result.
       // 学習履歴が更新されたので、問題リストも再フィルタリングする
-      let new_question_ids =
-        filtering_question_id(
-          model.question_id_categories,
-          model.selected_category,
-          model.selected_count,
-          model.shuffle_or_not,
-          quiz_result,
-          model.unanswered_only,
-        )
-      #(
+      let new_model =
         Model(
           ..model,
-          quiz_result: quiz_result,
-          selected_question_ids: new_question_ids,
+          filter_options: FilterOptions(
+            ..model.filter_options,
+            quiz_results: quiz_result,
+          ),
           loading: False,
-        ),
-        effect.none(),
-      )
+        )
+        |> update_filtered_questions
+      #(new_model, effect.none())
     }
     ErrScreen(json_err) -> {
       echo "err screen"
@@ -328,73 +272,6 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       )
       #(model, effect.none())
     }
-  }
-}
-
-/// 選択されたカテゴリに基づいて問題IDをフィルタリングする。
-fn filter_by_category(
-  all_questions: List(IdAndCategory),
-  selected_categories: List(SelectedCategory),
-) -> List(ID) {
-  let selected_category_ids =
-    selected_categories
-    |> list.filter(fn(c) { c.is_selected })
-    |> list.map(fn(c) { c.category.id })
-
-  all_questions
-  |> list.filter(fn(q) { list.contains(selected_category_ids, q.category.id) })
-  |> list.map(fn(q) { q.id })
-}
-
-fn filter_unanswered(
-  question_ids: List(ID),
-  quiz_results: QuizResults,
-  unanswered_only: Bool,
-) -> List(ID) {
-  echo "filter_unanswered"
-  echo unanswered_only
-  use <- bool.guard(bool.negate(unanswered_only), question_ids)
-  let answered_ids =
-    quiz_result.filter_exist_answers(quiz_results)
-    |> list.map(fn(r) { r.id })
-
-  list.filter(question_ids, fn(id) {
-    list.contains(answered_ids, id) |> bool.negate
-  })
-}
-
-/// シャッフルと出題数の制限を適用する。
-fn apply_count_and_shuffle(
-  question_ids: List(ID),
-  selected_count: QuestionCount,
-  do_shuffle: Bool,
-) -> List(ID) {
-  let shuffled_ids = shuffle(question_ids, do_shuffle)
-  let limit_count = case selected_count {
-    Limit(count) -> count
-    Full -> list.length(shuffled_ids)
-  }
-  list.take(shuffled_ids, limit_count)
-}
-
-fn filtering_question_id(
-  id_categorie_list: List(IdAndCategory),
-  selected_category_ids: List(SelectedCategory),
-  selected_count: QuestionCount,
-  do_shuffle: Bool,
-  quiz_results: QuizResults,
-  unanswered_only: Bool,
-) -> List(ID) {
-  id_categorie_list
-  |> filter_by_category(selected_category_ids)
-  |> filter_unanswered(quiz_results, unanswered_only)
-  |> apply_count_and_shuffle(selected_count, do_shuffle)
-}
-
-fn shuffle(xs: List(a), is_shuffle: Bool) -> List(a) {
-  case is_shuffle {
-    True -> list.shuffle(xs)
-    False -> xs
   }
 }
 
@@ -439,10 +316,19 @@ fn section_container_row_style() {
 }
 
 fn view_options(shuffle: Bool, unanswered_only: Bool) -> Element(Msg) {
-  html.div([section_container_style()], [
+  html.div([section_container_row_style()], [
     view_checkbox_label(shuffle, "シャッフルする", SwitchShuffle),
     view_checkbox_label(unanswered_only, "未回答の問題のみ", SwitchUnansweredOnly),
   ])
+}
+
+/// ラベルの左側に余白を追加するスタイル。
+fn style_margin_left_1() -> attr.Attribute(msg) {
+  attr.style("margin-left", "1rem")
+}
+
+fn style_cursor_pointer() -> attr.Attribute(msg) {
+  attr.style("cursor", "pointer")
 }
 
 fn view_checkbox_label(
@@ -450,13 +336,13 @@ fn view_checkbox_label(
   label: String,
   handler: fn(Bool) -> Msg,
 ) -> Element(Msg) {
-  html.label([attr.styles([#("cursor", "pointer")])], [
+  html.label([style_margin_left_1(), style_cursor_pointer()], [
     html.input([
       attr.type_("checkbox"),
       attr.checked(checked),
       event.on_check(fn(checked) { handler(checked) }),
     ]),
-    html.span([attr.styles([#("margin-left", "0.5rem")])], [html.text(label)]),
+    html.span([style_cursor_pointer()], [html.text(label)]),
   ])
 }
 
@@ -465,7 +351,7 @@ fn view_radio_with_label(
   label: String,
   handler: fn(Bool) -> Msg,
 ) -> Element(Msg) {
-  html.label([attr.styles([#("cursor", "pointer")])], [
+  html.label([style_margin_left_1(), style_cursor_pointer()], [
     html.input([
       event.on_check(handler),
       attr.type_("radio"),
@@ -473,7 +359,7 @@ fn view_radio_with_label(
       attr.value(label),
       attr.checked(checked),
     ]),
-    html.span([attr.styles([#("margin-left", "0.5rem")])], [html.text(label)]),
+    html.span([], [html.text(label)]),
   ])
 }
 
@@ -603,7 +489,8 @@ pub fn view(model: Model) -> Element(Msg) {
   // カテゴリと問題IDがロードされている場合にのみクイズ開始ボタンを有効にする。
   let is_start_quiz_enabled = list.length(model.selected_question_ids) > 0
   let checked =
-    list.map(model.selected_category, fn(c) { c.is_selected })
+    model.filter_options.selected_categories
+    |> list.map(fn(c) { c.is_selected })
     |> list.any(function.identity)
   let qty = list.length(model.selected_question_ids)
   html.div([], [
@@ -614,22 +501,25 @@ pub fn view(model: Model) -> Element(Msg) {
         [attr.styles([#("margin-right", "1rem"), #("font-size", "1.17em")])],
         [html.text("問題集選択")],
       ),
-      view_db_selection(model.db.data_set_list, model.db.data_set),
+      view_db_selection(model.db.names, model.db.name),
     ]),
     html.h2([attr.styles([#("margin-top", "1rem")])], [html.text("カテゴリ")]),
     // view_all_category_selection(checked),
-    view_category_selection(model.selected_category, checked),
+    view_category_selection(model.filter_options.selected_categories, checked),
     html.h2([attr.styles([#("margin-top", "1rem")])], [html.text("オプション")]),
-    view_options(model.shuffle_or_not, model.unanswered_only),
+    view_options(
+      model.filter_options.do_shuffle,
+      model.filter_options.unanswered_only,
+    ),
     html.h2([attr.styles([#("margin-top", "1rem")])], [html.text("出題数選択")]),
-    view_count_selection(model.selected_count),
+    view_count_selection(model.filter_options.selected_count),
     html.div([attr.styles([#("margin-top", "1rem")])], [
       html.text("選択中の問題数: " <> int.to_string(qty)),
     ]),
     view_actions(is_start_quiz_enabled),
     view_loading(model.loading),
     case model.show_results {
-      True -> quiz_result.view(model.quiz_result)
+      True -> quiz_result.view(model.filter_options.quiz_results)
       False -> html.text("")
     },
   ])

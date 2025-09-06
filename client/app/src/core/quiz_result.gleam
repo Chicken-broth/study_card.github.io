@@ -35,10 +35,6 @@ pub fn filter_exist_answers(rs: QuizResults) -> QuizResults {
   })
 }
 
-fn answer_not_empty(r: Record) {
-  list.length(r.answer) > 0
-}
-
 pub fn decoder() -> decode.Decoder(QuizResults) {
   decode.list({
     use id <- decode.field("id", decode.int)
