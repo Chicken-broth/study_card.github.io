@@ -34,6 +34,7 @@ pub type Model {
     selected_category: List(SelectedCategory),
     /// ユーザーによって選択された問題数。
     selected_count: QuestionCount,
+    /// 選択されたカテゴリと出題数に基づいてフィルタリングされた問題IDのリスト。
     selected_question_ids: List(Int),
     /// データのロード中かどうかを示すフラグ。
     loading: Bool,
@@ -189,12 +190,19 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     }
     SwitchShuffle(is_shuffle) -> {
       let new_question_ids: List(ID) =
-        shuffle(model.selected_question_ids, is_shuffle)
+        filtering_question_id(
+          model.question_id_categories,
+          model.selected_category,
+          model.selected_count,
+          is_shuffle,
+          model.quiz_result,
+          model.unanswered_only,
+        )
       #(
         Model(
           ..model,
-          selected_question_ids: new_question_ids,
           shuffle_or_not: is_shuffle,
+          selected_question_ids: new_question_ids,
         ),
         effect.none(),
       )
@@ -280,7 +288,25 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     GetQuizHistory(quiz_result) -> {
       echo "GetQuizHistory"
       // Update the model with the fetched quiz_result.
-      #(Model(..model, quiz_result: quiz_result, loading: False), effect.none())
+      // 学習履歴が更新されたので、問題リストも再フィルタリングする
+      let new_question_ids =
+        filtering_question_id(
+          model.question_id_categories,
+          model.selected_category,
+          model.selected_count,
+          model.shuffle_or_not,
+          quiz_result,
+          model.unanswered_only,
+        )
+      #(
+        Model(
+          ..model,
+          quiz_result: quiz_result,
+          selected_question_ids: new_question_ids,
+          loading: False,
+        ),
+        effect.none(),
+      )
     }
     ErrScreen(json_err) -> {
       echo "err screen"
@@ -412,15 +438,10 @@ fn section_container_row_style() {
   ])
 }
 
-fn view_shuffle(shuffle: Bool) -> Element(Msg) {
+fn view_options(shuffle: Bool, unanswered_only: Bool) -> Element(Msg) {
   html.div([section_container_style()], [
     view_checkbox_label(shuffle, "シャッフルする", SwitchShuffle),
-  ])
-}
-
-fn view_unanswered_only_filter(checked: Bool) -> Element(Msg) {
-  html.div([section_container_style()], [
-    view_checkbox_label(checked, "未回答の問題のみ", SwitchUnansweredOnly),
+    view_checkbox_label(unanswered_only, "未回答の問題のみ", SwitchUnansweredOnly),
   ])
 }
 
@@ -599,8 +620,7 @@ pub fn view(model: Model) -> Element(Msg) {
     // view_all_category_selection(checked),
     view_category_selection(model.selected_category, checked),
     html.h2([attr.styles([#("margin-top", "1rem")])], [html.text("オプション")]),
-    view_shuffle(model.shuffle_or_not),
-    view_unanswered_only_filter(model.unanswered_only),
+    view_options(model.shuffle_or_not, model.unanswered_only),
     html.h2([attr.styles([#("margin-top", "1rem")])], [html.text("出題数選択")]),
     view_count_selection(model.selected_count),
     html.div([attr.styles([#("margin-top", "1rem")])], [

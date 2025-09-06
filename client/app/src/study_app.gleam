@@ -1,5 +1,6 @@
 import extra/effect_
 import extra/promise_
+import gleam/option.{None}
 import interface/indexed_db.{type DB}
 import lustre
 import lustre/effect.{type Effect, none}
@@ -15,8 +16,8 @@ const db_version = "1"
 pub type Model {
   Loading
   Home(quiz_home.Model)
-  QuizScreen(quiz_screen.Model)
-  QuizResult(result_screen.Model)
+  QuizScreen(quiz_home.Model, quiz_screen.Model)
+  QuizResult(quiz_home.Model, result_screen.Model)
   ErrScreen
 }
 
@@ -77,7 +78,10 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
               echo "Home -> QuizScreen"
               let screen_ini = quiz_screen.init(new_home.db, questions)
               case screen_ini {
-                Ok(quiz_model) -> #(QuizScreen(quiz_model), effect.none())
+                Ok(quiz_model) -> #(
+                  QuizScreen(new_home, quiz_model),
+                  effect.none(),
+                )
                 Error(_) -> #(ErrScreen, effect.none())
               }
             }
@@ -87,7 +91,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         _ -> #(model, none())
       }
     }
-    QuizScreen(quiz_model) -> {
+    QuizScreen(home_model, quiz_model) -> {
       case msg {
         QuizMsg(quiz_msg) -> {
           let #(new_quiz_model, quiz_eff) =
@@ -102,39 +106,51 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
                   new_quiz_model.quiz_result,
                 )
               #(
-                QuizResult(result_model),
+                QuizResult(home_model, result_model),
                 effect.map(result_effect, QuizResultMsg),
               )
             }
             _ -> {
-              #(QuizScreen(new_quiz_model), effect.map(quiz_eff, QuizMsg))
+              #(
+                QuizScreen(home_model, new_quiz_model),
+                effect.map(quiz_eff, QuizMsg),
+              )
             }
           }
         }
         _ -> #(model, none())
       }
     }
-    QuizResult(quiz_model) -> {
+    QuizResult(home_model, result_model) -> {
       case msg {
         QuizResultMsg(result_msg) -> {
-          let #(new_model, eff) = result_screen.update(quiz_model, result_msg)
+          let #(new_model, eff) = result_screen.update(result_model, result_msg)
 
           case result_msg {
             result_screen.OutCome -> {
-              let #(new_modek, new_eff) = quiz_home.init(quiz_model.db)
-              #(Home(new_modek), effect.map(new_eff, HomeMsg))
+              // 保持していたhome_modelを再利用し、最新の学習履歴を取得するEffectを発行する
+              let get_results_effect =
+                result_model.db
+                |> indexed_db.get_quiz_results
+                |> promise_.to_effect(
+                  quiz_home.GetQuizHistory,
+                  quiz_home.ErrScreen,
+                )
+              #(Home(home_model), effect.map(get_results_effect, HomeMsg))
             }
-            _ -> #(QuizResult(new_model), effect.map(eff, QuizResultMsg))
+            _ -> #(
+              QuizResult(home_model, new_model),
+              effect.map(eff, QuizResultMsg),
+            )
           }
         }
         _ -> #(model, none())
       }
     }
-    ErrScreen -> {
+    ErrScreen ->
       case msg {
         _ -> #(model, none())
       }
-    }
   }
 }
 
@@ -145,10 +161,10 @@ pub fn view(model: Model) -> Element(Msg) {
     Home(home_model) ->
       quiz_home.view(home_model)
       |> element.map(HomeMsg)
-    QuizScreen(quiz_model) ->
+    QuizScreen(_, quiz_model) ->
       quiz_screen.view(quiz_model)
       |> element.map(QuizMsg)
-    QuizResult(result_model) ->
+    QuizResult(_, result_model) ->
       result_screen.view(result_model)
       |> element.map(QuizResultMsg)
     ErrScreen -> html.text("エラーが発生しました")

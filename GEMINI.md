@@ -23,7 +23,7 @@
 -   **フロントエンド**:
     -   **言語**: Gleam
     -   **フレームワーク**: Lustre
-    -   **初期データストア**: Local Storage
+    -   **初期データストア**: indexedDB
 -   **バックエンド**:
     -   **プラットフォーム**: Firebase Functions (TypeScriptを使用)
     -   **データベース**: Cloud Firestore (最終的なターゲット)

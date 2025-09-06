@@ -11506,7 +11506,7 @@ function get_initial_data_effects(db) {
     }
   );
   let get_results = _block$2;
-  echo("get_initial_data_effects", "src/pages/quiz_home.gleam", 102);
+  echo("get_initial_data_effects", "src/pages/quiz_home.gleam", 103);
   return batch(
     toList([get_categories2, get_question_id_and_category_list2, get_results])
   );
@@ -11552,8 +11552,8 @@ function filter_by_category(all_questions, selected_categories) {
   });
 }
 function filter_unanswered(question_ids, quiz_results, unanswered_only) {
-  echo("filter_unanswered", "src/pages/quiz_home.gleam", 328);
-  echo(unanswered_only, "src/pages/quiz_home.gleam", 329);
+  echo("filter_unanswered", "src/pages/quiz_home.gleam", 354);
+  echo(unanswered_only, "src/pages/quiz_home.gleam", 355);
   return guard(
     negate(unanswered_only),
     question_ids,
@@ -11735,7 +11735,14 @@ function update5(model, msg) {
     ];
   } else if (msg instanceof SwitchShuffle) {
     let is_shuffle = msg[0];
-    let new_question_ids = shuffle2(model.selected_question_ids, is_shuffle);
+    let new_question_ids = filtering_question_id(
+      model.question_id_categories,
+      model.selected_category,
+      model.selected_count,
+      is_shuffle,
+      model.quiz_result,
+      model.unanswered_only
+    );
     return [
       (() => {
         let _record = model;
@@ -11776,7 +11783,7 @@ function update5(model, msg) {
           _record.shuffle_or_not,
           _record.selected_category,
           _record.selected_count,
-          echo(new_question_ids, "src/pages/quiz_home.gleam", 216),
+          echo(new_question_ids, "src/pages/quiz_home.gleam", 224),
           _record.loading,
           _record.error,
           _record.quiz_result,
@@ -11788,7 +11795,7 @@ function update5(model, msg) {
     ];
   } else if (msg instanceof SWitchAllCategory) {
     let is_selected = msg[0];
-    echo("SWitchAllCategory", "src/pages/quiz_home.gleam", 223);
+    echo("SWitchAllCategory", "src/pages/quiz_home.gleam", 231);
     let new_select_category = map(
       model.selected_category,
       (c) => {
@@ -11824,7 +11831,7 @@ function update5(model, msg) {
       none2()
     ];
   } else if (msg instanceof ViewResults) {
-    echo("View History", "src/pages/quiz_home.gleam", 247);
+    echo("View History", "src/pages/quiz_home.gleam", 255);
     return [
       (() => {
         let _record = model;
@@ -11847,7 +11854,7 @@ function update5(model, msg) {
     ];
   } else if (msg instanceof GetCategories) {
     let categories2 = msg[0];
-    echo("GetCategories", "src/pages/quiz_home.gleam", 254);
+    echo("GetCategories", "src/pages/quiz_home.gleam", 262);
     let new_selected_category = map(
       categories2,
       (_capture) => {
@@ -11876,7 +11883,7 @@ function update5(model, msg) {
     ];
   } else if (msg instanceof GetQuestionIdAndCategoryList) {
     let id_and_category_list = msg[0];
-    echo("GetQuestionIdAndCategoryList", "src/pages/quiz_home.gleam", 269);
+    echo("GetQuestionIdAndCategoryList", "src/pages/quiz_home.gleam", 277);
     return [
       (() => {
         let _record = model;
@@ -11901,7 +11908,15 @@ function update5(model, msg) {
     ];
   } else if (msg instanceof GetQuizHistory) {
     let quiz_result = msg[0];
-    echo("GetQuizHistory", "src/pages/quiz_home.gleam", 281);
+    echo("GetQuizHistory", "src/pages/quiz_home.gleam", 289);
+    let new_question_ids = filtering_question_id(
+      model.question_id_categories,
+      model.selected_category,
+      model.selected_count,
+      model.shuffle_or_not,
+      quiz_result,
+      model.unanswered_only
+    );
     return [
       (() => {
         let _record = model;
@@ -11912,7 +11927,7 @@ function update5(model, msg) {
           _record.shuffle_or_not,
           _record.selected_category,
           _record.selected_count,
-          _record.selected_question_ids,
+          new_question_ids,
           false,
           _record.error,
           quiz_result,
@@ -11923,7 +11938,7 @@ function update5(model, msg) {
       none2()
     ];
   } else if (msg instanceof StartQuiz) {
-    echo("Start Quiz", "src/pages/quiz_home.gleam", 290);
+    echo("Start Quiz", "src/pages/quiz_home.gleam", 316);
     let _block;
     let _pipe = get_question_by_ids(model.db, model.selected_question_ids);
     _block = to_effect(
@@ -11945,7 +11960,7 @@ function update5(model, msg) {
     return [model, none2()];
   } else {
     let json_err = msg[0];
-    echo("err screen", "src/pages/quiz_home.gleam", 286);
+    echo("err screen", "src/pages/quiz_home.gleam", 312);
     return [
       (() => {
         let _record = model;
@@ -12016,7 +12031,7 @@ function view_checkbox_label(checked2, label2, handler) {
     ])
   );
 }
-function view_shuffle(shuffle3) {
+function view_options(shuffle3, unanswered_only) {
   return div(
     toList([section_container_style()]),
     toList([
@@ -12026,16 +12041,9 @@ function view_shuffle(shuffle3) {
         (var0) => {
           return new SwitchShuffle(var0);
         }
-      )
-    ])
-  );
-}
-function view_unanswered_only_filter(checked2) {
-  return div(
-    toList([section_container_style()]),
-    toList([
+      ),
       view_checkbox_label(
-        checked2,
+        unanswered_only,
         "\u672A\u56DE\u7B54\u306E\u554F\u984C\u306E\u307F",
         (var0) => {
           return new SwitchUnansweredOnly(var0);
@@ -12265,8 +12273,7 @@ function view6(model) {
         toList([styles(toList([["margin-top", "1rem"]]))]),
         toList([text3("\u30AA\u30D7\u30B7\u30E7\u30F3")])
       ),
-      view_shuffle(model.shuffle_or_not),
-      view_unanswered_only_filter(model.unanswered_only),
+      view_options(model.shuffle_or_not, model.unanswered_only),
       h2(
         toList([styles(toList([["margin-top", "1rem"]]))]),
         toList([text3("\u51FA\u984C\u6570\u9078\u629E")])
@@ -13079,15 +13086,17 @@ var Home = class extends CustomType {
   }
 };
 var QuizScreen = class extends CustomType {
-  constructor($0) {
+  constructor($0, $1) {
     super();
     this[0] = $0;
+    this[1] = $1;
   }
 };
 var QuizResult = class extends CustomType {
-  constructor($0) {
+  constructor($0, $1) {
     super();
     this[0] = $0;
+    this[1] = $1;
   }
 };
 var ErrScreen2 = class extends CustomType {
@@ -13122,7 +13131,7 @@ function update8(model, msg) {
   if (model instanceof Loading) {
     if (msg instanceof DataInitialized) {
       let db = msg[0];
-      echo4("DataInitialized", "src/study_app.gleam", 58);
+      echo4("DataInitialized", "src/study_app.gleam", 59);
       let $ = init2(db);
       let home_model = $[0];
       let home_effect = $[1];
@@ -13133,7 +13142,7 @@ function update8(model, msg) {
         })
       ];
     } else if (msg instanceof Miss) {
-      echo4("setup err", "src/study_app.gleam", 63);
+      echo4("setup err", "src/study_app.gleam", 64);
       return [new ErrScreen2(), none2()];
     } else {
       return [model, none2()];
@@ -13147,11 +13156,11 @@ function update8(model, msg) {
       let home_effect = $[1];
       if (home_msg instanceof OutCome) {
         let questions2 = home_msg[0];
-        echo4("Home -> QuizScreen", "src/study_app.gleam", 77);
+        echo4("Home -> QuizScreen", "src/study_app.gleam", 78);
         let screen_ini = init3(new_home.db, questions2);
         if (screen_ini instanceof Ok) {
           let quiz_model = screen_ini[0];
-          return [new QuizScreen(quiz_model), none2()];
+          return [new QuizScreen(new_home, quiz_model), none2()];
         } else {
           return [new ErrScreen2(), none2()];
         }
@@ -13167,7 +13176,8 @@ function update8(model, msg) {
       return [model, none2()];
     }
   } else if (model instanceof QuizScreen) {
-    let quiz_model = model[0];
+    let home_model = model[0];
+    let quiz_model = model[1];
     if (msg instanceof QuizMsg) {
       let quiz_msg = msg[0];
       let $ = update6(quiz_model, quiz_msg);
@@ -13183,7 +13193,7 @@ function update8(model, msg) {
         let result_model = $1[0];
         let result_effect = $1[1];
         return [
-          new QuizResult(result_model),
+          new QuizResult(home_model, result_model),
           map3(
             result_effect,
             (var0) => {
@@ -13193,7 +13203,7 @@ function update8(model, msg) {
         ];
       } else {
         return [
-          new QuizScreen(new_quiz_model),
+          new QuizScreen(home_model, new_quiz_model),
           map3(quiz_eff, (var0) => {
             return new QuizMsg(var0);
           })
@@ -13203,25 +13213,39 @@ function update8(model, msg) {
       return [model, none2()];
     }
   } else if (model instanceof QuizResult) {
-    let quiz_model = model[0];
+    let home_model = model[0];
+    let result_model = model[1];
     if (msg instanceof QuizResultMsg) {
       let result_msg = msg[0];
-      let $ = update7(quiz_model, result_msg);
+      let $ = update7(result_model, result_msg);
       let new_model = $[0];
       let eff = $[1];
       if (result_msg instanceof OutCome3) {
-        let $1 = init2(quiz_model.db);
-        let new_modek = $1[0];
-        let new_eff = $1[1];
+        let _block;
+        let _pipe = result_model.db;
+        let _pipe$1 = get_quiz_results(_pipe);
+        _block = to_effect(
+          _pipe$1,
+          (var0) => {
+            return new GetQuizHistory(var0);
+          },
+          (var0) => {
+            return new ErrScreen(var0);
+          }
+        );
+        let get_results_effect = _block;
         return [
-          new Home(new_modek),
-          map3(new_eff, (var0) => {
-            return new HomeMsg(var0);
-          })
+          new Home(home_model),
+          map3(
+            get_results_effect,
+            (var0) => {
+              return new HomeMsg(var0);
+            }
+          )
         ];
       } else {
         return [
-          new QuizResult(new_model),
+          new QuizResult(home_model, new_model),
           map3(eff, (var0) => {
             return new QuizResultMsg(var0);
           })
@@ -13244,13 +13268,13 @@ function view9(model) {
       return new HomeMsg(var0);
     });
   } else if (model instanceof QuizScreen) {
-    let quiz_model = model[0];
+    let quiz_model = model[1];
     let _pipe = view7(quiz_model);
     return map4(_pipe, (var0) => {
       return new QuizMsg(var0);
     });
   } else if (model instanceof QuizResult) {
-    let result_model = model[0];
+    let result_model = model[1];
     let _pipe = view8(result_model);
     return map4(_pipe, (var0) => {
       return new QuizResultMsg(var0);
@@ -13263,8 +13287,8 @@ var db_version = "1";
 function setup_db() {
   let data_sets = get_data_set_name();
   let db_name = "db" + db_version;
-  echo4("lustre setup_db", "src/study_app.gleam", 36);
-  echo4(data_sets, "src/study_app.gleam", 37);
+  echo4("lustre setup_db", "src/study_app.gleam", 37);
+  echo4(data_sets, "src/study_app.gleam", 38);
   if (data_sets instanceof Empty) {
     return perform(new Miss());
   } else {
@@ -13294,15 +13318,15 @@ function main() {
       "let_assert",
       FILEPATH,
       "study_app",
-      160,
+      176,
       "main",
       "Pattern match failed, no pattern matched the value.",
       {
         value: $,
-        start: 4467,
-        end: 4516,
-        pattern_start: 4478,
-        pattern_end: 4483
+        start: 5066,
+        end: 5115,
+        pattern_start: 5077,
+        pattern_end: 5082
       }
     );
   }
