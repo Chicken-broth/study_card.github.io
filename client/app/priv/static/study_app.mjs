@@ -11361,7 +11361,7 @@ function update_if(list4, prefix2, fun) {
 
 // build/dev/javascript/study_app/pages/quiz_home.mjs
 var Model4 = class extends CustomType {
-  constructor(db, categories2, question_id_categories, shuffle_or_not, selected_category, selected_count, selected_question_ids, loading, error, quiz_result, show_results) {
+  constructor(db, categories2, question_id_categories, shuffle_or_not, selected_category, selected_count, selected_question_ids, loading, error, quiz_result, show_results, unanswered_only) {
     super();
     this.db = db;
     this.categories = categories2;
@@ -11374,6 +11374,7 @@ var Model4 = class extends CustomType {
     this.error = error;
     this.quiz_result = quiz_result;
     this.show_results = show_results;
+    this.unanswered_only = unanswered_only;
   }
 };
 var SelectedCategory = class extends CustomType {
@@ -11417,6 +11418,12 @@ var SelectCount = class extends CustomType {
   }
 };
 var SwitchShuffle = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var SwitchUnansweredOnly = class extends CustomType {
   constructor($0) {
     super();
     this[0] = $0;
@@ -11499,7 +11506,7 @@ function get_initial_data_effects(db) {
     }
   );
   let get_results = _block$2;
-  echo("get_initial_data_effects", "src/pages/quiz_home.gleam", 98);
+  echo("get_initial_data_effects", "src/pages/quiz_home.gleam", 102);
   return batch(
     toList([get_categories2, get_question_id_and_category_list2, get_results])
   );
@@ -11517,10 +11524,55 @@ function init2(db) {
       false,
       new None(),
       toList([]),
+      false,
       false
     ),
     get_initial_data_effects(db)
   ];
+}
+function filter_by_category(all_questions, selected_categories) {
+  let _block;
+  let _pipe = selected_categories;
+  let _pipe$1 = filter(_pipe, (c) => {
+    return c.is_selected;
+  });
+  _block = map(_pipe$1, (c) => {
+    return c.category.id;
+  });
+  let selected_category_ids = _block;
+  let _pipe$2 = all_questions;
+  let _pipe$3 = filter(
+    _pipe$2,
+    (q) => {
+      return contains(selected_category_ids, q.category.id);
+    }
+  );
+  return map(_pipe$3, (q) => {
+    return q.id;
+  });
+}
+function filter_unanswered(question_ids, quiz_results, unanswered_only) {
+  echo("filter_unanswered", "src/pages/quiz_home.gleam", 328);
+  echo(unanswered_only, "src/pages/quiz_home.gleam", 329);
+  return guard(
+    negate(unanswered_only),
+    question_ids,
+    () => {
+      let _block;
+      let _pipe = filter_exist_answers(quiz_results);
+      _block = map(_pipe, (r) => {
+        return r.id;
+      });
+      let answered_ids = _block;
+      return filter(
+        question_ids,
+        (id) => {
+          let _pipe$1 = contains(answered_ids, id);
+          return negate(_pipe$1);
+        }
+      );
+    }
+  );
 }
 function shuffle2(xs, is_shuffle) {
   if (is_shuffle) {
@@ -11529,38 +11581,23 @@ function shuffle2(xs, is_shuffle) {
     return xs;
   }
 }
-function filtering_question_id(id_categorie_list, selected_category_ids, selected_count, do_shuffle) {
+function apply_count_and_shuffle(question_ids, selected_count, do_shuffle) {
+  let shuffled_ids = shuffle2(question_ids, do_shuffle);
   let _block;
-  let _pipe = selected_category_ids;
-  let _pipe$1 = filter(_pipe, (c) => {
-    return c.is_selected;
-  });
-  _block = map(_pipe$1, (c) => {
-    return c.category.id;
-  });
-  let filtered_category_ids = _block;
-  let _block$1;
-  let _pipe$2 = id_categorie_list;
-  let _pipe$3 = filter(
-    _pipe$2,
-    (q) => {
-      return contains(filtered_category_ids, q.category.id);
-    }
-  );
-  _block$1 = map(_pipe$3, (c) => {
-    return c.id;
-  });
-  let filtered_questions = _block$1;
-  let _block$2;
   if (selected_count instanceof Limit) {
     let count = selected_count[0];
-    _block$2 = count;
+    _block = count;
   } else {
-    _block$2 = length(filtered_questions);
+    _block = length(shuffled_ids);
   }
-  let limit_count = _block$2;
-  let _pipe$4 = shuffle2(filtered_questions, do_shuffle);
-  return take(_pipe$4, limit_count);
+  let limit_count = _block;
+  return take(shuffled_ids, limit_count);
+}
+function filtering_question_id(id_categorie_list, selected_category_ids, selected_count, do_shuffle, quiz_results, unanswered_only) {
+  let _pipe = id_categorie_list;
+  let _pipe$1 = filter_by_category(_pipe, selected_category_ids);
+  let _pipe$2 = filter_unanswered(_pipe$1, quiz_results, unanswered_only);
+  return apply_count_and_shuffle(_pipe$2, selected_count, do_shuffle);
 }
 function update5(model, msg) {
   if (msg instanceof SelectDb) {
@@ -11598,7 +11635,8 @@ function update5(model, msg) {
           true,
           _record$1.error,
           _record$1.quiz_result,
-          _record$1.show_results
+          _record$1.show_results,
+          _record$1.unanswered_only
         );
       })(),
       setup_db_effect
@@ -11619,7 +11657,8 @@ function update5(model, msg) {
           false,
           _record.error,
           _record.quiz_result,
-          _record.show_results
+          _record.show_results,
+          _record.unanswered_only
         );
       })(),
       get_initial_data_effects(new_db)
@@ -11640,7 +11679,9 @@ function update5(model, msg) {
       model.question_id_categories,
       new_select_category,
       model.selected_count,
-      model.shuffle_or_not
+      model.shuffle_or_not,
+      model.quiz_result,
+      model.unanswered_only
     );
     return [
       (() => {
@@ -11656,7 +11697,8 @@ function update5(model, msg) {
           _record.loading,
           _record.error,
           _record.quiz_result,
-          _record.show_results
+          _record.show_results,
+          _record.unanswered_only
         );
       })(),
       none2()
@@ -11667,7 +11709,9 @@ function update5(model, msg) {
       model.question_id_categories,
       model.selected_category,
       quest_count,
-      model.shuffle_or_not
+      model.shuffle_or_not,
+      model.quiz_result,
+      model.unanswered_only
     );
     return [
       (() => {
@@ -11683,7 +11727,8 @@ function update5(model, msg) {
           _record.loading,
           _record.error,
           _record.quiz_result,
-          _record.show_results
+          _record.show_results,
+          _record.unanswered_only
         );
       })(),
       none2()
@@ -11705,14 +11750,45 @@ function update5(model, msg) {
           _record.loading,
           _record.error,
           _record.quiz_result,
-          _record.show_results
+          _record.show_results,
+          _record.unanswered_only
+        );
+      })(),
+      none2()
+    ];
+  } else if (msg instanceof SwitchUnansweredOnly) {
+    let is_unanswered_only = msg[0];
+    let new_question_ids = filtering_question_id(
+      model.question_id_categories,
+      model.selected_category,
+      model.selected_count,
+      model.shuffle_or_not,
+      model.quiz_result,
+      is_unanswered_only
+    );
+    return [
+      (() => {
+        let _record = model;
+        return new Model4(
+          _record.db,
+          _record.categories,
+          _record.question_id_categories,
+          _record.shuffle_or_not,
+          _record.selected_category,
+          _record.selected_count,
+          echo(new_question_ids, "src/pages/quiz_home.gleam", 216),
+          _record.loading,
+          _record.error,
+          _record.quiz_result,
+          _record.show_results,
+          is_unanswered_only
         );
       })(),
       none2()
     ];
   } else if (msg instanceof SWitchAllCategory) {
     let is_selected = msg[0];
-    echo("SWitchAllCategory", "src/pages/quiz_home.gleam", 194);
+    echo("SWitchAllCategory", "src/pages/quiz_home.gleam", 223);
     let new_select_category = map(
       model.selected_category,
       (c) => {
@@ -11723,7 +11799,9 @@ function update5(model, msg) {
       model.question_id_categories,
       new_select_category,
       model.selected_count,
-      model.shuffle_or_not
+      model.shuffle_or_not,
+      model.quiz_result,
+      model.unanswered_only
     );
     return [
       (() => {
@@ -11739,13 +11817,14 @@ function update5(model, msg) {
           _record.loading,
           _record.error,
           _record.quiz_result,
-          _record.show_results
+          _record.show_results,
+          _record.unanswered_only
         );
       })(),
       none2()
     ];
   } else if (msg instanceof ViewResults) {
-    echo("View History", "src/pages/quiz_home.gleam", 216);
+    echo("View History", "src/pages/quiz_home.gleam", 247);
     return [
       (() => {
         let _record = model;
@@ -11760,14 +11839,15 @@ function update5(model, msg) {
           _record.loading,
           _record.error,
           _record.quiz_result,
-          negate(model.show_results)
+          negate(model.show_results),
+          _record.unanswered_only
         );
       })(),
       none2()
     ];
   } else if (msg instanceof GetCategories) {
     let categories2 = msg[0];
-    echo("GetCategories", "src/pages/quiz_home.gleam", 223);
+    echo("GetCategories", "src/pages/quiz_home.gleam", 254);
     let new_selected_category = map(
       categories2,
       (_capture) => {
@@ -11788,14 +11868,15 @@ function update5(model, msg) {
           _record.loading,
           _record.error,
           _record.quiz_result,
-          _record.show_results
+          _record.show_results,
+          _record.unanswered_only
         );
       })(),
       none2()
     ];
   } else if (msg instanceof GetQuestionIdAndCategoryList) {
     let id_and_category_list = msg[0];
-    echo("GetQuestionIdAndCategoryList", "src/pages/quiz_home.gleam", 238);
+    echo("GetQuestionIdAndCategoryList", "src/pages/quiz_home.gleam", 269);
     return [
       (() => {
         let _record = model;
@@ -11812,14 +11893,15 @@ function update5(model, msg) {
           _record.loading,
           _record.error,
           _record.quiz_result,
-          _record.show_results
+          _record.show_results,
+          _record.unanswered_only
         );
       })(),
       none2()
     ];
   } else if (msg instanceof GetQuizHistory) {
     let quiz_result = msg[0];
-    echo("GetQuizHistory", "src/pages/quiz_home.gleam", 250);
+    echo("GetQuizHistory", "src/pages/quiz_home.gleam", 281);
     return [
       (() => {
         let _record = model;
@@ -11834,13 +11916,14 @@ function update5(model, msg) {
           false,
           _record.error,
           quiz_result,
-          _record.show_results
+          _record.show_results,
+          _record.unanswered_only
         );
       })(),
       none2()
     ];
   } else if (msg instanceof StartQuiz) {
-    echo("Start Quiz", "src/pages/quiz_home.gleam", 259);
+    echo("Start Quiz", "src/pages/quiz_home.gleam", 290);
     let _block;
     let _pipe = get_question_by_ids(model.db, model.selected_question_ids);
     _block = to_effect(
@@ -11862,7 +11945,7 @@ function update5(model, msg) {
     return [model, none2()];
   } else {
     let json_err = msg[0];
-    echo("err screen", "src/pages/quiz_home.gleam", 255);
+    echo("err screen", "src/pages/quiz_home.gleam", 286);
     return [
       (() => {
         let _record = model;
@@ -11877,7 +11960,8 @@ function update5(model, msg) {
           _record.loading,
           new Some(json_err),
           _record.quiz_result,
-          _record.show_results
+          _record.show_results,
+          _record.unanswered_only
         );
       })(),
       none2()
@@ -11941,6 +12025,20 @@ function view_shuffle(shuffle3) {
         "\u30B7\u30E3\u30C3\u30D5\u30EB\u3059\u308B",
         (var0) => {
           return new SwitchShuffle(var0);
+        }
+      )
+    ])
+  );
+}
+function view_unanswered_only_filter(checked2) {
+  return div(
+    toList([section_container_style()]),
+    toList([
+      view_checkbox_label(
+        checked2,
+        "\u672A\u56DE\u7B54\u306E\u554F\u984C\u306E\u307F",
+        (var0) => {
+          return new SwitchUnansweredOnly(var0);
         }
       )
     ])
@@ -12168,6 +12266,7 @@ function view6(model) {
         toList([text3("\u30AA\u30D7\u30B7\u30E7\u30F3")])
       ),
       view_shuffle(model.shuffle_or_not),
+      view_unanswered_only_filter(model.unanswered_only),
       h2(
         toList([styles(toList([["margin-top", "1rem"]]))]),
         toList([text3("\u51FA\u984C\u6570\u9078\u629E")])

@@ -19,6 +19,7 @@
         - `QuizSettingsForm`:
             - `CategorySelector`: GET `/api/categories` で取得したカテゴリ一覧をチェックボックスで表示。最低1つは選択必須。
             - `QuestionCountSelector`: ラジオボタンで出題数（10/20/50）を選択。
+            - `QuizFilter`: 「未回答の問題のみ」を選択するチェックボックスなどのフィルターオプション。
             - `StartQuizButton`: `QuizSettingsForm` の内容を検証し、問題がなければクイズ画面に遷移。
             - `ViewHistoryButton`: 集計画面に遷移。
     - **フッター**

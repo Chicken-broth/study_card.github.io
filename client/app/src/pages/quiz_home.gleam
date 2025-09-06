@@ -43,6 +43,8 @@ pub type Model {
     quiz_result: QuizResults,
     /// 履歴表示のON/OFFを切り替えるフラグ。
     show_results: Bool,
+    /// 「未回答の問題のみ」フィルターが有効かどうか。
+    unanswered_only: Bool,
   )
 }
 
@@ -65,6 +67,8 @@ pub type Msg {
   SelectCount(QuestionCount)
   /// ユーザーがシャッフルのスイッチを操作した際に送信される。
   SwitchShuffle(Bool)
+  /// 「未回答の問題のみ」フィルターのスイッチを操作した際に送信される。
+  SwitchUnansweredOnly(Bool)
   ///カテゴリを全部選択にするか全部選択なしにするかの切り替えボタンがクリックされた際に送信される。
   SWitchAllCategory(Bool)
   /// 学習履歴ボタンがクリックされた際に送信される。
@@ -115,6 +119,7 @@ pub fn init(db: DB) -> #(Model, Effect(Msg)) {
       error: None,
       quiz_result: [],
       show_results: False,
+      unanswered_only: False,
     ),
     get_initial_data_effects(db),
   )
@@ -150,6 +155,8 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           new_select_category,
           model.selected_count,
           model.shuffle_or_not,
+          model.quiz_result,
+          model.unanswered_only,
         )
       #(
         Model(
@@ -167,6 +174,8 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           model.selected_category,
           quest_count,
           model.shuffle_or_not,
+          model.quiz_result,
+          model.unanswered_only,
         )
 
       #(
@@ -190,6 +199,26 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         effect.none(),
       )
     }
+    SwitchUnansweredOnly(is_unanswered_only) -> {
+      let new_question_ids: List(ID) =
+        filtering_question_id(
+          model.question_id_categories,
+          model.selected_category,
+          model.selected_count,
+          model.shuffle_or_not,
+          model.quiz_result,
+          is_unanswered_only,
+        )
+      #(
+        Model(
+          ..model,
+          unanswered_only: is_unanswered_only,
+          selected_question_ids: echo new_question_ids,
+        ),
+        effect.none(),
+      )
+    }
+
     SWitchAllCategory(is_selected) -> {
       echo "SWitchAllCategory"
       let new_select_category: List(SelectedCategory) =
@@ -202,6 +231,8 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           new_select_category,
           model.selected_count,
           model.shuffle_or_not,
+          model.quiz_result,
+          model.unanswered_only,
         )
       #(
         Model(
@@ -274,30 +305,64 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   }
 }
 
+/// 選択されたカテゴリに基づいて問題IDをフィルタリングする。
+fn filter_by_category(
+  all_questions: List(IdAndCategory),
+  selected_categories: List(SelectedCategory),
+) -> List(ID) {
+  let selected_category_ids =
+    selected_categories
+    |> list.filter(fn(c) { c.is_selected })
+    |> list.map(fn(c) { c.category.id })
+
+  all_questions
+  |> list.filter(fn(q) { list.contains(selected_category_ids, q.category.id) })
+  |> list.map(fn(q) { q.id })
+}
+
+fn filter_unanswered(
+  question_ids: List(ID),
+  quiz_results: QuizResults,
+  unanswered_only: Bool,
+) -> List(ID) {
+  echo "filter_unanswered"
+  echo unanswered_only
+  use <- bool.guard(bool.negate(unanswered_only), question_ids)
+  let answered_ids =
+    quiz_result.filter_exist_answers(quiz_results)
+    |> list.map(fn(r) { r.id })
+
+  list.filter(question_ids, fn(id) {
+    list.contains(answered_ids, id) |> bool.negate
+  })
+}
+
+/// シャッフルと出題数の制限を適用する。
+fn apply_count_and_shuffle(
+  question_ids: List(ID),
+  selected_count: QuestionCount,
+  do_shuffle: Bool,
+) -> List(ID) {
+  let shuffled_ids = shuffle(question_ids, do_shuffle)
+  let limit_count = case selected_count {
+    Limit(count) -> count
+    Full -> list.length(shuffled_ids)
+  }
+  list.take(shuffled_ids, limit_count)
+}
+
 fn filtering_question_id(
   id_categorie_list: List(IdAndCategory),
   selected_category_ids: List(SelectedCategory),
   selected_count: QuestionCount,
   do_shuffle: Bool,
+  quiz_results: QuizResults,
+  unanswered_only: Bool,
 ) -> List(ID) {
-  //categoryのidリストを作成
-  let filtered_category_ids: List(ID) =
-    selected_category_ids
-    |> list.filter(fn(c) { c.is_selected })
-    |> list.map(fn(c) { c.category.id })
-  //categoryでfilterしたquestionのidリストを作成
-  let filtered_questions: List(ID) =
-    id_categorie_list
-    |> list.filter(fn(q) { list.contains(filtered_category_ids, q.category.id) })
-    |> list.map(fn(c) { c.id })
-  // |> echo
-
-  let limit_count = case selected_count {
-    Limit(count) -> count
-    Full -> list.length(filtered_questions)
-  }
-  shuffle(filtered_questions, do_shuffle)
-  |> list.take(limit_count)
+  id_categorie_list
+  |> filter_by_category(selected_category_ids)
+  |> filter_unanswered(quiz_results, unanswered_only)
+  |> apply_count_and_shuffle(selected_count, do_shuffle)
 }
 
 fn shuffle(xs: List(a), is_shuffle: Bool) -> List(a) {
@@ -350,6 +415,12 @@ fn section_container_row_style() {
 fn view_shuffle(shuffle: Bool) -> Element(Msg) {
   html.div([section_container_style()], [
     view_checkbox_label(shuffle, "シャッフルする", SwitchShuffle),
+  ])
+}
+
+fn view_unanswered_only_filter(checked: Bool) -> Element(Msg) {
+  html.div([section_container_style()], [
+    view_checkbox_label(checked, "未回答の問題のみ", SwitchUnansweredOnly),
   ])
 }
 
@@ -529,6 +600,7 @@ pub fn view(model: Model) -> Element(Msg) {
     view_category_selection(model.selected_category, checked),
     html.h2([attr.styles([#("margin-top", "1rem")])], [html.text("オプション")]),
     view_shuffle(model.shuffle_or_not),
+    view_unanswered_only_filter(model.unanswered_only),
     html.h2([attr.styles([#("margin-top", "1rem")])], [html.text("出題数選択")]),
     view_count_selection(model.selected_count),
     html.div([attr.styles([#("margin-top", "1rem")])], [
