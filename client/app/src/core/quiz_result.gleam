@@ -23,15 +23,7 @@ pub type ID =
 
 pub fn filter_exist_answers(rs: QuizResults) -> QuizResults {
   list.filter(rs, fn(r) {
-    let fst = list.first(r.answer)
-    case fst {
-      Ok(ans) ->
-        case ans {
-          answer.NotAnswered -> False
-          _ -> True
-        }
-      Error(_) -> False
-    }
+    list.any(r.answer, fn(a) { a != answer.NotAnswered })
   })
 }
 
@@ -73,33 +65,45 @@ pub fn from_id_category(
 fn view_answers(answers: List(Answer)) -> element.Element(msg) {
   html.div(
     [
-      attr.styles([#("display", "flex")]),
-      attr.styles([#("flex-direction", "row")]),
-      attr.styles([#("gap", "0.5rem")]),
-      attr.styles([#("justify-content", "center")]),
-      attr.styles([#("align-items", "center")]),
+      attr.styles([
+        #("display", "flex"),
+        #("flex-direction", "row"),
+        #("gap", "0.5rem"),
+        #("justify-content", "center"),
+        #("align-items", "center"),
+      ]),
     ],
     list.map(answers, answer.view),
   )
 }
 
+//中央寄せ
+fn style_column() {
+  attr.styles([
+    #("text-align", "center"),
+    #("padding-left", "1rem"),
+    #("padding-right", "1rem"),
+  ])
+}
+
 pub fn view(quiz_result: QuizResults) -> element.Element(msg) {
   // echo quiz_result
+  // 各行の幅は広くとりたい
   html.table([], [
     html.thead([], [
       html.tr([], [
-        html.th([], [html.text("ID")]),
-        html.th([], [html.text("Category")]),
-        html.th([], [html.text("Result")]),
+        html.th([style_column()], [html.text("ID")]),
+        html.th([style_column()], [html.text("Category")]),
+        html.th([style_column()], [html.text("Result")]),
       ]),
     ]),
     html.tbody(
       [],
       list.map(quiz_result, fn(h) {
         html.tr([], [
-          html.td([], [html.text(int.to_string(h.id))]),
-          html.td([], [html.text(h.category.name)]),
-          html.td([], [view_answers(h.answer)]),
+          html.td([style_column()], [html.text(int.to_string(h.id))]),
+          html.td([style_column()], [html.text(h.category.name)]),
+          html.td([style_column()], [view_answers(h.answer)]),
         ])
       }),
     ),

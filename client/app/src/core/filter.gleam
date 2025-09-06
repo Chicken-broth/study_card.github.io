@@ -40,6 +40,16 @@ pub fn default_options() -> FilterOptions {
   )
 }
 
+pub fn reset(filter: FilterOptions) -> FilterOptions {
+  FilterOptions(
+    selected_categories: filter.selected_categories,
+    selected_count: Full,
+    do_shuffle: False,
+    quiz_results: [],
+    unanswered_only: False,
+  )
+}
+
 /// 選択されたカテゴリに基づいて問題IDをフィルタリングする。
 fn filter_by_category(
   all_questions: List(IdAndCategory),

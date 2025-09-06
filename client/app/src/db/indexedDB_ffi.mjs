@@ -1,4 +1,4 @@
-import "fake-indexeddb/auto";
+// import "fake-indexeddb/auto";
 import default_data from './data.mjs'
 import extra_data from './extra_data.mjs';
 import { Ok, Error } from "../gleam.mjs";
@@ -46,7 +46,24 @@ const STORE_CONFIGS = [
 // export function setupExtraDB(dbName, version) {
 //   return setup(dbName, version, extra_data);
 // }
+function loadData(dbName) {
+  switch (dbName) {
+    case DATAEXTRA:
+      return extra_data;
+    default:
+      return default_data;
+  }
+}
+function addQuizResults(store,xs) {
+  xs.forEach(x => {
 
+    store.add({
+      id: x.id,
+      category: x.category,
+      answer: []
+    })
+  });
+}
 /**
  * IndexedDBデータベースを初期化し、接続を確立します。
  * @param {string} dbName データベース名。
@@ -56,19 +73,8 @@ const STORE_CONFIGS = [
 export function setup(prefix, dbName, version) {
   console.log("\nsetup db:", prefix, dbName, version);
   return new Promise((resolve, reject) => {
-    let data;
-    let name;
-    switch (dbName) {
-      case DATAEXTRA:
-        data = extra_data;
-        name = prefix + dbName;
-        break;
-      default:
-        data = default_data;
-        name = prefix + dbName;
-        break;
-    }
-
+    const data = loadData(dbName);
+    const name = prefix + dbName
     const request = indexedDB.open(name, version);
     request.onerror = (event) => {
       console.error("Database error:", event.target.error);
@@ -116,14 +122,15 @@ export function setup(prefix, dbName, version) {
         });
 
         //questionsからhistoryを初期化
-        const resultStore = transaction.objectStore(QUIZ_RESULT_STORE);
-        data.questions.forEach(q => {
-          resultStore.add({
-            id: q.id,
-            category: q.category,
-            answer: []
-          })
-        });
+        addQuizResults(questionStore, data.questions)
+        // const resultStore = transaction.objectStore(QUIZ_RESULT_STORE);
+        // data.questions.forEach(q => {
+        //   resultStore.add({
+        //     id: q.id,
+        //     category: q.category,
+        //     answer: []
+        //   })
+        // });
       }
 
       console.log("Database setup and data seeding complete.");
@@ -370,4 +377,53 @@ function addAnswers(base, new_) {
 
   // 履歴を最大3件に制限して返します。
   return combined.slice(0, 3);
+}
+
+/**
+ * 'quiz_results'ストアのすべてのデータを削除します。
+ * @param {IDBDatabase} db データベース接続オブジェクト。
+ * @returns {Promise<Ok<null>|Error<null>>} 成功時にはOk(null)、失敗時にはError(null)で解決されるPromise。
+ */
+export function resetQuizResults(db) {
+  console.log("--resetQuizResults:");
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([QUIZ_RESULT_STORE, QUESTION_STORE], 'readwrite');
+    const quizResultStore = transaction.objectStore(QUIZ_RESULT_STORE);
+    const questionStore = transaction.objectStore(QUESTION_STORE);
+    
+    let newResults;
+
+    // 1. QUIZ_RESULT_STORE をクリアする
+    quizResultStore.clear();
+    
+    // 2. QUESTION_STORE からすべての質問を読み込む
+    const request = questionStore.getAll();
+    
+    request.onerror = (event) => {
+      // エラーは transaction.onerror で捕捉される
+      console.error("Error reading questions for reset:", event.target.error);
+    };
+    
+    request.onsuccess = (event) => {
+      // 3. 読み込んだ質問を元に QUIZ_RESULT_STORE を再作成する
+      const questions = event.target.result;
+      addQuizResults(quizResultStore, questions);
+
+      // 4. 再作成されたデータを取得する
+      const getAllRequest = quizResultStore.getAll();
+      getAllRequest.onsuccess = (e) => {
+        newResults = e.target.result;
+      };
+    };
+    
+    transaction.oncomplete = () => {
+      console.log("Quiz results reset and re-initialized successfully.");
+      resolve(new Ok(newResults));
+    };
+
+    transaction.onerror = (event) => {
+      console.error("Transaction error on resetQuizResults:", event.target.error);
+      reject(new Error(event.target.error));
+    };
+  });
 }

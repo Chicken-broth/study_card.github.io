@@ -159,6 +159,21 @@ pub fn save_quiz_results(
     }
   })
 }
+
+@external(javascript, "../db/indexedDB_ffi.mjs", "resetQuizResults")
+fn reset_quiz_results_ffi(db: Dynamic) -> Promise(Result(ok, err))
+
+pub fn reset_quiz_results(db: DB) -> Promise(Result(QuizResults, Err)) {
+  reset_quiz_results_ffi(db.db)
+  |> promise.map(fn(result) {
+    case result {
+      Ok(dynamic) ->
+        decode.run(dynamic, quiz_result.decoder())
+        |> result.map_error(DecodeErr)
+      Error(_) -> FFIError("Error saving quiz results:  ") |> Error
+    }
+  })
+}
 /// 問題IDとカテゴリのペアを表す型
 /// 取得した問題IDとカテゴリのリストをデコードします。
 /// データベースにクイズ結果を保存します。

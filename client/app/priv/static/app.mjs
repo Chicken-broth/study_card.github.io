@@ -1437,14 +1437,6 @@ function contains(loop$list, loop$elem) {
     }
   }
 }
-function first(list4) {
-  if (list4 instanceof Empty) {
-    return new Error(void 0);
-  } else {
-    let first$1 = list4.head;
-    return new Ok(first$1);
-  }
-}
 function filter_loop(loop$list, loop$fun, loop$acc) {
   while (true) {
     let list4 = loop$list;
@@ -1557,20 +1549,20 @@ function take(list4, n) {
 }
 function append_loop(loop$first, loop$second) {
   while (true) {
-    let first2 = loop$first;
+    let first = loop$first;
     let second = loop$second;
-    if (first2 instanceof Empty) {
+    if (first instanceof Empty) {
       return second;
     } else {
-      let first$1 = first2.head;
-      let rest$1 = first2.tail;
+      let first$1 = first.head;
+      let rest$1 = first.tail;
       loop$first = rest$1;
       loop$second = prepend(first$1, second);
     }
   }
 }
-function append(first2, second) {
-  return append_loop(reverse(first2), second);
+function append(first, second) {
+  return append_loop(reverse(first), second);
 }
 function prepend2(list4, item) {
   return prepend(item, list4);
@@ -2079,10 +2071,10 @@ function run_decoders(loop$data, loop$failure, loop$decoders) {
     }
   }
 }
-function one_of(first2, alternatives) {
+function one_of(first, alternatives) {
   return new Decoder(
     (dynamic_data) => {
-      let $ = first2.function(dynamic_data);
+      let $ = first.function(dynamic_data);
       let layer = $;
       let errors = $[1];
       if (errors instanceof Empty) {
@@ -6482,17 +6474,12 @@ function filter_exist_answers(rs) {
   return filter(
     rs,
     (r) => {
-      let fst = first(r.answer);
-      if (fst instanceof Ok) {
-        let ans = fst[0];
-        if (ans instanceof NotAnswered) {
-          return false;
-        } else {
-          return true;
+      return any(
+        r.answer,
+        (a) => {
+          return !isEqual(a, new NotAnswered());
         }
-      } else {
-        return false;
-      }
+      );
     }
   );
 }
@@ -6544,13 +6531,26 @@ function from_questions(questions2) {
 function view_answers(answers) {
   return div(
     toList([
-      styles(toList([["display", "flex"]])),
-      styles(toList([["flex-direction", "row"]])),
-      styles(toList([["gap", "0.5rem"]])),
-      styles(toList([["justify-content", "center"]])),
-      styles(toList([["align-items", "center"]]))
+      styles(
+        toList([
+          ["display", "flex"],
+          ["flex-direction", "row"],
+          ["gap", "0.5rem"],
+          ["justify-content", "center"],
+          ["align-items", "center"]
+        ])
+      )
     ]),
     map(answers, view)
+  );
+}
+function style_column() {
+  return styles(
+    toList([
+      ["text-align", "center"],
+      ["padding-left", "1rem"],
+      ["padding-right", "1rem"]
+    ])
   );
 }
 function view5(quiz_result) {
@@ -6563,9 +6563,12 @@ function view5(quiz_result) {
           tr(
             toList([]),
             toList([
-              th(toList([]), toList([text3("ID")])),
-              th(toList([]), toList([text3("Category")])),
-              th(toList([]), toList([text3("Result")]))
+              th(toList([style_column()]), toList([text3("ID")])),
+              th(
+                toList([style_column()]),
+                toList([text3("Category")])
+              ),
+              th(toList([style_column()]), toList([text3("Result")]))
             ])
           )
         ])
@@ -6578,9 +6581,18 @@ function view5(quiz_result) {
             return tr(
               toList([]),
               toList([
-                td(toList([]), toList([text3(to_string(h.id))])),
-                td(toList([]), toList([text3(h.category.name)])),
-                td(toList([]), toList([view_answers(h.answer)]))
+                td(
+                  toList([style_column()]),
+                  toList([text3(to_string(h.id))])
+                ),
+                td(
+                  toList([style_column()]),
+                  toList([text3(h.category.name)])
+                ),
+                td(
+                  toList([style_column()]),
+                  toList([view_answers(h.answer)])
+                )
               ])
             );
           }
@@ -10971,21 +10983,28 @@ var STORE_CONFIGS = [
     keyPath: { keyPath: "id" }
   }
 ];
+function loadData(dbName) {
+  switch (dbName) {
+    case DATAEXTRA:
+      return extra_data_default;
+    default:
+      return data_default;
+  }
+}
+function addQuizResults(store, xs) {
+  xs.forEach((x) => {
+    store.add({
+      id: x.id,
+      category: x.category,
+      answer: []
+    });
+  });
+}
 function setup(prefix2, dbName, version) {
   console.log("\nsetup db:", prefix2, dbName, version);
   return new Promise((resolve2, reject) => {
-    let data;
-    let name2;
-    switch (dbName) {
-      case DATAEXTRA:
-        data = extra_data_default;
-        name2 = prefix2 + dbName;
-        break;
-      default:
-        data = data_default;
-        name2 = prefix2 + dbName;
-        break;
-    }
+    const data = loadData(dbName);
+    const name2 = prefix2 + dbName;
     const request = indexedDB.open(name2, version);
     request.onerror = (event4) => {
       console.error("Database error:", event4.target.error);
@@ -11023,14 +11042,7 @@ function setup(prefix2, dbName, version) {
         data.questions.forEach((question) => {
           questionStore.add(question);
         });
-        const resultStore = transaction.objectStore(QUIZ_RESULT_STORE);
-        data.questions.forEach((q) => {
-          resultStore.add({
-            id: q.id,
-            category: q.category,
-            answer: []
-          });
-        });
+        addQuizResults(questionStore, data.questions);
       }
       console.log("Database setup and data seeding complete.");
     };
@@ -11146,6 +11158,36 @@ function addAnswers(base, new_) {
   }
   const combined = [newAnswer, ...baseAnswers];
   return combined.slice(0, 3);
+}
+function resetQuizResults(db) {
+  console.log("--resetQuizResults:");
+  return new Promise((resolve2, reject) => {
+    const transaction = db.transaction([QUIZ_RESULT_STORE, QUESTION_STORE], "readwrite");
+    const quizResultStore = transaction.objectStore(QUIZ_RESULT_STORE);
+    const questionStore = transaction.objectStore(QUESTION_STORE);
+    let newResults;
+    quizResultStore.clear();
+    const request = questionStore.getAll();
+    request.onerror = (event4) => {
+      console.error("Error reading questions for reset:", event4.target.error);
+    };
+    request.onsuccess = (event4) => {
+      const questions2 = event4.target.result;
+      addQuizResults(quizResultStore, questions2);
+      const getAllRequest = quizResultStore.getAll();
+      getAllRequest.onsuccess = (e) => {
+        newResults = e.target.result;
+      };
+    };
+    transaction.oncomplete = () => {
+      console.log("Quiz results reset and re-initialized successfully.");
+      resolve2(new Ok(newResults));
+    };
+    transaction.onerror = (event4) => {
+      console.error("Transaction error on resetQuizResults:", event4.target.error);
+      reject(new Error(event4.target.error));
+    };
+  });
 }
 
 // build/dev/javascript/app/db/indexed_db.mjs
@@ -11299,6 +11341,27 @@ function save_quiz_results(db, results) {
     }
   );
 }
+function reset_quiz_results(db) {
+  let _pipe = resetQuizResults(db.db);
+  return map_promise(
+    _pipe,
+    (result) => {
+      if (result instanceof Ok) {
+        let dynamic2 = result[0];
+        let _pipe$1 = run(dynamic2, decoder6());
+        return map_error(
+          _pipe$1,
+          (var0) => {
+            return new DecodeErr(var0);
+          }
+        );
+      } else {
+        let _pipe$1 = new FFIError("Error saving quiz results:  ");
+        return new Error(_pipe$1);
+      }
+    }
+  );
+}
 
 // build/dev/javascript/app/extra/effect_.mjs
 function perform(msg) {
@@ -11370,6 +11433,15 @@ var FilterOptions = class extends CustomType {
 };
 function default_options() {
   return new FilterOptions(toList([]), new Full(), false, toList([]), false);
+}
+function reset(filter3) {
+  return new FilterOptions(
+    filter3.selected_categories,
+    new Full(),
+    false,
+    toList([]),
+    false
+  );
 }
 function filter_by_category(all_questions, selected_categories) {
   let _block;
@@ -11577,6 +11649,14 @@ var ErrScreen = class extends CustomType {
     this[0] = $0;
   }
 };
+var ResetQuizResults = class extends CustomType {
+};
+var ResetQuizResultsFinished = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
 function get_initial_data_effects(db) {
   let _block;
   let _pipe = get_categories(db);
@@ -11614,7 +11694,7 @@ function get_initial_data_effects(db) {
     }
   );
   let get_results = _block$2;
-  echo("get_initial_data_effects", "src/pages/quiz_home.gleam", 86);
+  echo("get_initial_data_effects", "src/pages/quiz_home.gleam", 92);
   return batch(
     toList([get_categories2, get_question_id_and_category_list2, get_results])
   );
@@ -11832,7 +11912,7 @@ function update5(model, msg) {
     return [new_model, none2()];
   } else if (msg instanceof SWitchAllCategory) {
     let is_selected = msg[0];
-    echo("SWitchAllCategory", "src/pages/quiz_home.gleam", 192);
+    echo("SWitchAllCategory", "src/pages/quiz_home.gleam", 199);
     let new_select_category = map(
       model.filter_options.selected_categories,
       (c) => {
@@ -11866,7 +11946,7 @@ function update5(model, msg) {
     let new_model = _block;
     return [new_model, none2()];
   } else if (msg instanceof ViewResults) {
-    echo("View History", "src/pages/quiz_home.gleam", 209);
+    echo("View History", "src/pages/quiz_home.gleam", 216);
     return [
       (() => {
         let _record = model;
@@ -11885,7 +11965,7 @@ function update5(model, msg) {
     ];
   } else if (msg instanceof GetCategories) {
     let categories2 = msg[0];
-    echo("GetCategories", "src/pages/quiz_home.gleam", 216);
+    echo("GetCategories", "src/pages/quiz_home.gleam", 223);
     let new_selected_category = map(
       categories2,
       (_capture) => {
@@ -11920,7 +12000,7 @@ function update5(model, msg) {
     return [new_model, none2()];
   } else if (msg instanceof GetQuestionIdAndCategoryList) {
     let id_and_category_list = msg[0];
-    echo("GetQuestionIdAndCategoryList", "src/pages/quiz_home.gleam", 233);
+    echo("GetQuestionIdAndCategoryList", "src/pages/quiz_home.gleam", 240);
     let _block;
     let _block$1;
     let _record = model;
@@ -11940,7 +12020,7 @@ function update5(model, msg) {
     return [new_model, none2()];
   } else if (msg instanceof GetQuizHistory) {
     let quiz_result = msg[0];
-    echo("GetQuizHistory", "src/pages/quiz_home.gleam", 240);
+    echo("GetQuizHistory", "src/pages/quiz_home.gleam", 247);
     let _block;
     let _block$1;
     let _record = model;
@@ -11968,7 +12048,7 @@ function update5(model, msg) {
     let new_model = _block;
     return [new_model, none2()];
   } else if (msg instanceof StartQuiz) {
-    echo("Start Quiz", "src/pages/quiz_home.gleam", 260);
+    echo("Start Quiz", "src/pages/quiz_home.gleam", 267);
     let _block;
     let _pipe = get_question_by_ids(model.db, model.selected_question_ids);
     _block = to_effect(
@@ -11988,9 +12068,9 @@ function update5(model, msg) {
       "Fetched " + to_string(length(questions2)) + " questions."
     );
     return [model, none2()];
-  } else {
+  } else if (msg instanceof ErrScreen) {
     let json_err = msg[0];
-    echo("err screen", "src/pages/quiz_home.gleam", 256);
+    echo("err screen", "src/pages/quiz_home.gleam", 263);
     return [
       (() => {
         let _record = model;
@@ -12003,6 +12083,54 @@ function update5(model, msg) {
           _record.loading,
           new Some(json_err),
           _record.show_results
+        );
+      })(),
+      none2()
+    ];
+  } else if (msg instanceof ResetQuizResults) {
+    let _block;
+    let _pipe = model.db;
+    _block = reset_quiz_results(_pipe);
+    let promise = _block;
+    let _block$1;
+    let _pipe$1 = promise;
+    _block$1 = to_effect(
+      _pipe$1,
+      (var0) => {
+        return new ResetQuizResultsFinished(var0);
+      },
+      (var0) => {
+        return new ErrScreen(var0);
+      }
+    );
+    let effect = _block$1;
+    return [model, effect];
+  } else {
+    let quiz_result = msg[0];
+    echo("ResetQuizResultsFinished", "src/pages/quiz_home.gleam", 295);
+    let reseted_filter = reset(model.filter_options);
+    let _block;
+    let _record = reseted_filter;
+    _block = new FilterOptions(
+      _record.selected_categories,
+      _record.selected_count,
+      _record.do_shuffle,
+      quiz_result,
+      _record.unanswered_only
+    );
+    let new_filter = _block;
+    return [
+      (() => {
+        let _record$1 = model;
+        return new Model4(
+          _record$1.db,
+          _record$1.categories,
+          _record$1.question_id_categories,
+          new_filter,
+          _record$1.selected_question_ids,
+          false,
+          _record$1.error,
+          _record$1.show_results
         );
       })(),
       none2()
@@ -12033,19 +12161,28 @@ function section_container_row_style() {
       ["display", "inline-flex"],
       ["padding", "0.5rem"],
       ["border-radius", "0.5rem"],
-      ["background-color", "#f0f0f0"]
+      ["background-color", "#f0f0f0"],
+      ["gap", "1rem"]
     ])
   );
 }
-function style_margin_left_1() {
+function style_margin_left_4() {
   return style("margin-left", "1rem");
+}
+function style_vertical_margin_h2() {
+  return styles(
+    toList([["margin-top", "0.75rem"], ["margin-bottom", "0.125rem"]])
+  );
+}
+function style_margin_top_2() {
+  return style("margin-top", "0.5rem");
 }
 function style_cursor_pointer() {
   return style("cursor", "pointer");
 }
 function view_checkbox_label(checked2, label2, handler) {
   return label(
-    toList([style_margin_left_1(), style_cursor_pointer()]),
+    toList([style_cursor_pointer()]),
     toList([
       input(
         toList([
@@ -12062,7 +12199,7 @@ function view_checkbox_label(checked2, label2, handler) {
 }
 function view_options(shuffle3, unanswered_only) {
   return div(
-    toList([section_container_row_style()]),
+    toList([style_margin_left_4(), section_container_row_style()]),
     toList([
       view_checkbox_label(
         shuffle3,
@@ -12083,7 +12220,7 @@ function view_options(shuffle3, unanswered_only) {
 }
 function view_radio_with_label(checked2, label2, handler) {
   return label(
-    toList([style_margin_left_1(), style_cursor_pointer()]),
+    toList([style_cursor_pointer()]),
     toList([
       input(
         toList([
@@ -12100,7 +12237,7 @@ function view_radio_with_label(checked2, label2, handler) {
 }
 function view_category_selection(selected_categories, checked2) {
   return div(
-    toList([section_container_style()]),
+    toList([style_margin_left_4(), section_container_style()]),
     toList([
       view_checkbox_label(
         checked2,
@@ -12160,7 +12297,7 @@ function view_count_selection(quest_count) {
     }
   };
   return div(
-    toList([section_container_row_style()]),
+    toList([style_margin_left_4(), section_container_row_style()]),
     map(
       counts,
       (count) => {
@@ -12232,12 +12369,17 @@ function view_loading(loading) {
 }
 function view_db_selection(data_set_list, selected_db) {
   return div(
-    toList([section_container_row_style()]),
+    toList([style_margin_left_4(), section_container_row_style()]),
     toList([
       select(
-        toList([on_change((var0) => {
-          return new SelectDb(var0);
-        })]),
+        toList([
+          styles(
+            toList([["border", "none"], ["background-color", "#f0f0f0"]])
+          ),
+          on_change((var0) => {
+            return new SelectDb(var0);
+          })
+        ]),
         map(
           data_set_list,
           (data_set_name) => {
@@ -12272,29 +12414,18 @@ function view6(model) {
         toList([text3("Quiz App")])
       ),
       view_error(model.error),
-      div(
-        toList([
-          styles(toList([["display", "flex"], ["align-items", "center"]]))
-        ]),
-        toList([
-          h2(
-            toList([
-              styles(
-                toList([["margin-right", "1rem"], ["font-size", "1.17em"]])
-              )
-            ]),
-            toList([text3("\u554F\u984C\u96C6\u9078\u629E")])
-          ),
-          view_db_selection(model.db.names, model.db.name)
-        ])
-      ),
       h2(
-        toList([styles(toList([["margin-top", "1rem"]]))]),
+        toList([style_vertical_margin_h2()]),
+        toList([text3("\u554F\u984C\u96C6\u9078\u629E")])
+      ),
+      view_db_selection(model.db.names, model.db.name),
+      h2(
+        toList([style_vertical_margin_h2()]),
         toList([text3("\u30AB\u30C6\u30B4\u30EA")])
       ),
       view_category_selection(model.filter_options.selected_categories, checked2),
       h2(
-        toList([styles(toList([["margin-top", "1rem"]]))]),
+        toList([style_vertical_margin_h2()]),
         toList([text3("\u30AA\u30D7\u30B7\u30E7\u30F3")])
       ),
       view_options(
@@ -12302,12 +12433,12 @@ function view6(model) {
         model.filter_options.unanswered_only
       ),
       h2(
-        toList([styles(toList([["margin-top", "1rem"]]))]),
+        toList([style_vertical_margin_h2()]),
         toList([text3("\u51FA\u984C\u6570\u9078\u629E")])
       ),
       view_count_selection(model.filter_options.selected_count),
       div(
-        toList([styles(toList([["margin-top", "1rem"]]))]),
+        toList([style_vertical_margin_h2()]),
         toList([text3("\u9078\u629E\u4E2D\u306E\u554F\u984C\u6570: " + to_string(qty))])
       ),
       view_actions(is_start_quiz_enabled),
@@ -12315,7 +12446,26 @@ function view6(model) {
       (() => {
         let $ = model.show_results;
         if ($) {
-          return view5(model.filter_options.quiz_results);
+          return div(
+            toList([style_margin_top_2()]),
+            toList([
+              view5(model.filter_options.quiz_results),
+              div(
+                toList([style_margin_top_2()]),
+                toList([
+                  button(
+                    toList([
+                      on_click(new ResetQuizResults()),
+                      class$(
+                        "px-4 py-2 border border-red-500 text-red-500 rounded-lg hover:bg-red-50"
+                      )
+                    ]),
+                    toList([text3("\u5B66\u7FD2\u5C65\u6B74\u3092\u30EA\u30BB\u30C3\u30C8")])
+                  )
+                ])
+              )
+            ])
+          );
         } else {
           return text3("");
         }
@@ -12366,16 +12516,16 @@ function echo$inspectString(str) {
 }
 function echo$inspectDict(map7) {
   let body = "dict.from_list([";
-  let first2 = true;
+  let first = true;
   let key_value_pairs = [];
   map7.forEach((value2, key) => {
     key_value_pairs.push([key, value2]);
   });
   key_value_pairs.sort();
   key_value_pairs.forEach(([key, value2]) => {
-    if (!first2) body = body + ", ";
+    if (!first) body = body + ", ";
     body = body + "#(" + echo$inspect(key) + ", " + echo$inspect(value2) + ")";
-    first2 = false;
+    first = false;
   });
   return body + "])";
 }
@@ -12582,16 +12732,16 @@ function echo$inspectString2(str) {
 }
 function echo$inspectDict2(map7) {
   let body = "dict.from_list([";
-  let first2 = true;
+  let first = true;
   let key_value_pairs = [];
   map7.forEach((value2, key) => {
     key_value_pairs.push([key, value2]);
   });
   key_value_pairs.sort();
   key_value_pairs.forEach(([key, value2]) => {
-    if (!first2) body = body + ", ";
+    if (!first) body = body + ", ";
     body = body + "#(" + echo$inspect2(key) + ", " + echo$inspect2(value2) + ")";
-    first2 = false;
+    first = false;
   });
   return body + "])";
 }
@@ -13028,16 +13178,16 @@ function echo$inspectString3(str) {
 }
 function echo$inspectDict3(map7) {
   let body = "dict.from_list([";
-  let first2 = true;
+  let first = true;
   let key_value_pairs = [];
   map7.forEach((value2, key) => {
     key_value_pairs.push([key, value2]);
   });
   key_value_pairs.sort();
   key_value_pairs.forEach(([key, value2]) => {
-    if (!first2) body = body + ", ";
+    if (!first) body = body + ", ";
     body = body + "#(" + echo$inspect3(key) + ", " + echo$inspect3(value2) + ")";
-    first2 = false;
+    first = false;
   });
   return body + "])";
 }
@@ -13343,8 +13493,8 @@ function setup_db() {
     if ($ instanceof Empty) {
       return perform(new Miss());
     } else {
-      let first2 = data_sets.head;
-      let _pipe = setup2(data_sets, first2, db_name, 1);
+      let first = data_sets.head;
+      let _pipe = setup2(data_sets, first, db_name, 1);
       return to_effect_simple(
         _pipe,
         (var0) => {
@@ -13422,16 +13572,16 @@ function echo$inspectString4(str) {
 }
 function echo$inspectDict4(map7) {
   let body = "dict.from_list([";
-  let first2 = true;
+  let first = true;
   let key_value_pairs = [];
   map7.forEach((value2, key) => {
     key_value_pairs.push([key, value2]);
   });
   key_value_pairs.sort();
   key_value_pairs.forEach(([key, value2]) => {
-    if (!first2) body = body + ", ";
+    if (!first) body = body + ", ";
     body = body + "#(" + echo$inspect4(key) + ", " + echo$inspect4(value2) + ")";
-    first2 = false;
+    first = false;
   });
   return body + "])";
 }

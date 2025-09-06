@@ -12,8 +12,10 @@ import gleam/bool
 import gleam/function
 import gleam/int
 import gleam/io
+import gleam/javascript/promise
 import gleam/list
 import gleam/option.{type Option, None, Some}
+import gleam/result
 import lustre/attribute as attr
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
@@ -69,6 +71,10 @@ pub type Msg {
   OutCome(List(question.Model))
   /// エラーが発生した際に送信される。
   ErrScreen(db.Err)
+  /// 学習履歴のリセットボタンがクリックされた
+  ResetQuizResults
+  /// 学習履歴のリセット処理が完了した
+  ResetQuizResultsFinished(QuizResults)
 }
 
 fn get_initial_data_effects(db: DB) -> Effect(Msg) {
@@ -117,6 +123,7 @@ fn update_filtered_questions(model: Model) -> Model {
 
 /// 受信したメッセージに基づいてモデルを更新し、新しい状態と副作用（Effect）を返す。
 pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
+  // echo msg
   case msg {
     SelectDb(name) -> {
       let new_db = db.DB(..model.db, name: name)
@@ -272,6 +279,28 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       )
       #(model, effect.none())
     }
+    ResetQuizResults -> {
+      let promise =
+        model.db
+        |> db.reset_quiz_results
+
+      let effect =
+        promise
+        |> promise_.to_effect(ResetQuizResultsFinished, ErrScreen)
+
+      #(model, effect)
+    }
+
+    ResetQuizResultsFinished(quiz_result) -> {
+      echo "ResetQuizResultsFinished"
+      let reseted_filter = filter.reset(model.filter_options)
+      let new_filter =
+        FilterOptions(..reseted_filter, quiz_results: quiz_result)
+      #(
+        Model(..model, filter_options: new_filter, loading: False),
+        effect.none(),
+      )
+    }
   }
 }
 
@@ -312,19 +341,29 @@ fn section_container_row_style() {
     #("padding", "0.5rem"),
     #("border-radius", "0.5rem"),
     #("background-color", "#f0f0f0"),
+    #("gap", "1rem"),
   ])
 }
 
 fn view_options(shuffle: Bool, unanswered_only: Bool) -> Element(Msg) {
-  html.div([section_container_row_style()], [
+  html.div([style_margin_left_4(), section_container_row_style()], [
     view_checkbox_label(shuffle, "シャッフルする", SwitchShuffle),
     view_checkbox_label(unanswered_only, "未回答の問題のみ", SwitchUnansweredOnly),
   ])
 }
 
 /// ラベルの左側に余白を追加するスタイル。
-fn style_margin_left_1() -> attr.Attribute(msg) {
+fn style_margin_left_4() -> attr.Attribute(msg) {
   attr.style("margin-left", "1rem")
+}
+
+/// 上下に0.5remのマージンを追加するスタイル。
+fn style_vertical_margin_h2() -> attr.Attribute(Msg) {
+  attr.styles([#("margin-top", "0.75rem"), #("margin-bottom", "0.125rem")])
+}
+
+fn style_margin_top_2() -> attr.Attribute(msg) {
+  attr.style("margin-top", "0.5rem")
 }
 
 fn style_cursor_pointer() -> attr.Attribute(msg) {
@@ -336,7 +375,7 @@ fn view_checkbox_label(
   label: String,
   handler: fn(Bool) -> Msg,
 ) -> Element(Msg) {
-  html.label([style_margin_left_1(), style_cursor_pointer()], [
+  html.label([style_cursor_pointer()], [
     html.input([
       attr.type_("checkbox"),
       attr.checked(checked),
@@ -351,7 +390,7 @@ fn view_radio_with_label(
   label: String,
   handler: fn(Bool) -> Msg,
 ) -> Element(Msg) {
-  html.label([style_margin_left_1(), style_cursor_pointer()], [
+  html.label([style_cursor_pointer()], [
     html.input([
       event.on_check(handler),
       attr.type_("radio"),
@@ -367,7 +406,7 @@ fn view_category_selection(
   selected_categories: List(SelectedCategory),
   checked: Bool,
 ) -> Element(Msg) {
-  html.div([section_container_style()], [
+  html.div([style_margin_left_4(), section_container_style()], [
     view_checkbox_label(checked, "switch all select", SWitchAllCategory),
     //ボーダーラインを追加
     html.hr([
@@ -401,7 +440,7 @@ fn view_count_selection(quest_count: QuestionCount) -> Element(Msg) {
     }
   }
   html.div(
-    [section_container_row_style()],
+    [style_margin_left_4(), section_container_row_style()],
     list.map(counts, fn(count) {
       let is_selected = quest_count == count
       view_radio_with_label(is_selected, to_s(count), fn(_) {
@@ -468,9 +507,12 @@ fn view_db_selection(
   data_set_list: List(String),
   selected_db: String,
 ) -> Element(Msg) {
-  html.div([section_container_row_style()], [
+  html.div([style_margin_left_4(), section_container_row_style()], [
     html.select(
-      [event.on_change(SelectDb)],
+      [
+        attr.styles([#("border", "none"), #("background-color", "#f0f0f0")]),
+        event.on_change(SelectDb),
+      ],
       list.map(data_set_list, fn(data_set_name) {
         html.option(
           [
@@ -485,6 +527,8 @@ fn view_db_selection(
 }
 
 /// アプリケーションのメインビューをレンダリングする。
+/// モデルの状態に基づいて、問題集選択、カテゴリ選択、オプション、問題数選択などのUI要素を表示し、
+/// ユーザーのアクションに応じてメッセージをディスパッチする。
 pub fn view(model: Model) -> Element(Msg) {
   // カテゴリと問題IDがロードされている場合にのみクイズ開始ボタンを有効にする。
   let is_start_quiz_enabled = list.length(model.selected_question_ids) > 0
@@ -496,30 +540,39 @@ pub fn view(model: Model) -> Element(Msg) {
   html.div([], [
     html.h1([attr.styles([#("text-align", "center")])], [html.text("Quiz App")]),
     view_error(model.error),
-    html.div([attr.styles([#("display", "flex"), #("align-items", "center")])], [
-      html.h2(
-        [attr.styles([#("margin-right", "1rem"), #("font-size", "1.17em")])],
-        [html.text("問題集選択")],
-      ),
-      view_db_selection(model.db.names, model.db.name),
-    ]),
-    html.h2([attr.styles([#("margin-top", "1rem")])], [html.text("カテゴリ")]),
+    html.h2([style_vertical_margin_h2()], [html.text("問題集選択")]),
+    view_db_selection(model.db.names, model.db.name),
+    html.h2([style_vertical_margin_h2()], [html.text("カテゴリ")]),
     // view_all_category_selection(checked),
     view_category_selection(model.filter_options.selected_categories, checked),
-    html.h2([attr.styles([#("margin-top", "1rem")])], [html.text("オプション")]),
+    html.h2([style_vertical_margin_h2()], [html.text("オプション")]),
     view_options(
       model.filter_options.do_shuffle,
       model.filter_options.unanswered_only,
     ),
-    html.h2([attr.styles([#("margin-top", "1rem")])], [html.text("出題数選択")]),
+    html.h2([style_vertical_margin_h2()], [html.text("出題数選択")]),
     view_count_selection(model.filter_options.selected_count),
-    html.div([attr.styles([#("margin-top", "1rem")])], [
+    html.div([style_vertical_margin_h2()], [
       html.text("選択中の問題数: " <> int.to_string(qty)),
     ]),
     view_actions(is_start_quiz_enabled),
     view_loading(model.loading),
     case model.show_results {
-      True -> quiz_result.view(model.filter_options.quiz_results)
+      True ->
+        html.div([style_margin_top_2()], [
+          quiz_result.view(model.filter_options.quiz_results),
+          html.div([style_margin_top_2()], [
+            html.button(
+              [
+                event.on_click(ResetQuizResults),
+                attr.class(
+                  "px-4 py-2 border border-red-500 text-red-500 rounded-lg hover:bg-red-50",
+                ),
+              ],
+              [html.text("学習履歴をリセット")],
+            ),
+          ]),
+        ])
       False -> html.text("")
     },
   ])
