@@ -13,12 +13,31 @@ pub type QuizResults =
   List(Record)
 
 /// IndexedDBに保存される学習履歴のレコード
+/// idはquiz id
 pub type Record {
   Record(id: ID, category: QusetionCategory, answer: List(Answer))
 }
 
 pub type ID =
   Int
+
+pub fn filter_exist_answers(rs: QuizResults) -> QuizResults {
+  list.filter(rs, fn(r) {
+    let fst = list.first(r.answer)
+    case fst {
+      Ok(ans) ->
+        case ans {
+          answer.NotAnswered -> False
+          _ -> True
+        }
+      Error(_) -> False
+    }
+  })
+}
+
+fn answer_not_empty(r: Record) {
+  list.length(r.answer) > 0
+}
 
 pub fn decoder() -> decode.Decoder(QuizResults) {
   decode.list({

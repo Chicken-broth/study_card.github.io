@@ -28,8 +28,6 @@ pub fn init(
   total_questions: Int,
   quiz_result: QuizResults,
 ) -> #(Model, Effect(Msg)) {
-  echo quiz_result
-
   #(
     Model(
       db: db,
@@ -58,21 +56,13 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       let eff =
         // effect_.perform(OutCome)
         model.quiz_result
-        |> db.save_quiz_history(model.db, _)
+        |> quiz_result.filter_exist_answers
+        |> echo
+        |> db.save_quiz_results(model.db, _)
         |> promise_.to_effect_simple(fn(_) { OutCome })
       #(model, eff)
     }
-    // GetHistory(quiz_result) -> {
-    //   echo "GetHistory"
-    //       let eff =
-    //       promise_.to_effect(
-    //         db.get_quiz_historys(model.db),
-    //         db.decode_quiz_historys,
-    //         GetHistory,
-    //         Err,
-    //       )
-    //   #(Model(..model, quiz_result: quiz_result), eff)
-    // }
+
     OutCome -> {
       echo "result -> home"
       #(model, none())

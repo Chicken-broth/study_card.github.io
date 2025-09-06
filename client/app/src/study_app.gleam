@@ -1,7 +1,5 @@
 import extra/effect_
 import extra/promise_
-import gleam/int
-import gleam/list
 import interface/indexed_db.{type DB}
 import lustre
 import lustre/effect.{type Effect, none}
@@ -11,9 +9,7 @@ import pages/quiz_home
 import pages/quiz_screen
 import pages/result_screen
 
-const db_name = "default"
-
-const db_version = 1
+const db_version = "1"
 
 /// アプリケーション全体のモデル
 pub type Model {
@@ -36,11 +32,11 @@ pub type Msg {
 
 fn setup_db() -> Effect(Msg) {
   let data_sets = indexed_db.get_data_set_name()
-  let db_name = "db" <> int.to_string(db_version)
+  let db_name = "db" <> db_version
   echo "lustre setup_db"
   echo data_sets
   case data_sets {
-    [first, second, ..] ->
+    [first, _, ..] ->
       indexed_db.setup(data_sets, first, db_name, 1)
       |> promise_.to_effect_simple(DataInitialized)
     _ -> effect_.perform(Miss)
@@ -122,6 +118,7 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       case msg {
         QuizResultMsg(result_msg) -> {
           let #(new_model, eff) = result_screen.update(quiz_model, result_msg)
+
           case result_msg {
             result_screen.OutCome -> {
               let #(new_modek, new_eff) = quiz_home.init(quiz_model.db)

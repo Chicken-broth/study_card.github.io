@@ -42,7 +42,7 @@ pub type Model {
     /// ユーザーの学習履歴。
     quiz_result: QuizResults,
     /// 履歴表示のON/OFFを切り替えるフラグ。
-    show_history: Bool,
+    show_results: Bool,
   )
 }
 
@@ -68,7 +68,7 @@ pub type Msg {
   ///カテゴリを全部選択にするか全部選択なしにするかの切り替えボタンがクリックされた際に送信される。
   SWitchAllCategory(Bool)
   /// 学習履歴ボタンがクリックされた際に送信される。
-  ViewHistory
+  ViewResults
   /// カテゴリのリストが取得された際に送信される。
   GetCategories(List(Category))
   /// 問題IDのリストが取得された際に送信される。
@@ -92,11 +92,11 @@ fn get_initial_data_effects(db: DB) -> Effect(Msg) {
     db.get_question_id_and_category_list(db)
     |> promise_.to_effect(GetQuestionIdAndCategoryList, ErrScreen)
 
-  let get_history =
-    db.get_quiz_historys(db)
+  let get_results =
+    db.get_quiz_results(db)
     |> promise_.to_effect(GetQuizHistory, ErrScreen)
-
-  effect.batch([get_categories, get_question_id_and_category_list, get_history])
+  echo "get_initial_data_effects"
+  effect.batch([get_categories, get_question_id_and_category_list, get_results])
 }
 
 /// アプリケーションの初期状態を生成する。
@@ -114,7 +114,7 @@ pub fn init(db: DB) -> #(Model, Effect(Msg)) {
       loading: False,
       error: None,
       quiz_result: [],
-      show_history: False,
+      show_results: False,
     ),
     get_initial_data_effects(db),
   )
@@ -212,10 +212,10 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         effect.none(),
       )
     }
-    ViewHistory -> {
+    ViewResults -> {
       echo "View History"
       #(
-        Model(..model, show_history: bool.negate(model.show_history)),
+        Model(..model, show_results: bool.negate(model.show_results)),
         effect.none(),
       )
     }
@@ -471,7 +471,7 @@ fn view_actions(is_start_quiz_enabled: Bool) -> Element(Msg) {
         [html.text("クイズ開始")],
       ),
       html.button(
-        [event.on_click(ViewHistory)] |> list.append(button_style(True)),
+        [event.on_click(ViewResults)] |> list.append(button_style(True)),
         [html.text("学習履歴")],
       ),
     ],
@@ -536,7 +536,7 @@ pub fn view(model: Model) -> Element(Msg) {
     ]),
     view_actions(is_start_quiz_enabled),
     view_loading(model.loading),
-    case model.show_history {
+    case model.show_results {
       True -> quiz_result.view(model.quiz_result)
       False -> html.text("")
     },

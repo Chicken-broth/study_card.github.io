@@ -8,7 +8,7 @@ const DATAEXTRA = "英語語根"
 const dataSet = [DATADEFAULT, DATAEXTRA]
 const CATEGORY_STORE = "categories";
 const QUESTION_STORE = "questions";
-const HISTORY_STORE = "history";
+const QUIZ_RESULT_STORE = "quiz_results";
 
 export function getDataSetName() {
   return dataSet
@@ -35,7 +35,7 @@ const STORE_CONFIGS = [
     keyPath: { keyPath: "id" },
   },
   {
-    storeName: HISTORY_STORE,
+    storeName: QUIZ_RESULT_STORE,
     keyPath: { keyPath: "id" },
   }
 ];
@@ -54,7 +54,7 @@ const STORE_CONFIGS = [
  * @returns {Promise<IDBDatabase>} 成功時にはデータベース接続オブジェクト、失敗時にはエラーでrejectされるPromise。
 */
 export function setup(dbName, version, dataSetName) {
-  console.log("setup db:", dbName, version, dataSetName);
+  console.log("\nsetup db:", dbName, version, dataSetName);
   return new Promise((resolve, reject) => {
     let data;
     let name;
@@ -116,12 +116,12 @@ export function setup(dbName, version, dataSetName) {
         });
 
         //questionsからhistoryを初期化
-        const historyStore = transaction.objectStore(HISTORY_STORE);
+        const resultStore = transaction.objectStore(QUIZ_RESULT_STORE);
         data.questions.forEach(q => {
-          historyStore.add({
+          resultStore.add({
             id: q.id,
             category: q.category,
-            answer: ["NotAnswered"]
+            answer: []
           })
         });
       }
@@ -137,6 +137,7 @@ export function setup(dbName, version, dataSetName) {
  * @returns {Promise<Array<any>>} カテゴリの配列で解決されるPromise。
  */
 export function getCategories(db) {
+  console.log("--getCategories:");
   return new Promise((resolve, reject) => {
     const transaction = db.transaction([CATEGORY_STORE], 'readonly');
     const store = transaction.objectStore(CATEGORY_STORE);
@@ -276,16 +277,38 @@ export function getQuestionById(db, id) {
   });
 }
 
+
+
+/**
+ * 'quiz_results'ストアからすべてのクイズ履歴を取得します。
+ * @param {IDBDatabase} db データベース接続オブジェクト。
+ * @returns {Promise<Array<any>>} クイズ履歴の配列で解決されるPromise。
+ */
+export function getQuizResults(db) {
+  console.log("--getQuizResults:");
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([QUIZ_RESULT_STORE], 'readonly');
+    const store = transaction.objectStore(QUIZ_RESULT_STORE);
+    const request = store.getAll();
+    request.onerror = (event) => {
+      reject(new Error(event.target.error));
+    };
+
+    request.onsuccess = (event) => {
+      resolve(new Ok(event.target.result));
+    };
+  });
+}
 /**
  * 'quiz_results'ストアにクイズ履歴を保存します。
  * @param {IDBDatabase} db データベース接続オブジェクト。
  * @param {any} result 保存するクイズ履歴オブジェクト。
  * @returns {Promise<IDBValidKey>} 保存されたアイテムのキーで解決されるPromise。
  */
-export function saveQuizHistory(db, results) {
-  // console.log("result:", results);
+export function saveQuizResults(db, results) {
+  console.log("result:", results);
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction([HISTORY_STORE], 'readwrite');
+    const transaction = db.transaction([QUIZ_RESULT_STORE], 'readwrite');
     transaction.onerror = (event) => {
       console.log("Error saving quiz history:", event.target.error);
       reject(new Error(null));
@@ -294,13 +317,27 @@ export function saveQuizHistory(db, results) {
       console.log("Quiz history saved successfully");
       resolve(new Ok(null));
     }
-    const store = transaction.objectStore(HISTORY_STORE);
-    results.forEach(q => {
-      store.put({
-        id: q.id,
-        category: q.category,
-        answer: q.answer
-      })
+    const store = transaction.objectStore(QUIZ_RESULT_STORE);
+    results.forEach(quiz_result => {
+      // quiz_result.answerは要素を一つだけ持つ。はず
+      const requestUpdate = store.get(quiz_result.id);
+      requestUpdate.onerror = (event) => {
+        // エラーが発生した場合の処理
+        reject(new Error(null));
+      };
+      requestUpdate.onsuccess = (event) => {
+        // 成功 - データを更新しました!
+        const base = event.target.result;
+        
+        const new_ans = addAnswers(base,quiz_result)
+        store.put({
+          id: quiz_result.id,
+          category: quiz_result.category,
+          answer: new_ans,
+        })
+        resolve(new Ok(null));
+      };
+
 
       // request.onerror = (event) => {
       //   console.error("Error saving quiz history:", event.target.error);
@@ -315,23 +352,22 @@ export function saveQuizHistory(db, results) {
   });
 }
 
-/**
- * 'quiz_results'ストアからすべてのクイズ履歴を取得します。
- * @param {IDBDatabase} db データベース接続オブジェクト。
- * @returns {Promise<Array<any>>} クイズ履歴の配列で解決されるPromise。
- */
-export function getQuizHistory(db) {
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction([HISTORY_STORE], 'readonly');
-    const store = transaction.objectStore(HISTORY_STORE);
-    const request = store.getAll();
 
-    request.onerror = (event) => {
-      reject(event.target.error);
-    };
+function addAnswers(base, new_) {
+  // 既存の回答履歴を取得。存在しない、または配列でない場合は空配列を使用します。
+  const baseAnswers = (base && Array.isArray(base.answer)) ? base.answer : [];
+  
+  // 新しい回答を取得。存在しない、または配列でない、または空配列の場合はnullとします。
+  const newAnswer = (new_ && Array.isArray(new_.answer) && new_.answer.length > 0) ? new_.answer[0] : null;
 
-    request.onsuccess = (event) => {
-      resolve(event.target.result);
-    };
-  });
+  // 新しい回答がなければ、既存の履歴をそのまま返します。
+  if (newAnswer === null) {
+    return baseAnswers;
+  }
+
+  // 新しい回答を履歴の先頭に追加します。
+  const combined = [newAnswer, ...baseAnswers];
+  
+  // 履歴を最大3件に制限して返します。
+  return combined.slice(0, 3);
 }

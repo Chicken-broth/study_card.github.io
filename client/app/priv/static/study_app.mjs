@@ -1345,14 +1345,6 @@ var Dict = class _Dict {
 };
 var unequalDictSymbol = /* @__PURE__ */ Symbol();
 
-// build/dev/javascript/gleam_stdlib/gleam/order.mjs
-var Lt = class extends CustomType {
-};
-var Eq = class extends CustomType {
-};
-var Gt = class extends CustomType {
-};
-
 // build/dev/javascript/gleam_stdlib/gleam/option.mjs
 var Some = class extends CustomType {
   constructor($0) {
@@ -1362,6 +1354,29 @@ var Some = class extends CustomType {
 };
 var None = class extends CustomType {
 };
+
+// build/dev/javascript/gleam_stdlib/gleam/order.mjs
+var Lt = class extends CustomType {
+};
+var Eq = class extends CustomType {
+};
+var Gt = class extends CustomType {
+};
+
+// build/dev/javascript/gleam_stdlib/gleam/float.mjs
+function compare(a, b) {
+  let $ = a === b;
+  if ($) {
+    return new Eq();
+  } else {
+    let $1 = a < b;
+    if ($1) {
+      return new Lt();
+    } else {
+      return new Gt();
+    }
+  }
+}
 
 // build/dev/javascript/gleam_stdlib/gleam/list.mjs
 var Ascending = class extends CustomType {
@@ -1420,6 +1435,14 @@ function contains(loop$list, loop$elem) {
         loop$elem = elem;
       }
     }
+  }
+}
+function first(list4) {
+  if (list4 instanceof Empty) {
+    return new Error(void 0);
+  } else {
+    let first$1 = list4.head;
+    return new Ok(first$1);
   }
 }
 function filter_loop(loop$list, loop$fun, loop$acc) {
@@ -1534,20 +1557,20 @@ function take(list4, n) {
 }
 function append_loop(loop$first, loop$second) {
   while (true) {
-    let first = loop$first;
+    let first2 = loop$first;
     let second = loop$second;
-    if (first instanceof Empty) {
+    if (first2 instanceof Empty) {
       return second;
     } else {
-      let first$1 = first.head;
-      let rest$1 = first.tail;
+      let first$1 = first2.head;
+      let rest$1 = first2.tail;
       loop$first = rest$1;
       loop$second = prepend(first$1, second);
     }
   }
 }
-function append(first, second) {
-  return append_loop(reverse(first), second);
+function append(first2, second) {
+  return append_loop(reverse(first2), second);
 }
 function prepend2(list4, item) {
   return prepend(item, list4);
@@ -2056,10 +2079,10 @@ function run_decoders(loop$data, loop$failure, loop$decoders) {
     }
   }
 }
-function one_of(first, alternatives) {
+function one_of(first2, alternatives) {
   return new Decoder(
     (dynamic_data) => {
-      let $ = first.function(dynamic_data);
+      let $ = first2.function(dynamic_data);
       let layer = $;
       let errors = $[1];
       if (errors instanceof Empty) {
@@ -2357,22 +2380,16 @@ function string(data) {
   return new Error("");
 }
 
-// build/dev/javascript/gleam_stdlib/gleam/float.mjs
-function compare(a, b) {
-  let $ = a === b;
-  if ($) {
-    return new Eq();
+// build/dev/javascript/gleam_stdlib/gleam/result.mjs
+function map_error(result, fun) {
+  if (result instanceof Ok) {
+    let x = result[0];
+    return new Ok(x);
   } else {
-    let $1 = a < b;
-    if ($1) {
-      return new Lt();
-    } else {
-      return new Gt();
-    }
+    let error = result[0];
+    return new Error(fun(error));
   }
 }
-
-// build/dev/javascript/gleam_stdlib/gleam/result.mjs
 function unwrap(result, default$) {
   if (result instanceof Ok) {
     let v = result[0];
@@ -6494,6 +6511,24 @@ var Record = class extends CustomType {
     this.answer = answer;
   }
 };
+function filter_exist_answers(rs) {
+  return filter(
+    rs,
+    (r) => {
+      let fst = first(r.answer);
+      if (fst instanceof Ok) {
+        let ans = fst[0];
+        if (ans instanceof NotAnswered) {
+          return false;
+        } else {
+          return true;
+        }
+      } else {
+        return false;
+      }
+    }
+  );
+}
 function decoder6() {
   return list2(
     field(
@@ -10951,7 +10986,7 @@ var DATAEXTRA = "\u82F1\u8A9E\u8A9E\u6839";
 var dataSet = [DATADEFAULT, DATAEXTRA];
 var CATEGORY_STORE = "categories";
 var QUESTION_STORE = "questions";
-var HISTORY_STORE = "history";
+var QUIZ_RESULT_STORE = "quiz_results";
 function getDataSetName() {
   return dataSet;
 }
@@ -10965,12 +11000,12 @@ var STORE_CONFIGS = [
     keyPath: { keyPath: "id" }
   },
   {
-    storeName: HISTORY_STORE,
+    storeName: QUIZ_RESULT_STORE,
     keyPath: { keyPath: "id" }
   }
 ];
 function setup(dbName, version, dataSetName) {
-  console.log("setup db:", dbName, version, dataSetName);
+  console.log("\nsetup db:", dbName, version, dataSetName);
   return new Promise((resolve2, reject) => {
     let data;
     let name2;
@@ -11021,12 +11056,12 @@ function setup(dbName, version, dataSetName) {
         data.questions.forEach((question) => {
           questionStore.add(question);
         });
-        const historyStore = transaction.objectStore(HISTORY_STORE);
+        const resultStore = transaction.objectStore(QUIZ_RESULT_STORE);
         data.questions.forEach((q) => {
-          historyStore.add({
+          resultStore.add({
             id: q.id,
             category: q.category,
-            answer: ["NotAnswered"]
+            answer: []
           });
         });
       }
@@ -11035,6 +11070,7 @@ function setup(dbName, version, dataSetName) {
   });
 }
 function getCategories(db) {
+  console.log("--getCategories:");
   return new Promise((resolve2, reject) => {
     const transaction = db.transaction([CATEGORY_STORE], "readonly");
     const store = transaction.objectStore(CATEGORY_STORE);
@@ -11090,9 +11126,24 @@ function getQuestionByIds(db, ids) {
     });
   });
 }
-function saveQuizHistory(db, results) {
+function getQuizResults(db) {
+  console.log("--getQuizResults:");
   return new Promise((resolve2, reject) => {
-    const transaction = db.transaction([HISTORY_STORE], "readwrite");
+    const transaction = db.transaction([QUIZ_RESULT_STORE], "readonly");
+    const store = transaction.objectStore(QUIZ_RESULT_STORE);
+    const request = store.getAll();
+    request.onerror = (event4) => {
+      reject(new Error(event4.target.error));
+    };
+    request.onsuccess = (event4) => {
+      resolve2(new Ok(event4.target.result));
+    };
+  });
+}
+function saveQuizResults(db, results) {
+  console.log("result:", results);
+  return new Promise((resolve2, reject) => {
+    const transaction = db.transaction([QUIZ_RESULT_STORE], "readwrite");
     transaction.onerror = (event4) => {
       console.log("Error saving quiz history:", event4.target.error);
       reject(new Error(null));
@@ -11101,28 +11152,33 @@ function saveQuizHistory(db, results) {
       console.log("Quiz history saved successfully");
       resolve2(new Ok(null));
     };
-    const store = transaction.objectStore(HISTORY_STORE);
-    results.forEach((q) => {
-      store.put({
-        id: q.id,
-        category: q.category,
-        answer: q.answer
-      });
+    const store = transaction.objectStore(QUIZ_RESULT_STORE);
+    results.forEach((quiz_result) => {
+      const requestUpdate = store.get(quiz_result.id);
+      requestUpdate.onerror = (event4) => {
+        reject(new Error(null));
+      };
+      requestUpdate.onsuccess = (event4) => {
+        const base = event4.target.result;
+        const new_ans = addAnswers(base, quiz_result);
+        store.put({
+          id: quiz_result.id,
+          category: quiz_result.category,
+          answer: new_ans
+        });
+        resolve2(new Ok(null));
+      };
     });
   });
 }
-function getQuizHistory(db) {
-  return new Promise((resolve2, reject) => {
-    const transaction = db.transaction([HISTORY_STORE], "readonly");
-    const store = transaction.objectStore(HISTORY_STORE);
-    const request = store.getAll();
-    request.onerror = (event4) => {
-      reject(event4.target.error);
-    };
-    request.onsuccess = (event4) => {
-      resolve2(event4.target.result);
-    };
-  });
+function addAnswers(base, new_) {
+  const baseAnswers = base && Array.isArray(base.answer) ? base.answer : [];
+  const newAnswer = new_ && Array.isArray(new_.answer) && new_.answer.length > 0 ? new_.answer[0] : null;
+  if (newAnswer === null) {
+    return baseAnswers;
+  }
+  const combined = [newAnswer, ...baseAnswers];
+  return combined.slice(0, 3);
 }
 
 // build/dev/javascript/study_app/interface/indexed_db.mjs
@@ -11134,6 +11190,18 @@ var DB = class extends CustomType {
     this.data_set = data_set;
     this.name = name2;
     this.version = version;
+  }
+};
+var DecodeErr = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var FFIError = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
   }
 };
 function get_data_set_name() {
@@ -11158,7 +11226,13 @@ function get_categories(db) {
   return map_promise(
     _pipe,
     (dynamic2) => {
-      return run(dynamic2, list2(decoder()));
+      let _pipe$1 = run(dynamic2, list2(decoder()));
+      return map_error(
+        _pipe$1,
+        (var0) => {
+          return new DecodeErr(var0);
+        }
+      );
     }
   );
 }
@@ -11167,7 +11241,13 @@ function get_question_by_ids(db, id) {
   return map_promise(
     _pipe,
     (dynamic2) => {
-      return run(dynamic2, list2(decoder5()));
+      let _pipe$1 = run(dynamic2, list2(decoder5()));
+      return map_error(
+        _pipe$1,
+        (var0) => {
+          return new DecodeErr(var0);
+        }
+      );
     }
   );
 }
@@ -11189,28 +11269,53 @@ function get_question_id_and_category_list(db) {
   return map_promise(
     _pipe,
     (dynamic2) => {
-      return run(dynamic2, list2(decoder7));
+      let _pipe$1 = run(dynamic2, list2(decoder7));
+      return map_error(
+        _pipe$1,
+        (var0) => {
+          return new DecodeErr(var0);
+        }
+      );
     }
   );
 }
-function save_quiz_history(db, results) {
+function get_quiz_results(db) {
+  let _pipe = getQuizResults(db.db);
+  return map_promise(
+    _pipe,
+    (result) => {
+      if (result instanceof Ok) {
+        let dynamic2 = result[0];
+        let _pipe$1 = run(dynamic2, decoder6());
+        return map_error(
+          _pipe$1,
+          (var0) => {
+            return new DecodeErr(var0);
+          }
+        );
+      } else {
+        let _pipe$1 = new FFIError("Error saving quiz results:  ");
+        return new Error(_pipe$1);
+      }
+    }
+  );
+}
+function save_quiz_results(db, results) {
   let _pipe = results;
   let _pipe$1 = to_json7(_pipe);
   let _pipe$2 = ((_capture) => {
-    return saveQuizHistory(db.db, _capture);
+    return saveQuizResults(db.db, _capture);
   })(
     _pipe$1
   );
-  return map_promise(_pipe$2, (_) => {
-    return new Ok(void 0);
-  });
-}
-function get_quiz_historys(db) {
-  let _pipe = getQuizHistory(db.db);
   return map_promise(
-    _pipe,
-    (dynamic2) => {
-      return run(dynamic2, decoder6());
+    _pipe$2,
+    (x) => {
+      if (x instanceof Ok) {
+        return new Ok(void 0);
+      } else {
+        return new Error(void 0);
+      }
     }
   );
 }
@@ -11256,7 +11361,7 @@ function update_if(list4, prefix2, fun) {
 
 // build/dev/javascript/study_app/pages/quiz_home.mjs
 var Model4 = class extends CustomType {
-  constructor(db, categories2, question_id_categories, shuffle_or_not, selected_category, selected_count, selected_question_ids, loading, error, quiz_result, show_history) {
+  constructor(db, categories2, question_id_categories, shuffle_or_not, selected_category, selected_count, selected_question_ids, loading, error, quiz_result, show_results) {
     super();
     this.db = db;
     this.categories = categories2;
@@ -11268,7 +11373,7 @@ var Model4 = class extends CustomType {
     this.loading = loading;
     this.error = error;
     this.quiz_result = quiz_result;
-    this.show_history = show_history;
+    this.show_results = show_results;
   }
 };
 var SelectedCategory = class extends CustomType {
@@ -11323,7 +11428,7 @@ var SWitchAllCategory = class extends CustomType {
     this[0] = $0;
   }
 };
-var ViewHistory = class extends CustomType {
+var ViewResults = class extends CustomType {
 };
 var GetCategories = class extends CustomType {
   constructor($0) {
@@ -11383,7 +11488,7 @@ function get_initial_data_effects(db) {
   );
   let get_question_id_and_category_list2 = _block$1;
   let _block$2;
-  let _pipe$2 = get_quiz_historys(db);
+  let _pipe$2 = get_quiz_results(db);
   _block$2 = to_effect(
     _pipe$2,
     (var0) => {
@@ -11393,9 +11498,10 @@ function get_initial_data_effects(db) {
       return new ErrScreen(var0);
     }
   );
-  let get_history = _block$2;
+  let get_results = _block$2;
+  echo("get_initial_data_effects", "src/pages/quiz_home.gleam", 98);
   return batch(
-    toList([get_categories2, get_question_id_and_category_list2, get_history])
+    toList([get_categories2, get_question_id_and_category_list2, get_results])
   );
 }
 function init2(db) {
@@ -11492,7 +11598,7 @@ function update5(model, msg) {
           true,
           _record$1.error,
           _record$1.quiz_result,
-          _record$1.show_history
+          _record$1.show_results
         );
       })(),
       setup_db_effect
@@ -11513,7 +11619,7 @@ function update5(model, msg) {
           false,
           _record.error,
           _record.quiz_result,
-          _record.show_history
+          _record.show_results
         );
       })(),
       get_initial_data_effects(new_db)
@@ -11550,7 +11656,7 @@ function update5(model, msg) {
           _record.loading,
           _record.error,
           _record.quiz_result,
-          _record.show_history
+          _record.show_results
         );
       })(),
       none2()
@@ -11577,7 +11683,7 @@ function update5(model, msg) {
           _record.loading,
           _record.error,
           _record.quiz_result,
-          _record.show_history
+          _record.show_results
         );
       })(),
       none2()
@@ -11599,7 +11705,7 @@ function update5(model, msg) {
           _record.loading,
           _record.error,
           _record.quiz_result,
-          _record.show_history
+          _record.show_results
         );
       })(),
       none2()
@@ -11633,12 +11739,12 @@ function update5(model, msg) {
           _record.loading,
           _record.error,
           _record.quiz_result,
-          _record.show_history
+          _record.show_results
         );
       })(),
       none2()
     ];
-  } else if (msg instanceof ViewHistory) {
+  } else if (msg instanceof ViewResults) {
     echo("View History", "src/pages/quiz_home.gleam", 216);
     return [
       (() => {
@@ -11654,7 +11760,7 @@ function update5(model, msg) {
           _record.loading,
           _record.error,
           _record.quiz_result,
-          negate(model.show_history)
+          negate(model.show_results)
         );
       })(),
       none2()
@@ -11682,7 +11788,7 @@ function update5(model, msg) {
           _record.loading,
           _record.error,
           _record.quiz_result,
-          _record.show_history
+          _record.show_results
         );
       })(),
       none2()
@@ -11706,7 +11812,7 @@ function update5(model, msg) {
           _record.loading,
           _record.error,
           _record.quiz_result,
-          _record.show_history
+          _record.show_results
         );
       })(),
       none2()
@@ -11728,7 +11834,7 @@ function update5(model, msg) {
           false,
           _record.error,
           quiz_result,
-          _record.show_history
+          _record.show_results
         );
       })(),
       none2()
@@ -11771,7 +11877,7 @@ function update5(model, msg) {
           _record.loading,
           new Some(json_err),
           _record.quiz_result,
-          _record.show_history
+          _record.show_results
         );
       })(),
       none2()
@@ -11977,7 +12083,7 @@ function view_actions(is_start_quiz_enabled) {
       ),
       button(
         (() => {
-          let _pipe = toList([on_click(new ViewHistory())]);
+          let _pipe = toList([on_click(new ViewResults())]);
           return append(_pipe, button_style(true));
         })(),
         toList([text3("\u5B66\u7FD2\u5C65\u6B74")])
@@ -12074,7 +12180,7 @@ function view6(model) {
       view_actions(is_start_quiz_enabled),
       view_loading(model.loading),
       (() => {
-        let $ = model.show_history;
+        let $ = model.show_results;
         if ($) {
           return view5(model.quiz_result);
         } else {
@@ -12127,16 +12233,16 @@ function echo$inspectString(str) {
 }
 function echo$inspectDict(map7) {
   let body = "dict.from_list([";
-  let first = true;
+  let first2 = true;
   let key_value_pairs = [];
   map7.forEach((value2, key) => {
     key_value_pairs.push([key, value2]);
   });
   key_value_pairs.sort();
   key_value_pairs.forEach(([key, value2]) => {
-    if (!first) body = body + ", ";
+    if (!first2) body = body + ", ";
     body = body + "#(" + echo$inspect(key) + ", " + echo$inspect(value2) + ")";
-    first = false;
+    first2 = false;
   });
   return body + "])";
 }
@@ -12553,16 +12659,16 @@ function echo$inspectString2(str) {
 }
 function echo$inspectDict2(map7) {
   let body = "dict.from_list([";
-  let first = true;
+  let first2 = true;
   let key_value_pairs = [];
   map7.forEach((value2, key) => {
     key_value_pairs.push([key, value2]);
   });
   key_value_pairs.sort();
   key_value_pairs.forEach(([key, value2]) => {
-    if (!first) body = body + ", ";
+    if (!first2) body = body + ", ";
     body = body + "#(" + echo$inspect2(key) + ", " + echo$inspect2(value2) + ")";
-    first = false;
+    first2 = false;
   });
   return body + "])";
 }
@@ -12668,24 +12774,25 @@ var GoToHome = class extends CustomType {
 var OutCome3 = class extends CustomType {
 };
 function init4(db, score, total_questions, quiz_result) {
-  echo3(quiz_result, "src/pages/result_screen.gleam", 31);
   return [new Model6(db, score, total_questions, quiz_result), none2()];
 }
 function update7(model, msg) {
   if (msg instanceof Err) {
     let json_err = msg[0];
-    echo3("err screen", "src/pages/result_screen.gleam", 48);
-    echo3(json_err, "src/pages/result_screen.gleam", 49);
+    echo3("err screen", "src/pages/result_screen.gleam", 46);
+    echo3(json_err, "src/pages/result_screen.gleam", 47);
     return [model, none2()];
   } else if (msg instanceof GoToHome) {
-    echo3("GoToHome", "src/pages/result_screen.gleam", 57);
+    echo3("GoToHome", "src/pages/result_screen.gleam", 55);
     let _block;
     let _pipe = model.quiz_result;
-    let _pipe$1 = ((_capture) => {
-      return save_quiz_history(model.db, _capture);
-    })(_pipe);
+    let _pipe$1 = filter_exist_answers(_pipe);
+    echo3(_pipe$1, "src/pages/result_screen.gleam", 60);
+    let _pipe$2 = ((_capture) => {
+      return save_quiz_results(model.db, _capture);
+    })(_pipe$1);
     _block = to_effect_simple(
-      _pipe$1,
+      _pipe$2,
       (_) => {
         return new OutCome3();
       }
@@ -12693,7 +12800,7 @@ function update7(model, msg) {
     let eff = _block;
     return [model, eff];
   } else {
-    echo3("result -> home", "src/pages/result_screen.gleam", 77);
+    echo3("result -> home", "src/pages/result_screen.gleam", 67);
     return [model, none2()];
   }
 }
@@ -12768,16 +12875,16 @@ function echo$inspectString3(str) {
 }
 function echo$inspectDict3(map7) {
   let body = "dict.from_list([";
-  let first = true;
+  let first2 = true;
   let key_value_pairs = [];
   map7.forEach((value2, key) => {
     key_value_pairs.push([key, value2]);
   });
   key_value_pairs.sort();
   key_value_pairs.forEach(([key, value2]) => {
-    if (!first) body = body + ", ";
+    if (!first2) body = body + ", ";
     body = body + "#(" + echo$inspect3(key) + ", " + echo$inspect3(value2) + ")";
-    first = false;
+    first2 = false;
   });
   return body + "])";
 }
@@ -12916,7 +13023,7 @@ function update8(model, msg) {
   if (model instanceof Loading) {
     if (msg instanceof DataInitialized) {
       let db = msg[0];
-      echo4("DataInitialized", "src/study_app.gleam", 62);
+      echo4("DataInitialized", "src/study_app.gleam", 58);
       let $ = init2(db);
       let home_model = $[0];
       let home_effect = $[1];
@@ -12927,7 +13034,7 @@ function update8(model, msg) {
         })
       ];
     } else if (msg instanceof Miss) {
-      echo4("setup err", "src/study_app.gleam", 67);
+      echo4("setup err", "src/study_app.gleam", 63);
       return [new ErrScreen2(), none2()];
     } else {
       return [model, none2()];
@@ -12941,7 +13048,7 @@ function update8(model, msg) {
       let home_effect = $[1];
       if (home_msg instanceof OutCome) {
         let questions2 = home_msg[0];
-        echo4("Home -> QuizScreen", "src/study_app.gleam", 81);
+        echo4("Home -> QuizScreen", "src/study_app.gleam", 77);
         let screen_ini = init3(new_home.db, questions2);
         if (screen_ini instanceof Ok) {
           let quiz_model = screen_ini[0];
@@ -13053,12 +13160,12 @@ function view9(model) {
     return text3("\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F");
   }
 }
-var db_version = 1;
+var db_version = "1";
 function setup_db() {
   let data_sets = get_data_set_name();
-  let db_name$1 = "db" + to_string(db_version);
-  echo4("lustre setup_db", "src/study_app.gleam", 40);
-  echo4(data_sets, "src/study_app.gleam", 41);
+  let db_name = "db" + db_version;
+  echo4("lustre setup_db", "src/study_app.gleam", 36);
+  echo4(data_sets, "src/study_app.gleam", 37);
   if (data_sets instanceof Empty) {
     return perform(new Miss());
   } else {
@@ -13066,9 +13173,8 @@ function setup_db() {
     if ($ instanceof Empty) {
       return perform(new Miss());
     } else {
-      let first = data_sets.head;
-      let second = $.head;
-      let _pipe = setup2(data_sets, first, db_name$1, 1);
+      let first2 = data_sets.head;
+      let _pipe = setup2(data_sets, first2, db_name, 1);
       return to_effect_simple(
         _pipe,
         (var0) => {
@@ -13089,15 +13195,15 @@ function main() {
       "let_assert",
       FILEPATH,
       "study_app",
-      163,
+      160,
       "main",
       "Pattern match failed, no pattern matched the value.",
       {
         value: $,
-        start: 4546,
-        end: 4595,
-        pattern_start: 4557,
-        pattern_end: 4562
+        start: 4467,
+        end: 4516,
+        pattern_start: 4478,
+        pattern_end: 4483
       }
     );
   }
@@ -13146,16 +13252,16 @@ function echo$inspectString4(str) {
 }
 function echo$inspectDict4(map7) {
   let body = "dict.from_list([";
-  let first = true;
+  let first2 = true;
   let key_value_pairs = [];
   map7.forEach((value2, key) => {
     key_value_pairs.push([key, value2]);
   });
   key_value_pairs.sort();
   key_value_pairs.forEach(([key, value2]) => {
-    if (!first) body = body + ", ";
+    if (!first2) body = body + ", ";
     body = body + "#(" + echo$inspect4(key) + ", " + echo$inspect4(value2) + ")";
-    first = false;
+    first2 = false;
   });
   return body + "])";
 }

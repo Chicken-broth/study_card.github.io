@@ -17,8 +17,10 @@ pub type DB {
   )
 }
 
-pub type Err =
-  List(decode.DecodeError)
+pub type Err {
+  DecodeErr(List(decode.DecodeError))
+  FFIError(String)
+}
 
 @external(javascript, "./indexedDB_ffi.mjs", "getDataSetName")
 fn get_data_set_name_ffi() -> Dynamic
@@ -56,6 +58,7 @@ pub fn get_categories(db: DB) -> Promise(Result(List(Category), Err)) {
   get_categories_ffi(db.db)
   |> promise.map(fn(dynamic) {
     decode.run(dynamic, decode.list(category.decoder()))
+    |> result.map_error(DecodeErr)
   })
 }
 
@@ -66,7 +69,10 @@ fn get_question_id_list_ffi(db: Dynamic) -> Promise(Dynamic)
 
 pub fn get_question_id_list(db: DB) -> Promise(Result(List(Int), Err)) {
   get_question_id_list_ffi(db.db)
-  |> promise.map(fn(dynamic) { decode.run(dynamic, decode.list(decode.int)) })
+  |> promise.map(fn(dynamic) {
+    decode.run(dynamic, decode.list(decode.int))
+    |> result.map_error(DecodeErr)
+  })
 }
 
 /// IDを指定して特定の問題を取得します。
@@ -81,6 +87,7 @@ pub fn get_question_by_ids(
   get_question_by_ids_ffi(db.db, id)
   |> promise.map(fn(dynamic) {
     decode.run(dynamic, decode.list(question.decoder()))
+    |> result.map_error(DecodeErr)
   })
 }
 
@@ -101,11 +108,53 @@ pub fn get_question_id_and_category_list(
     decode.success(question.IdAndCategory(id, category))
   }
   get_question_id_and_category_list_ffi(db.db)
-  |> promise.map(fn(dynamic) { decode.run(dynamic, decode.list(decoder)) })
+  |> promise.map(fn(dynamic) {
+    decode.run(dynamic, decode.list(decoder)) |> result.map_error(DecodeErr)
+  })
 }
 
+//quiz resultsを取得します。
+@external(javascript, "./indexedDB_ffi.mjs", "getQuizResults")
+fn get_quiz_results_ffi(db: Dynamic) -> Promise(Result(Dynamic, err))
+
+pub fn get_quiz_results(db: DB) -> Promise(Result(QuizResults, Err)) {
+  get_quiz_results_ffi(db.db)
+  |> promise.map(fn(result) {
+    case result {
+      Ok(dynamic) ->
+        decode.run(dynamic, quiz_result.decoder())
+        |> result.map_error(DecodeErr)
+      Error(_) -> FFIError("Error saving quiz results:  ") |> Error
+    }
+  })
+}
+
+//quiz_resultsを保存します
+@external(javascript, "./indexedDB_ffi.mjs", "saveQuizResults")
+fn save_quiz_results_ffi(
+  db: Dynamic,
+  results: json.Json,
+) -> Promise(Result(ok, err))
+
+pub fn save_quiz_results(
+  db: DB,
+  results: QuizResults,
+) -> Promise(Result(Nil, Nil)) {
+  results
+  |> quiz_result.to_json()
+  |> save_quiz_results_ffi(db.db, _)
+  |> promise.map(fn(x) {
+    case x {
+      Ok(_) -> Ok(Nil)
+      Error(_) -> Error(Nil)
+    }
+  })
+}
 /// 問題IDとカテゴリのペアを表す型
 /// 取得した問題IDとカテゴリのリストをデコードします。
+/// データベースにクイズ結果を保存します。
+/// `indexedDB_ffi.mjs`の`saveQuizResult`に対応します。
+/// 保存するresultオブジェクトはidを含まないdynamic型である必要があります。
 // pub fn decode_question_id_and_category_list(
 //   dynamic: Dynamic,
 // ) -> Result(List(IdAndCategory), Err) {
@@ -119,30 +168,3 @@ pub fn get_question_id_and_category_list(
 //   }
 //   decode.run(dynamic, decode.list(id_and_category_decoder))
 // }
-
-/// データベースにクイズ結果を保存します。
-/// `indexedDB_ffi.mjs`の`saveQuizResult`に対応します。
-/// 保存するresultオブジェクトはidを含まないdynamic型である必要があります。
-@external(javascript, "./indexedDB_ffi.mjs", "saveQuizHistory")
-fn save_quiz_history_ffi(db: Dynamic, results: json.Json) -> Promise(Dynamic)
-
-pub fn save_quiz_history(
-  db: DB,
-  results: QuizResults,
-) -> Promise(Result(Nil, Err)) {
-  results
-  |> quiz_result.to_json()
-  |> save_quiz_history_ffi(db.db, _)
-  |> promise.map(fn(_) { Ok(Nil) })
-}
-
-/// データベースからすべてのクイズ結果を取得します。
-/// `indexedDB_ffi.mjs`の`getQuizResults`に対応します。
-/// decoder はhistory.decode_quiz_historys
-@external(javascript, "./indexedDB_ffi.mjs", "getQuizHistory")
-fn get_quiz_historys_ffi(db: Dynamic) -> Promise(Dynamic)
-
-pub fn get_quiz_historys(db: DB) -> Promise(Result(QuizResults, Err)) {
-  get_quiz_historys_ffi(db.db)
-  |> promise.map(fn(dynamic) { decode.run(dynamic, quiz_result.decoder()) })
-}

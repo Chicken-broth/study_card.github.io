@@ -72,20 +72,25 @@ pub fn get_question_by_id_test() {
   Nil
 }
 
-pub fn save_and_get_quiz_history_test() {
-  use db <- promise.tap(get_first_db(6))
-  use quiz_history_result <- promise.tap(db.get_quiz_historys(db))
-  should.be_ok(quiz_history_result)
+pub fn save_and_get_quiz_results_test() {
+  echo "save_and_get_quiz_results_test"
+  let promise = {
+    use db <- promise.await(get_first_db(6))
+    use quiz_results <- promise.await(db.get_quiz_results(db))
+    let assert Ok(quiz_results) = quiz_results
+    use save <- promise.map(db.save_quiz_results(db, quiz_results))
+    save
+  }
+  use result <- promise.tap(promise)
+  should.be_ok(result)
   Nil
 }
 
 //decode_question_id_and_category_listpub 
 pub fn get_question_id_and_category_list_test() {
   use db <- promise.tap(get_first_db(7))
-  use quiz_history_result <- promise.tap(db.get_question_id_and_category_list(
-    db,
-  ))
-  should.be_ok(quiz_history_result)
+  use quiz_results <- promise.tap(db.get_question_id_and_category_list(db))
+  should.be_ok(quiz_results)
   Nil
 }
 

@@ -16,51 +16,64 @@ pub type History =
   List(Record)
 
 /// IndexedDBに保存される学習履歴のレコード
+/// idはquiz id
 pub type Record {
-  Record(id: ID, category: Category, answer: Answer)
+  Record(id: ID, category: QusetionCategory, answer: List(Answer))
 }
 
 pub type ID =
   Int
 
-/// JSONからQuizResultRecordをデコードするためのデコーダー
-pub fn decoder() -> decode.Decoder(History) {
+pub fn decoder() -> decode.Decoder(QuizResults) {
   decode.list({
     use id <- decode.field("id", decode.int)
-    use category <- decode.field("category", category.decoder())
+    use category <- decode.field(
+      "category",
+      question.qusetion_category_decoder(),
+    )
     use answers <- decode.field("answer", decode.list(answer.decoder()))
-    decode.success(Record(id, category, history))
+    decode.success(Record(id, category, answers))
   })
 }
 
-pub fn to_json(history: History) {
-  use record <- json.array(history)
+pub fn to_json(qr: QuizResults) -> json.Json {
+  use record <- json.array(qr)
   json.object([
     #("id", json.int(record.id)),
-    #("category", category.to_json(record.category)),
-    #("answer", json.string(answer.to_string(record.answer))),
+    #("category", question.qusetion_category_to_json(record.category)),
+    #("answer", json.array(record.answer, answer.to_json)),
   ])
 }
 
-pub fn update_from_quiz_results(
-  history: History,
-  results: quiz_result.QuizResults,
-) -> History {
-  use record <- list.map(history)
-  let result = list.find(results, fn(result) { record.id == result.id })
-  case result {
-    Ok(a) -> Record(..record, answer: a.answer)
-    Error(Nil) -> record
-  }
-}
-
-pub fn from_id_category(id_category_list: List(question.IdAndCategory)) {
-  list.map(id_category_list, fn(a) {
-    Record(id: a.id, category: a.category, answer: answer.NotAnswered)
+pub fn from_questions(questions: List(question.Model)) -> QuizResults {
+  list.map(questions, fn(q) {
+    Record(id: q.id, category: q.category, answer: [])
   })
 }
 
-pub fn view(history: History) -> element.Element(msg) {
+pub fn from_id_category(
+  id_category_list: List(question.IdAndCategory),
+) -> QuizResults {
+  list.map(id_category_list, fn(a) {
+    Record(id: a.id, category: a.category, answer: [answer.NotAnswered])
+  })
+}
+
+fn view_answers(answers: List(Answer)) -> element.Element(msg) {
+  html.div(
+    [
+      attr.styles([#("display", "flex")]),
+      attr.styles([#("flex-direction", "row")]),
+      attr.styles([#("gap", "0.5rem")]),
+      attr.styles([#("justify-content", "center")]),
+      attr.styles([#("align-items", "center")]),
+    ],
+    list.map(answers, answer.view),
+  )
+}
+
+pub fn view(quiz_result: QuizResults) -> element.Element(msg) {
+  // echo quiz_result
   html.table([], [
     html.thead([], [
       html.tr([], [
@@ -71,11 +84,11 @@ pub fn view(history: History) -> element.Element(msg) {
     ]),
     html.tbody(
       [],
-      list.map(history, fn(h) {
+      list.map(quiz_result, fn(h) {
         html.tr([], [
           html.td([], [html.text(int.to_string(h.id))]),
           html.td([], [html.text(h.category.name)]),
-          html.td([], [answer.view(h.answer)]),
+          html.td([], [view_answers(h.answer)]),
         ])
       }),
     ),
