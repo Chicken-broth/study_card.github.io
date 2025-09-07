@@ -11873,8 +11873,7 @@ function view_count_selection(quest_count) {
     new Limit(1),
     new Limit(5),
     new Limit(10),
-    new Limit(30),
-    new Limit(50)
+    new Limit(30)
   ]);
   let to_s = (count) => {
     if (count instanceof Limit) {

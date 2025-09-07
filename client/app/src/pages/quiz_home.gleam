@@ -435,7 +435,7 @@ fn view_category_selection(
 
 /// 問題数選択UIをレンダリングする。
 fn view_count_selection(quest_count: QuestionCount) -> Element(Msg) {
-  let counts = [Full, Limit(1), Limit(5), Limit(10), Limit(30), Limit(50)]
+  let counts = [Full, Limit(1), Limit(5), Limit(10), Limit(30)]
   let to_s = fn(count) {
     case count {
       Limit(i) -> int.to_string(i) <> "問"
