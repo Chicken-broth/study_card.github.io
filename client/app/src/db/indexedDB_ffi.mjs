@@ -142,7 +142,7 @@ function _initializeDb(prefix, dbName, version, onUpgradeNeededCallback) {
  * @returns {Promise<IDBDatabase>} 成功時にはデータベース接続オブジェクト、失敗時にはエラーでrejectされるPromise。
 */
 export function setup(prefix, dbName, version) {
-  console.log("\nsetup db:", prefix, dbName, version);
+  console.log("setup db:", prefix, dbName, version);
   const onUpgrade = (db) => {
     console.log("Database upgrade needed");
     STORE_CONFIGS.forEach(config => {

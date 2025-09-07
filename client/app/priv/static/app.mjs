@@ -11047,7 +11047,7 @@ function _initializeDb(prefix2, dbName, version, onUpgradeNeededCallback) {
   });
 }
 function setup(prefix2, dbName, version) {
-  console.log("\nsetup db:", prefix2, dbName, version);
+  console.log("setup db:", prefix2, dbName, version);
   const onUpgrade = (db) => {
     console.log("Database upgrade needed");
     STORE_CONFIGS.forEach((config) => {
