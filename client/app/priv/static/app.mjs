@@ -11000,24 +11000,8 @@ function addQuizResults(store, xs) {
     });
   });
 }
-function _loadInitialData(transaction, dbName) {
-  const data = loadData(dbName);
-  if (data.categories) {
-    const categoryStore = transaction.objectStore(CATEGORY_STORE);
-    data.categories.forEach((category) => {
-      categoryStore.add(category);
-    });
-  }
-  if (data.questions) {
-    const questionStore = transaction.objectStore(QUESTION_STORE);
-    data.questions.forEach((question) => {
-      questionStore.add(question);
-    });
-    const resultStore = transaction.objectStore(QUIZ_RESULT_STORE);
-    addQuizResults(resultStore, data.questions);
-  }
-}
-function _initializeDb(prefix2, dbName, version, onUpgradeNeededCallback) {
+function setup(prefix2, dbName, version) {
+  console.log("\nsetup db:", prefix2, dbName, version);
   return new Promise((resolve2, reject) => {
     const name2 = prefix2 + dbName;
     const request = indexedDB.open(name2, version);
@@ -11030,33 +11014,42 @@ function _initializeDb(prefix2, dbName, version, onUpgradeNeededCallback) {
       resolve2(new Ok(event4.target.result));
     };
     request.onupgradeneeded = (event4) => {
+      console.log("Database upgrade needed");
       const db = event4.target.result;
+      STORE_CONFIGS.forEach((config) => {
+        if (!db.objectStoreNames.contains(config.storeName)) {
+          db.createObjectStore(config.storeName, config.keyPath);
+        }
+      });
       const transaction = event4.target.transaction;
-      onUpgradeNeededCallback(db);
-      _loadInitialData(transaction, dbName);
-      console.log("Database setup/reset and data seeding complete.");
-      transaction.oncomplete = () => {
-        console.log("DB transaction complete");
+      transaction.onerror = (e) => {
+        console.log("setup Error", event4.target.error);
+        reject(new Error(event4.target.error));
+      };
+      transaction.oncomplete = (_) => {
+        console.log("setup complete");
         resolve2(new Ok(db));
       };
-      transaction.onerror = (e) => {
-        console.error("DB transaction error", e.target.error);
-        reject(new Error(e.target.error));
-      };
+      const data = loadData(dbName);
+      if (data.categories) {
+        const categoryStore = transaction.objectStore(CATEGORY_STORE);
+        data.categories.forEach((category) => {
+          console.log("category:", category);
+          categoryStore.add(category);
+        });
+      }
+      if (data.questions) {
+        const questionStore = transaction.objectStore(QUESTION_STORE);
+        data.questions.forEach((question) => {
+          console.log("question:", question);
+          questionStore.add(question);
+        });
+        const resultStore = transaction.objectStore(QUIZ_RESULT_STORE);
+        addQuizResults(resultStore, data.questions);
+      }
+      console.log("Database setup and data seeding complete.");
     };
   });
-}
-function setup(prefix2, dbName, version) {
-  console.log("setup db:", prefix2, dbName, version);
-  const onUpgrade = (db) => {
-    console.log("Database upgrade needed");
-    STORE_CONFIGS.forEach((config) => {
-      if (!db.objectStoreNames.contains(config.storeName)) {
-        db.createObjectStore(config.storeName, config.keyPath);
-      }
-    });
-  };
-  return _initializeDb(prefix2, dbName, version, onUpgrade);
 }
 function getCategories(db) {
   console.log("--getCategories:");
@@ -11435,7 +11428,7 @@ var FilterOptions = class extends CustomType {
 function default_options() {
   return new FilterOptions(toList([]), new Full(), false, toList([]), false);
 }
-function reset2(filter3) {
+function reset(filter3) {
   return new FilterOptions(
     filter3.selected_categories,
     new Full(),
@@ -12450,7 +12443,7 @@ function update5(model, msg) {
   } else {
     let quiz_result = msg[0];
     echo("ResetQuizResultsFinished", "src/pages/quiz_home.gleam", 298);
-    let reseted_filter = reset2(model.filter_options);
+    let reseted_filter = reset(model.filter_options);
     let _block;
     let _record = reseted_filter;
     _block = new FilterOptions(
@@ -13338,8 +13331,6 @@ var DBErr = class extends CustomType {
     this[0] = $0;
   }
 };
-var Reset = class extends CustomType {
-};
 function update8(model, msg) {
   if (model instanceof Loading) {
     if (msg instanceof DataInitialized) {
@@ -13473,19 +13464,7 @@ function update8(model, msg) {
     }
   } else {
     let err = model[0];
-    if (msg instanceof Reset) {
-      throw makeError(
-        "todo",
-        FILEPATH,
-        "app",
-        169,
-        "update",
-        "`todo` expression evaluated. This code has not yet been implemented.",
-        {}
-      );
-    } else {
-      return [model, none2()];
-    }
+    return [model, none2()];
   }
 }
 function view9(model) {
@@ -13511,16 +13490,7 @@ function view9(model) {
     });
   } else {
     let err = model[0];
-    return div(
-      toList([]),
-      toList([
-        text3(err),
-        button(
-          toList([on_click(new Reset())]),
-          toList([text3("reset")])
-        )
-      ])
-    );
+    return div(toList([]), toList([text3(err)]));
   }
 }
 var db_prefix = "1";
@@ -13564,15 +13534,15 @@ function main() {
       "let_assert",
       FILEPATH,
       "app",
-      199,
+      196,
       "main",
       "Pattern match failed, no pattern matched the value.",
       {
         value: $,
-        start: 5689,
-        end: 5738,
-        pattern_start: 5700,
-        pattern_end: 5705
+        start: 5681,
+        end: 5730,
+        pattern_start: 5692,
+        pattern_end: 5697
       }
     );
   }

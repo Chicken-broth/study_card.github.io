@@ -32,7 +32,7 @@ pub type Msg {
   StartQuiz
   DataInitialized(DB)
   DBErr(indexed_db.Err)
-  Reset
+  // Reset
 }
 
 fn setup_db() -> Effect(Msg) {
@@ -46,16 +46,16 @@ fn setup_db() -> Effect(Msg) {
   }
 }
 
-fn reset_db() -> Effect(Msg) {
-  let data_sets = indexed_db.get_data_set_name()
-  echo data_sets
-  case data_sets {
-    [first, ..] ->
-      indexed_db.reset(data_sets, db_prefix, first, db_version)
-      |> promise_.to_effect(DataInitialized, DBErr)
-    _ -> effect_.perform(DBErr(indexed_db.FFIError("No data sets found")))
-  }
-}
+// fn reset_db() -> Effect(Msg) {
+//   let data_sets = indexed_db.get_data_set_name()
+//   echo data_sets
+//   case data_sets {
+//     [first, ..] ->
+//       indexed_db.reset(data_sets, db_prefix, first, db_version)
+//       |> promise_.to_effect(DataInitialized, DBErr)
+//     _ -> effect_.perform(DBErr(indexed_db.FFIError("No data sets found")))
+//   }
+// }
 
 /// アプリケーション全体の初期化
 pub fn init(_) -> #(Model, Effect(Msg)) {
@@ -165,9 +165,6 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     }
     ErrScreen(err) ->
       case msg {
-        Reset -> {
-          todo
-        }
         _ -> #(model, none())
       }
   }
@@ -189,7 +186,7 @@ pub fn view(model: Model) -> Element(Msg) {
     ErrScreen(err) ->
       html.div([], [
         html.text(err),
-        html.button([event.on_click(Reset)], [html.text("reset")]),
+        // html.button([event.on_click(Reset)], [html.text("reset")]),
       ])
   }
 }

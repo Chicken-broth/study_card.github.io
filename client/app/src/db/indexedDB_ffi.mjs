@@ -64,77 +64,6 @@ function addQuizResults(store,xs) {
     })
   });
 }
-
-/**
- * データベースに初期データを投入します。
- * @param {IDBTransaction} transaction データベースのトランザクション。
- * @param {string} dbName データベース名。
- */
-function _loadInitialData(transaction, dbName) {
-  const data = loadData(dbName);
-  if (data.categories) {
-    const categoryStore = transaction.objectStore(CATEGORY_STORE);
-    data.categories.forEach(category => {
-      categoryStore.add(category);
-    });
-  }
-
-  if (data.questions) {
-    const questionStore = transaction.objectStore(QUESTION_STORE);
-    data.questions.forEach(question => {
-      questionStore.add(question);
-    });
-
-    const resultStore = transaction.objectStore(QUIZ_RESULT_STORE);
-    addQuizResults(resultStore, data.questions);
-  }
-}
-
-/**
- * IndexedDBデータベースを開き、アップグレード処理を実行します。
- * @param {string} prefix データベース名のプレフィックス。
- * @param {string} dbName データベース名。
- * @param {number} version データベースのバージョン。
- * @param {(db: IDBDatabase) => void} onUpgradeNeededCallback onupgradeneededイベントで実行されるコールバック。
- * @returns {Promise<Ok<IDBDatabase>|Error<any>>} 成功時にはデータベース接続オブジェクト、失敗時にはエラーでrejectされるPromise。
- */
-function _initializeDb(prefix, dbName, version, onUpgradeNeededCallback) {
-  return new Promise((resolve, reject) => {
-    const name = prefix + dbName;
-    const request = indexedDB.open(name, version);
-
-    request.onerror = (event) => {
-      console.error("Database error:", event.target.error);
-      reject(new Error(event.target.error));
-    };
-
-    request.onsuccess = (event) => {
-      console.log("Database opened successfully");
-      resolve(new Ok(event.target.result));
-    };
-
-    request.onupgradeneeded = (event) => {
-      const db = event.target.result;
-      const transaction = event.target.transaction;
-
-      onUpgradeNeededCallback(db);
-
-      _loadInitialData (transaction, dbName);
-      console.log("Database setup/reset and data seeding complete.");
-
-      transaction.oncomplete = () => {
-        console.log("DB transaction complete");
-        resolve(new Ok(db));
-      };
-
-      transaction.onerror = (e) => {
-        console.error("DB transaction error", e.target.error);
-        reject(new Error(e.target.error));
-      };
-    };
-  });
-}
-
 /**
  * IndexedDBデータベースを初期化し、接続を確立します。
  * @param {string} dbName データベース名。
@@ -142,39 +71,75 @@ function _initializeDb(prefix, dbName, version, onUpgradeNeededCallback) {
  * @returns {Promise<IDBDatabase>} 成功時にはデータベース接続オブジェクト、失敗時にはエラーでrejectされるPromise。
 */
 export function setup(prefix, dbName, version) {
-  console.log("setup db:", prefix, dbName, version);
-  const onUpgrade = (db) => {
-    console.log("Database upgrade needed");
-    STORE_CONFIGS.forEach(config => {
-      if (!db.objectStoreNames.contains(config.storeName)) {
-        db.createObjectStore(config.storeName, config.keyPath);
+  console.log("\nsetup db:", prefix, dbName, version);
+  return new Promise((resolve, reject) => {
+    const name = prefix + dbName
+    const request = indexedDB.open(name, version);
+    request.onerror = (event) => {
+      console.error("Database error:", event.target.error);
+      reject(new Error(event.target.error));
+    };
+    
+    request.onsuccess = (event) => {
+      console.log("Database opened successfully");
+      resolve(new Ok(event.target.result));
+    };
+    
+    request.onupgradeneeded = (event) => {
+      console.log("Database upgrade needed");
+      const db = event.target.result;
+      
+      // オブジェクトストアを作成
+      STORE_CONFIGS.forEach(config => {
+        if (!db.objectStoreNames.contains(config.storeName)) {
+          db.createObjectStore(config.storeName, config.keyPath);
+        }
+      });
+
+      const transaction = event.target.transaction;
+      transaction.onerror = (e) => {
+        console.log("setup Error", event.target.error);
+        reject(new Error(event.target.error));
+      };
+      transaction.oncomplete = (_) => {
+        console.log("setup complete");
+        resolve(new Ok(db));
       }
-    });
-  };
-  return _initializeDb(prefix, dbName, version, onUpgrade);
+      
+      const data = loadData(dbName);
+      if (data.categories) {
+        const categoryStore = transaction.objectStore(CATEGORY_STORE);
+        data.categories.forEach(category => {
+          console.log("category:", category);
+          categoryStore.add(category);
+        });
+      }
+      
+      if (data.questions) {
+        const questionStore = transaction.objectStore(QUESTION_STORE);
+        data.questions.forEach(question =>{
+          console.log("question:", question);
+          questionStore.add(question);
+        });
+
+        //questionsからhistoryを初期化
+        const resultStore = transaction.objectStore(QUIZ_RESULT_STORE);
+        addQuizResults(resultStore, data.questions)
+        // data.questions.forEach(q => {
+        //   resultStore.add({
+        //     id: q.id,
+        //     category: q.category,
+        //     answer: []
+        //   })
+        // });
+      }
+
+      console.log("Database setup and data seeding complete.");
+    };
+  });
 }
 
 
-/**
- * IndexedDBデータベースをリセットします。既存のストアは削除され、再作成されます。
- * @param {string} prefix データベース名のプレフィックス。
- * @param {string} dbName データベース名。
- * @param {number} version データベースのバージョン。onupgradeneededをトリガーするために、現在のバージョンより高い数値を指定する必要があります。
- * @returns {Promise<IDBDatabase>} 成功時にはデータベース接続オブジェクト、失敗時にはエラーでrejectされるPromise。
-*/
-export function reset(prefix, dbName, version) {
-  console.log("\nreset db:", prefix, dbName, version);
-  const onUpgrade = (db) => {
-    console.log("Database upgrade needed for reset");
-    STORE_CONFIGS.forEach(config => {
-      if (db.objectStoreNames.contains(config.storeName)) {
-        db.deleteObjectStore(config.storeName);
-      }
-      db.createObjectStore(config.storeName, config.keyPath);
-    });
-  };
-  return _initializeDb(prefix, dbName, version, onUpgrade);
-}
 
 
 

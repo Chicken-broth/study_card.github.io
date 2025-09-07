@@ -59,27 +59,27 @@ pub fn setup(
 }
 
 /// IndexedDBデータベースをリセットします。
-@external(javascript, "./indexedDB_ffi.mjs", "reset")
-fn reset_ffi(
-  prefix: String,
-  name: String,
-  version: Int,
-) -> Promise(Result(Dynamic, err))
+// @external(javascript, "./indexedDB_ffi.mjs", "reset")
+// fn reset_ffi(
+//   prefix: String,
+//   name: String,
+//   version: Int,
+// ) -> Promise(Result(Dynamic, err))
 
-pub fn reset(
-  names: List(String),
-  prefix: String,
-  name: String,
-  version: Int,
-) -> Promise(Result(DB, Err)) {
-  setup_ffi(prefix, name, version)
-  |> promise.map(fn(db_result) {
-    case db_result {
-      Ok(db) -> DB(db, names, prefix, name, version) |> Ok
-      Error(_) -> FFIError("reset Error ") |> Error
-    }
-  })
-}
+// pub fn reset(
+//   names: List(String),
+//   prefix: String,
+//   name: String,
+//   version: Int,
+// ) -> Promise(Result(DB, Err)) {
+//   setup_ffi(prefix, name, version)
+//   |> promise.map(fn(db_result) {
+//     case db_result {
+//       Ok(db) -> DB(db, names, prefix, name, version) |> Ok
+//       Error(_) -> FFIError("reset Error ") |> Error
+//     }
+//   })
+// }
 
 // pub fn setup_from_db(db: DB) -> Promise(DB) {
 //   setup_ffi(db.prefix, db.name, db.version)
