@@ -22,6 +22,8 @@ import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
 
+const db_version = 1
+
 /// Home画面のアプリケーションの状態を保持するモデル。
 pub type Model {
   Model(
@@ -126,11 +128,12 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   // echo msg
   case msg {
     SelectDb(name) -> {
+      echo "SelectDb"
+      echo name
       let new_db = db.DB(..model.db, name: name)
       let setup_db_effect =
-        new_db
-        |> db.setup_from_db
-        |> promise_.to_effect_simple(DbChanged)
+        db.setup(model.db.names, model.db.prefix, name, db_version)
+        |> promise_.to_effect(DbChanged, ErrScreen)
 
       #(Model(..model, db: new_db, loading: True), setup_db_effect)
     }

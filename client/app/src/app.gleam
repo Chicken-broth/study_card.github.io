@@ -6,11 +6,14 @@ import lustre
 import lustre/effect.{type Effect, none}
 import lustre/element.{type Element}
 import lustre/element/html
+import lustre/event
 import pages/quiz_home
 import pages/quiz_result
 import pages/quiz_screen
 
-const db_version = "1"
+const db_prefix = "1"
+
+const db_version = 1
 
 /// アプリケーション全体のモデル
 pub type Model {
@@ -18,7 +21,7 @@ pub type Model {
   Home(quiz_home.Model)
   QuizScreen(quiz_home.Model, quiz_screen.Model)
   QuizResult(quiz_home.Model, quiz_result.Model)
-  ErrScreen
+  ErrScreen(String)
 }
 
 /// アプリケーション全体のメッセージ
@@ -28,19 +31,29 @@ pub type Msg {
   QuizResultMsg(quiz_result.Msg)
   StartQuiz
   DataInitialized(DB)
-  Miss
+  DBErr(indexed_db.Err)
+  Reset
 }
 
 fn setup_db() -> Effect(Msg) {
   let data_sets = indexed_db.get_data_set_name()
-  let db_name = "db" <> db_version
-  echo "lustre setup_db"
   echo data_sets
   case data_sets {
     [first, _, ..] ->
-      indexed_db.setup(data_sets, first, db_name, 1)
-      |> promise_.to_effect_simple(DataInitialized)
-    _ -> effect_.perform(Miss)
+      indexed_db.setup(data_sets, db_prefix, first, db_version)
+      |> promise_.to_effect(DataInitialized, DBErr)
+    _ -> effect_.perform(DBErr(indexed_db.FFIError("No data sets found")))
+  }
+}
+
+fn reset_db() -> Effect(Msg) {
+  let data_sets = indexed_db.get_data_set_name()
+  echo data_sets
+  case data_sets {
+    [first, ..] ->
+      indexed_db.reset(data_sets, db_prefix, first, db_version)
+      |> promise_.to_effect(DataInitialized, DBErr)
+    _ -> effect_.perform(DBErr(indexed_db.FFIError("No data sets found")))
   }
 }
 
@@ -60,9 +73,9 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           let #(home_model, home_effect) = quiz_home.init(db)
           #(Home(home_model), effect.map(home_effect, HomeMsg))
         }
-        Miss -> {
+        DBErr(err) -> {
           echo "setup err"
-          #(ErrScreen, effect.none())
+          #(ErrScreen("setup err"), effect.none())
         }
         _ -> #(model, none())
         // Ignore other messages while loading
@@ -82,7 +95,10 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
                   QuizScreen(new_home, quiz_model),
                   effect.none(),
                 )
-                Error(_) -> #(ErrScreen, effect.none())
+                Error(Nil) -> #(
+                  ErrScreen("Error initializing quiz screen"),
+                  effect.none(),
+                )
               }
             }
             _ -> #(Home(new_home), effect.map(home_effect, HomeMsg))
@@ -147,8 +163,11 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         _ -> #(model, none())
       }
     }
-    ErrScreen ->
+    ErrScreen(err) ->
       case msg {
+        Reset -> {
+          todo
+        }
         _ -> #(model, none())
       }
   }
@@ -167,7 +186,11 @@ pub fn view(model: Model) -> Element(Msg) {
     QuizResult(_, result_model) ->
       quiz_result.view(result_model)
       |> element.map(QuizResultMsg)
-    ErrScreen -> html.text("エラーが発生しました")
+    ErrScreen(err) ->
+      html.div([], [
+        html.text(err),
+        html.button([event.on_click(Reset)], [html.text("reset")]),
+      ])
   }
 }
 

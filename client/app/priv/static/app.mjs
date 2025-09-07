@@ -5501,6 +5501,68 @@ function start3(app, selector, start_args) {
   );
 }
 
+// build/dev/javascript/lustre/lustre/event.mjs
+function is_immediate_event(name2) {
+  if (name2 === "input") {
+    return true;
+  } else if (name2 === "change") {
+    return true;
+  } else if (name2 === "focus") {
+    return true;
+  } else if (name2 === "focusin") {
+    return true;
+  } else if (name2 === "focusout") {
+    return true;
+  } else if (name2 === "blur") {
+    return true;
+  } else if (name2 === "select") {
+    return true;
+  } else {
+    return false;
+  }
+}
+function on(name2, handler) {
+  return event(
+    name2,
+    map2(handler, (msg) => {
+      return new Handler(false, false, msg);
+    }),
+    empty_list,
+    never,
+    never,
+    is_immediate_event(name2),
+    0,
+    0
+  );
+}
+function on_click(msg) {
+  return on("click", success(msg));
+}
+function on_change(msg) {
+  return on(
+    "change",
+    subfield(
+      toList(["target", "value"]),
+      string2,
+      (value2) => {
+        return success(msg(value2));
+      }
+    )
+  );
+}
+function on_check(msg) {
+  return on(
+    "change",
+    subfield(
+      toList(["target", "checked"]),
+      bool,
+      (checked2) => {
+        return success(msg(checked2));
+      }
+    )
+  );
+}
+
 // build/dev/javascript/gleam_javascript/gleam_javascript_ffi.mjs
 var PromiseLayer = class _PromiseLayer {
   constructor(promise) {
@@ -5610,68 +5672,6 @@ function view(answer) {
   }
   let _pipe = _block;
   return text3(_pipe);
-}
-
-// build/dev/javascript/lustre/lustre/event.mjs
-function is_immediate_event(name2) {
-  if (name2 === "input") {
-    return true;
-  } else if (name2 === "change") {
-    return true;
-  } else if (name2 === "focus") {
-    return true;
-  } else if (name2 === "focusin") {
-    return true;
-  } else if (name2 === "focusout") {
-    return true;
-  } else if (name2 === "blur") {
-    return true;
-  } else if (name2 === "select") {
-    return true;
-  } else {
-    return false;
-  }
-}
-function on(name2, handler) {
-  return event(
-    name2,
-    map2(handler, (msg) => {
-      return new Handler(false, false, msg);
-    }),
-    empty_list,
-    never,
-    never,
-    is_immediate_event(name2),
-    0,
-    0
-  );
-}
-function on_click(msg) {
-  return on("click", success(msg));
-}
-function on_change(msg) {
-  return on(
-    "change",
-    subfield(
-      toList(["target", "value"]),
-      string2,
-      (value2) => {
-        return success(msg(value2));
-      }
-    )
-  );
-}
-function on_check(msg) {
-  return on(
-    "change",
-    subfield(
-      toList(["target", "checked"]),
-      bool,
-      (checked2) => {
-        return success(msg(checked2));
-      }
-    )
-  );
 }
 
 // build/dev/javascript/app/core/association_question.mjs
@@ -11000,53 +11000,63 @@ function addQuizResults(store, xs) {
     });
   });
 }
-function setup(prefix2, dbName, version) {
-  console.log("\nsetup db:", prefix2, dbName, version);
+function _loadInitialData(transaction, dbName) {
+  const data = loadData(dbName);
+  if (data.categories) {
+    const categoryStore = transaction.objectStore(CATEGORY_STORE);
+    data.categories.forEach((category) => {
+      categoryStore.add(category);
+    });
+  }
+  if (data.questions) {
+    const questionStore = transaction.objectStore(QUESTION_STORE);
+    data.questions.forEach((question) => {
+      questionStore.add(question);
+    });
+    const resultStore = transaction.objectStore(QUIZ_RESULT_STORE);
+    addQuizResults(resultStore, data.questions);
+  }
+}
+function _initializeDb(prefix2, dbName, version, onUpgradeNeededCallback) {
   return new Promise((resolve2, reject) => {
-    const data = loadData(dbName);
     const name2 = prefix2 + dbName;
     const request = indexedDB.open(name2, version);
     request.onerror = (event4) => {
       console.error("Database error:", event4.target.error);
-      reject(event4.target.error);
+      reject(new Error(event4.target.error));
     };
     request.onsuccess = (event4) => {
       console.log("Database opened successfully");
-      resolve2(event4.target.result);
+      resolve2(new Ok(event4.target.result));
     };
     request.onupgradeneeded = (event4) => {
-      console.log("Database upgrade needed");
       const db = event4.target.result;
-      STORE_CONFIGS.forEach((config) => {
-        if (!db.objectStoreNames.contains(config.storeName)) {
-          db.createObjectStore(config.storeName, config.keyPath);
-        }
-      });
       const transaction = event4.target.transaction;
+      onUpgradeNeededCallback(db);
+      _loadInitialData(transaction, dbName);
+      console.log("Database setup/reset and data seeding complete.");
+      transaction.oncomplete = () => {
+        console.log("DB transaction complete");
+        resolve2(new Ok(db));
+      };
       transaction.onerror = (e) => {
-        console.log("setup Error", event4.target.error);
-        reject(db);
+        console.error("DB transaction error", e.target.error);
+        reject(new Error(e.target.error));
       };
-      transaction.oncomplete = (_) => {
-        console.log("Quiz history saved successfully");
-        resolve2(db);
-      };
-      if (data.categories) {
-        const categoryStore = transaction.objectStore(CATEGORY_STORE);
-        data.categories.forEach((category) => {
-          categoryStore.add(category);
-        });
-      }
-      if (data.questions) {
-        const questionStore = transaction.objectStore(QUESTION_STORE);
-        data.questions.forEach((question) => {
-          questionStore.add(question);
-        });
-        addQuizResults(questionStore, data.questions);
-      }
-      console.log("Database setup and data seeding complete.");
     };
   });
+}
+function setup(prefix2, dbName, version) {
+  console.log("\nsetup db:", prefix2, dbName, version);
+  const onUpgrade = (db) => {
+    console.log("Database upgrade needed");
+    STORE_CONFIGS.forEach((config) => {
+      if (!db.objectStoreNames.contains(config.storeName)) {
+        db.createObjectStore(config.storeName, config.keyPath);
+      }
+    });
+  };
+  return _initializeDb(prefix2, dbName, version, onUpgrade);
 }
 function getCategories(db) {
   console.log("--getCategories:");
@@ -11222,24 +11232,15 @@ function setup2(names, prefix2, name2, version) {
   let _pipe = setup(prefix2, name2, version);
   return map_promise(
     _pipe,
-    (db) => {
-      return new DB(db, names, prefix2, name2, version);
-    }
-  );
-}
-function setup_from_db(db) {
-  let _pipe = setup(db.prefix, db.name, db.version);
-  return map_promise(
-    _pipe,
-    (dynamic2) => {
-      let _record = db;
-      return new DB(
-        dynamic2,
-        _record.names,
-        _record.prefix,
-        _record.name,
-        _record.version
-      );
+    (db_result) => {
+      if (db_result instanceof Ok) {
+        let db = db_result[0];
+        let _pipe$1 = new DB(db, names, prefix2, name2, version);
+        return new Ok(_pipe$1);
+      } else {
+        let _pipe$1 = new FFIError("setup Error ");
+        return new Error(_pipe$1);
+      }
     }
   );
 }
@@ -11434,7 +11435,7 @@ var FilterOptions = class extends CustomType {
 function default_options() {
   return new FilterOptions(toList([]), new Full(), false, toList([]), false);
 }
-function reset(filter3) {
+function reset2(filter3) {
   return new FilterOptions(
     filter3.selected_categories,
     new Full(),
@@ -11694,7 +11695,7 @@ function get_initial_data_effects(db) {
     }
   );
   let get_results = _block$2;
-  echo("get_initial_data_effects", "src/pages/quiz_home.gleam", 92);
+  echo("get_initial_data_effects", "src/pages/quiz_home.gleam", 94);
   return batch(
     toList([get_categories2, get_question_id_and_category_list2, get_results])
   );
@@ -11730,412 +11731,6 @@ function update_filtered_questions(model) {
     _record.error,
     _record.show_results
   );
-}
-function update5(model, msg) {
-  if (msg instanceof SelectDb) {
-    let name2 = msg[0];
-    let _block;
-    let _record = model.db;
-    _block = new DB(
-      _record.db,
-      _record.names,
-      _record.prefix,
-      name2,
-      _record.version
-    );
-    let new_db = _block;
-    let _block$1;
-    let _pipe = new_db;
-    let _pipe$1 = setup_from_db(_pipe);
-    _block$1 = to_effect_simple(
-      _pipe$1,
-      (var0) => {
-        return new DbChanged(var0);
-      }
-    );
-    let setup_db_effect = _block$1;
-    return [
-      (() => {
-        let _record$1 = model;
-        return new Model4(
-          new_db,
-          _record$1.categories,
-          _record$1.question_id_categories,
-          _record$1.filter_options,
-          _record$1.selected_question_ids,
-          true,
-          _record$1.error,
-          _record$1.show_results
-        );
-      })(),
-      setup_db_effect
-    ];
-  } else if (msg instanceof DbChanged) {
-    let new_db = msg[0];
-    return [
-      (() => {
-        let _record = model;
-        return new Model4(
-          new_db,
-          _record.categories,
-          _record.question_id_categories,
-          _record.filter_options,
-          _record.selected_question_ids,
-          false,
-          _record.error,
-          _record.show_results
-        );
-      })(),
-      get_initial_data_effects(new_db)
-    ];
-  } else if (msg instanceof SelectCategory) {
-    let id = msg[0];
-    let is_selected = msg[1];
-    let new_select_category = update_if(
-      model.filter_options.selected_categories,
-      (c) => {
-        return c.category.id === id;
-      },
-      (c) => {
-        return new SelectedCategory(is_selected, c.category);
-      }
-    );
-    let _block;
-    let _block$1;
-    let _record = model;
-    _block$1 = new Model4(
-      _record.db,
-      _record.categories,
-      _record.question_id_categories,
-      (() => {
-        let _record$1 = model.filter_options;
-        return new FilterOptions(
-          new_select_category,
-          _record$1.selected_count,
-          _record$1.do_shuffle,
-          _record$1.quiz_results,
-          _record$1.unanswered_only
-        );
-      })(),
-      _record.selected_question_ids,
-      _record.loading,
-      _record.error,
-      _record.show_results
-    );
-    let _pipe = _block$1;
-    _block = update_filtered_questions(_pipe);
-    let new_model = _block;
-    return [new_model, none2()];
-  } else if (msg instanceof SelectCount) {
-    let quest_count = msg[0];
-    let _block;
-    let _block$1;
-    let _record = model;
-    _block$1 = new Model4(
-      _record.db,
-      _record.categories,
-      _record.question_id_categories,
-      (() => {
-        let _record$1 = model.filter_options;
-        return new FilterOptions(
-          _record$1.selected_categories,
-          quest_count,
-          _record$1.do_shuffle,
-          _record$1.quiz_results,
-          _record$1.unanswered_only
-        );
-      })(),
-      _record.selected_question_ids,
-      _record.loading,
-      _record.error,
-      _record.show_results
-    );
-    let _pipe = _block$1;
-    _block = update_filtered_questions(_pipe);
-    let new_model = _block;
-    return [new_model, none2()];
-  } else if (msg instanceof SwitchShuffle) {
-    let is_shuffle = msg[0];
-    let _block;
-    let _block$1;
-    let _record = model;
-    _block$1 = new Model4(
-      _record.db,
-      _record.categories,
-      _record.question_id_categories,
-      (() => {
-        let _record$1 = model.filter_options;
-        return new FilterOptions(
-          _record$1.selected_categories,
-          _record$1.selected_count,
-          is_shuffle,
-          _record$1.quiz_results,
-          _record$1.unanswered_only
-        );
-      })(),
-      _record.selected_question_ids,
-      _record.loading,
-      _record.error,
-      _record.show_results
-    );
-    let _pipe = _block$1;
-    _block = update_filtered_questions(_pipe);
-    let new_model = _block;
-    return [new_model, none2()];
-  } else if (msg instanceof SwitchUnansweredOnly) {
-    let is_unanswered_only = msg[0];
-    let _block;
-    let _block$1;
-    let _record = model;
-    _block$1 = new Model4(
-      _record.db,
-      _record.categories,
-      _record.question_id_categories,
-      (() => {
-        let _record$1 = model.filter_options;
-        return new FilterOptions(
-          _record$1.selected_categories,
-          _record$1.selected_count,
-          _record$1.do_shuffle,
-          _record$1.quiz_results,
-          is_unanswered_only
-        );
-      })(),
-      _record.selected_question_ids,
-      _record.loading,
-      _record.error,
-      _record.show_results
-    );
-    let _pipe = _block$1;
-    _block = update_filtered_questions(_pipe);
-    let new_model = _block;
-    return [new_model, none2()];
-  } else if (msg instanceof SWitchAllCategory) {
-    let is_selected = msg[0];
-    echo("SWitchAllCategory", "src/pages/quiz_home.gleam", 199);
-    let new_select_category = map(
-      model.filter_options.selected_categories,
-      (c) => {
-        return new SelectedCategory(is_selected, c.category);
-      }
-    );
-    let _block;
-    let _block$1;
-    let _record = model;
-    _block$1 = new Model4(
-      _record.db,
-      _record.categories,
-      _record.question_id_categories,
-      (() => {
-        let _record$1 = model.filter_options;
-        return new FilterOptions(
-          new_select_category,
-          _record$1.selected_count,
-          _record$1.do_shuffle,
-          _record$1.quiz_results,
-          _record$1.unanswered_only
-        );
-      })(),
-      _record.selected_question_ids,
-      _record.loading,
-      _record.error,
-      _record.show_results
-    );
-    let _pipe = _block$1;
-    _block = update_filtered_questions(_pipe);
-    let new_model = _block;
-    return [new_model, none2()];
-  } else if (msg instanceof ViewResults) {
-    echo("View History", "src/pages/quiz_home.gleam", 216);
-    return [
-      (() => {
-        let _record = model;
-        return new Model4(
-          _record.db,
-          _record.categories,
-          _record.question_id_categories,
-          _record.filter_options,
-          _record.selected_question_ids,
-          _record.loading,
-          _record.error,
-          negate(model.show_results)
-        );
-      })(),
-      none2()
-    ];
-  } else if (msg instanceof GetCategories) {
-    let categories2 = msg[0];
-    echo("GetCategories", "src/pages/quiz_home.gleam", 223);
-    let new_selected_category = map(
-      categories2,
-      (_capture) => {
-        return new SelectedCategory(true, _capture);
-      }
-    );
-    let _block;
-    let _block$1;
-    let _record = model;
-    _block$1 = new Model4(
-      _record.db,
-      categories2,
-      _record.question_id_categories,
-      (() => {
-        let _record$1 = model.filter_options;
-        return new FilterOptions(
-          new_selected_category,
-          _record$1.selected_count,
-          _record$1.do_shuffle,
-          _record$1.quiz_results,
-          _record$1.unanswered_only
-        );
-      })(),
-      _record.selected_question_ids,
-      _record.loading,
-      _record.error,
-      _record.show_results
-    );
-    let _pipe = _block$1;
-    _block = update_filtered_questions(_pipe);
-    let new_model = _block;
-    return [new_model, none2()];
-  } else if (msg instanceof GetQuestionIdAndCategoryList) {
-    let id_and_category_list = msg[0];
-    echo("GetQuestionIdAndCategoryList", "src/pages/quiz_home.gleam", 240);
-    let _block;
-    let _block$1;
-    let _record = model;
-    _block$1 = new Model4(
-      _record.db,
-      _record.categories,
-      id_and_category_list,
-      _record.filter_options,
-      _record.selected_question_ids,
-      _record.loading,
-      _record.error,
-      _record.show_results
-    );
-    let _pipe = _block$1;
-    _block = update_filtered_questions(_pipe);
-    let new_model = _block;
-    return [new_model, none2()];
-  } else if (msg instanceof GetQuizHistory) {
-    let quiz_result = msg[0];
-    echo("GetQuizHistory", "src/pages/quiz_home.gleam", 247);
-    let _block;
-    let _block$1;
-    let _record = model;
-    _block$1 = new Model4(
-      _record.db,
-      _record.categories,
-      _record.question_id_categories,
-      (() => {
-        let _record$1 = model.filter_options;
-        return new FilterOptions(
-          _record$1.selected_categories,
-          _record$1.selected_count,
-          _record$1.do_shuffle,
-          quiz_result,
-          _record$1.unanswered_only
-        );
-      })(),
-      _record.selected_question_ids,
-      false,
-      _record.error,
-      _record.show_results
-    );
-    let _pipe = _block$1;
-    _block = update_filtered_questions(_pipe);
-    let new_model = _block;
-    return [new_model, none2()];
-  } else if (msg instanceof StartQuiz) {
-    echo("Start Quiz", "src/pages/quiz_home.gleam", 267);
-    let _block;
-    let _pipe = get_question_by_ids(model.db, model.selected_question_ids);
-    _block = to_effect(
-      _pipe,
-      (var0) => {
-        return new OutCome(var0);
-      },
-      (var0) => {
-        return new ErrScreen(var0);
-      }
-    );
-    let eff = _block;
-    return [model, eff];
-  } else if (msg instanceof OutCome) {
-    let questions2 = msg[0];
-    console_log(
-      "Fetched " + to_string(length(questions2)) + " questions."
-    );
-    return [model, none2()];
-  } else if (msg instanceof ErrScreen) {
-    let json_err = msg[0];
-    echo("err screen", "src/pages/quiz_home.gleam", 263);
-    return [
-      (() => {
-        let _record = model;
-        return new Model4(
-          _record.db,
-          _record.categories,
-          _record.question_id_categories,
-          _record.filter_options,
-          _record.selected_question_ids,
-          _record.loading,
-          new Some(json_err),
-          _record.show_results
-        );
-      })(),
-      none2()
-    ];
-  } else if (msg instanceof ResetQuizResults) {
-    let _block;
-    let _pipe = model.db;
-    _block = reset_quiz_results(_pipe);
-    let promise = _block;
-    let _block$1;
-    let _pipe$1 = promise;
-    _block$1 = to_effect(
-      _pipe$1,
-      (var0) => {
-        return new ResetQuizResultsFinished(var0);
-      },
-      (var0) => {
-        return new ErrScreen(var0);
-      }
-    );
-    let effect = _block$1;
-    return [model, effect];
-  } else {
-    let quiz_result = msg[0];
-    echo("ResetQuizResultsFinished", "src/pages/quiz_home.gleam", 295);
-    let reseted_filter = reset(model.filter_options);
-    let _block;
-    let _record = reseted_filter;
-    _block = new FilterOptions(
-      _record.selected_categories,
-      _record.selected_count,
-      _record.do_shuffle,
-      quiz_result,
-      _record.unanswered_only
-    );
-    let new_filter = _block;
-    return [
-      (() => {
-        let _record$1 = model;
-        return new Model4(
-          _record$1.db,
-          _record$1.categories,
-          _record$1.question_id_categories,
-          new_filter,
-          _record$1.selected_question_ids,
-          false,
-          _record$1.error,
-          _record$1.show_results
-        );
-      })(),
-      none2()
-    ];
-  }
 }
 function view_error(error) {
   if (error instanceof Some) {
@@ -12472,6 +12067,417 @@ function view6(model) {
       })()
     ])
   );
+}
+var db_version = 1;
+function update5(model, msg) {
+  if (msg instanceof SelectDb) {
+    let name2 = msg[0];
+    echo("SelectDb", "src/pages/quiz_home.gleam", 131);
+    echo(name2, "src/pages/quiz_home.gleam", 132);
+    let _block;
+    let _record = model.db;
+    _block = new DB(
+      _record.db,
+      _record.names,
+      _record.prefix,
+      name2,
+      _record.version
+    );
+    let new_db = _block;
+    let _block$1;
+    let _pipe = setup2(model.db.names, model.db.prefix, name2, db_version);
+    _block$1 = to_effect(
+      _pipe,
+      (var0) => {
+        return new DbChanged(var0);
+      },
+      (var0) => {
+        return new ErrScreen(var0);
+      }
+    );
+    let setup_db_effect = _block$1;
+    return [
+      (() => {
+        let _record$1 = model;
+        return new Model4(
+          new_db,
+          _record$1.categories,
+          _record$1.question_id_categories,
+          _record$1.filter_options,
+          _record$1.selected_question_ids,
+          true,
+          _record$1.error,
+          _record$1.show_results
+        );
+      })(),
+      setup_db_effect
+    ];
+  } else if (msg instanceof DbChanged) {
+    let new_db = msg[0];
+    return [
+      (() => {
+        let _record = model;
+        return new Model4(
+          new_db,
+          _record.categories,
+          _record.question_id_categories,
+          _record.filter_options,
+          _record.selected_question_ids,
+          false,
+          _record.error,
+          _record.show_results
+        );
+      })(),
+      get_initial_data_effects(new_db)
+    ];
+  } else if (msg instanceof SelectCategory) {
+    let id = msg[0];
+    let is_selected = msg[1];
+    let new_select_category = update_if(
+      model.filter_options.selected_categories,
+      (c) => {
+        return c.category.id === id;
+      },
+      (c) => {
+        return new SelectedCategory(is_selected, c.category);
+      }
+    );
+    let _block;
+    let _block$1;
+    let _record = model;
+    _block$1 = new Model4(
+      _record.db,
+      _record.categories,
+      _record.question_id_categories,
+      (() => {
+        let _record$1 = model.filter_options;
+        return new FilterOptions(
+          new_select_category,
+          _record$1.selected_count,
+          _record$1.do_shuffle,
+          _record$1.quiz_results,
+          _record$1.unanswered_only
+        );
+      })(),
+      _record.selected_question_ids,
+      _record.loading,
+      _record.error,
+      _record.show_results
+    );
+    let _pipe = _block$1;
+    _block = update_filtered_questions(_pipe);
+    let new_model = _block;
+    return [new_model, none2()];
+  } else if (msg instanceof SelectCount) {
+    let quest_count = msg[0];
+    let _block;
+    let _block$1;
+    let _record = model;
+    _block$1 = new Model4(
+      _record.db,
+      _record.categories,
+      _record.question_id_categories,
+      (() => {
+        let _record$1 = model.filter_options;
+        return new FilterOptions(
+          _record$1.selected_categories,
+          quest_count,
+          _record$1.do_shuffle,
+          _record$1.quiz_results,
+          _record$1.unanswered_only
+        );
+      })(),
+      _record.selected_question_ids,
+      _record.loading,
+      _record.error,
+      _record.show_results
+    );
+    let _pipe = _block$1;
+    _block = update_filtered_questions(_pipe);
+    let new_model = _block;
+    return [new_model, none2()];
+  } else if (msg instanceof SwitchShuffle) {
+    let is_shuffle = msg[0];
+    let _block;
+    let _block$1;
+    let _record = model;
+    _block$1 = new Model4(
+      _record.db,
+      _record.categories,
+      _record.question_id_categories,
+      (() => {
+        let _record$1 = model.filter_options;
+        return new FilterOptions(
+          _record$1.selected_categories,
+          _record$1.selected_count,
+          is_shuffle,
+          _record$1.quiz_results,
+          _record$1.unanswered_only
+        );
+      })(),
+      _record.selected_question_ids,
+      _record.loading,
+      _record.error,
+      _record.show_results
+    );
+    let _pipe = _block$1;
+    _block = update_filtered_questions(_pipe);
+    let new_model = _block;
+    return [new_model, none2()];
+  } else if (msg instanceof SwitchUnansweredOnly) {
+    let is_unanswered_only = msg[0];
+    let _block;
+    let _block$1;
+    let _record = model;
+    _block$1 = new Model4(
+      _record.db,
+      _record.categories,
+      _record.question_id_categories,
+      (() => {
+        let _record$1 = model.filter_options;
+        return new FilterOptions(
+          _record$1.selected_categories,
+          _record$1.selected_count,
+          _record$1.do_shuffle,
+          _record$1.quiz_results,
+          is_unanswered_only
+        );
+      })(),
+      _record.selected_question_ids,
+      _record.loading,
+      _record.error,
+      _record.show_results
+    );
+    let _pipe = _block$1;
+    _block = update_filtered_questions(_pipe);
+    let new_model = _block;
+    return [new_model, none2()];
+  } else if (msg instanceof SWitchAllCategory) {
+    let is_selected = msg[0];
+    echo("SWitchAllCategory", "src/pages/quiz_home.gleam", 202);
+    let new_select_category = map(
+      model.filter_options.selected_categories,
+      (c) => {
+        return new SelectedCategory(is_selected, c.category);
+      }
+    );
+    let _block;
+    let _block$1;
+    let _record = model;
+    _block$1 = new Model4(
+      _record.db,
+      _record.categories,
+      _record.question_id_categories,
+      (() => {
+        let _record$1 = model.filter_options;
+        return new FilterOptions(
+          new_select_category,
+          _record$1.selected_count,
+          _record$1.do_shuffle,
+          _record$1.quiz_results,
+          _record$1.unanswered_only
+        );
+      })(),
+      _record.selected_question_ids,
+      _record.loading,
+      _record.error,
+      _record.show_results
+    );
+    let _pipe = _block$1;
+    _block = update_filtered_questions(_pipe);
+    let new_model = _block;
+    return [new_model, none2()];
+  } else if (msg instanceof ViewResults) {
+    echo("View History", "src/pages/quiz_home.gleam", 219);
+    return [
+      (() => {
+        let _record = model;
+        return new Model4(
+          _record.db,
+          _record.categories,
+          _record.question_id_categories,
+          _record.filter_options,
+          _record.selected_question_ids,
+          _record.loading,
+          _record.error,
+          negate(model.show_results)
+        );
+      })(),
+      none2()
+    ];
+  } else if (msg instanceof GetCategories) {
+    let categories2 = msg[0];
+    echo("GetCategories", "src/pages/quiz_home.gleam", 226);
+    let new_selected_category = map(
+      categories2,
+      (_capture) => {
+        return new SelectedCategory(true, _capture);
+      }
+    );
+    let _block;
+    let _block$1;
+    let _record = model;
+    _block$1 = new Model4(
+      _record.db,
+      categories2,
+      _record.question_id_categories,
+      (() => {
+        let _record$1 = model.filter_options;
+        return new FilterOptions(
+          new_selected_category,
+          _record$1.selected_count,
+          _record$1.do_shuffle,
+          _record$1.quiz_results,
+          _record$1.unanswered_only
+        );
+      })(),
+      _record.selected_question_ids,
+      _record.loading,
+      _record.error,
+      _record.show_results
+    );
+    let _pipe = _block$1;
+    _block = update_filtered_questions(_pipe);
+    let new_model = _block;
+    return [new_model, none2()];
+  } else if (msg instanceof GetQuestionIdAndCategoryList) {
+    let id_and_category_list = msg[0];
+    echo("GetQuestionIdAndCategoryList", "src/pages/quiz_home.gleam", 243);
+    let _block;
+    let _block$1;
+    let _record = model;
+    _block$1 = new Model4(
+      _record.db,
+      _record.categories,
+      id_and_category_list,
+      _record.filter_options,
+      _record.selected_question_ids,
+      _record.loading,
+      _record.error,
+      _record.show_results
+    );
+    let _pipe = _block$1;
+    _block = update_filtered_questions(_pipe);
+    let new_model = _block;
+    return [new_model, none2()];
+  } else if (msg instanceof GetQuizHistory) {
+    let quiz_result = msg[0];
+    echo("GetQuizHistory", "src/pages/quiz_home.gleam", 250);
+    let _block;
+    let _block$1;
+    let _record = model;
+    _block$1 = new Model4(
+      _record.db,
+      _record.categories,
+      _record.question_id_categories,
+      (() => {
+        let _record$1 = model.filter_options;
+        return new FilterOptions(
+          _record$1.selected_categories,
+          _record$1.selected_count,
+          _record$1.do_shuffle,
+          quiz_result,
+          _record$1.unanswered_only
+        );
+      })(),
+      _record.selected_question_ids,
+      false,
+      _record.error,
+      _record.show_results
+    );
+    let _pipe = _block$1;
+    _block = update_filtered_questions(_pipe);
+    let new_model = _block;
+    return [new_model, none2()];
+  } else if (msg instanceof StartQuiz) {
+    echo("Start Quiz", "src/pages/quiz_home.gleam", 270);
+    let _block;
+    let _pipe = get_question_by_ids(model.db, model.selected_question_ids);
+    _block = to_effect(
+      _pipe,
+      (var0) => {
+        return new OutCome(var0);
+      },
+      (var0) => {
+        return new ErrScreen(var0);
+      }
+    );
+    let eff = _block;
+    return [model, eff];
+  } else if (msg instanceof OutCome) {
+    let questions2 = msg[0];
+    console_log(
+      "Fetched " + to_string(length(questions2)) + " questions."
+    );
+    return [model, none2()];
+  } else if (msg instanceof ErrScreen) {
+    let json_err = msg[0];
+    echo("err screen", "src/pages/quiz_home.gleam", 266);
+    return [
+      (() => {
+        let _record = model;
+        return new Model4(
+          _record.db,
+          _record.categories,
+          _record.question_id_categories,
+          _record.filter_options,
+          _record.selected_question_ids,
+          _record.loading,
+          new Some(json_err),
+          _record.show_results
+        );
+      })(),
+      none2()
+    ];
+  } else if (msg instanceof ResetQuizResults) {
+    let _block;
+    let _pipe = model.db;
+    _block = reset_quiz_results(_pipe);
+    let promise = _block;
+    let _block$1;
+    let _pipe$1 = promise;
+    _block$1 = to_effect(
+      _pipe$1,
+      (var0) => {
+        return new ResetQuizResultsFinished(var0);
+      },
+      (var0) => {
+        return new ErrScreen(var0);
+      }
+    );
+    let effect = _block$1;
+    return [model, effect];
+  } else {
+    let quiz_result = msg[0];
+    echo("ResetQuizResultsFinished", "src/pages/quiz_home.gleam", 298);
+    let reseted_filter = reset2(model.filter_options);
+    let _block;
+    let _record = reseted_filter;
+    _block = new FilterOptions(
+      _record.selected_categories,
+      _record.selected_count,
+      _record.do_shuffle,
+      quiz_result,
+      _record.unanswered_only
+    );
+    let new_filter = _block;
+    return [
+      (() => {
+        let _record$1 = model;
+        return new Model4(
+          _record$1.db,
+          _record$1.categories,
+          _record$1.question_id_categories,
+          new_filter,
+          _record$1.selected_question_ids,
+          false,
+          _record$1.error,
+          _record$1.show_results
+        );
+      })(),
+      none2()
+    ];
+  }
 }
 function echo(value2, file, line) {
   const grey = "\x1B[90m";
@@ -13297,6 +13303,10 @@ var QuizResult = class extends CustomType {
   }
 };
 var ErrScreen2 = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
 };
 var HomeMsg = class extends CustomType {
   constructor($0) {
@@ -13322,13 +13332,19 @@ var DataInitialized = class extends CustomType {
     this[0] = $0;
   }
 };
-var Miss = class extends CustomType {
+var DBErr = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
+var Reset = class extends CustomType {
 };
 function update8(model, msg) {
   if (model instanceof Loading) {
     if (msg instanceof DataInitialized) {
       let db = msg[0];
-      echo4("DataInitialized", "src/app.gleam", 59);
+      echo4("DataInitialized", "src/app.gleam", 72);
       let $ = init2(db);
       let home_model = $[0];
       let home_effect = $[1];
@@ -13338,9 +13354,10 @@ function update8(model, msg) {
           return new HomeMsg(var0);
         })
       ];
-    } else if (msg instanceof Miss) {
-      echo4("setup err", "src/app.gleam", 64);
-      return [new ErrScreen2(), none2()];
+    } else if (msg instanceof DBErr) {
+      let err = msg[0];
+      echo4("setup err", "src/app.gleam", 77);
+      return [new ErrScreen2("setup err"), none2()];
     } else {
       return [model, none2()];
     }
@@ -13353,13 +13370,16 @@ function update8(model, msg) {
       let home_effect = $[1];
       if (home_msg instanceof OutCome) {
         let questions2 = home_msg[0];
-        echo4("Home -> QuizScreen", "src/app.gleam", 78);
+        echo4("Home -> QuizScreen", "src/app.gleam", 91);
         let screen_ini = init4(new_home.db, questions2);
         if (screen_ini instanceof Ok) {
           let quiz_model = screen_ini[0];
           return [new QuizScreen(new_home, quiz_model), none2()];
         } else {
-          return [new ErrScreen2(), none2()];
+          return [
+            new ErrScreen2("Error initializing quiz screen"),
+            none2()
+          ];
         }
       } else {
         return [
@@ -13452,7 +13472,20 @@ function update8(model, msg) {
       return [model, none2()];
     }
   } else {
-    return [model, none2()];
+    let err = model[0];
+    if (msg instanceof Reset) {
+      throw makeError(
+        "todo",
+        FILEPATH,
+        "app",
+        169,
+        "update",
+        "`todo` expression evaluated. This code has not yet been implemented.",
+        {}
+      );
+    } else {
+      return [model, none2()];
+    }
   }
 }
 function view9(model) {
@@ -13477,28 +13510,44 @@ function view9(model) {
       return new QuizResultMsg(var0);
     });
   } else {
-    return text3("\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F");
+    let err = model[0];
+    return div(
+      toList([]),
+      toList([
+        text3(err),
+        button(
+          toList([on_click(new Reset())]),
+          toList([text3("reset")])
+        )
+      ])
+    );
   }
 }
-var db_version = "1";
+var db_prefix = "1";
+var db_version2 = 1;
 function setup_db() {
   let data_sets = get_data_set_name();
-  let db_name = "db" + db_version;
-  echo4("lustre setup_db", "src/app.gleam", 37);
-  echo4(data_sets, "src/app.gleam", 38);
+  echo4(data_sets, "src/app.gleam", 40);
   if (data_sets instanceof Empty) {
-    return perform(new Miss());
+    return perform(
+      new DBErr(new FFIError("No data sets found"))
+    );
   } else {
     let $ = data_sets.tail;
     if ($ instanceof Empty) {
-      return perform(new Miss());
+      return perform(
+        new DBErr(new FFIError("No data sets found"))
+      );
     } else {
       let first = data_sets.head;
-      let _pipe = setup2(data_sets, first, db_name, 1);
-      return to_effect_simple(
+      let _pipe = setup2(data_sets, db_prefix, first, db_version2);
+      return to_effect(
         _pipe,
         (var0) => {
           return new DataInitialized(var0);
+        },
+        (var0) => {
+          return new DBErr(var0);
         }
       );
     }
@@ -13515,15 +13564,15 @@ function main() {
       "let_assert",
       FILEPATH,
       "app",
-      176,
+      199,
       "main",
       "Pattern match failed, no pattern matched the value.",
       {
         value: $,
-        start: 5045,
-        end: 5094,
-        pattern_start: 5056,
-        pattern_end: 5061
+        start: 5689,
+        end: 5738,
+        pattern_start: 5700,
+        pattern_end: 5705
       }
     );
   }

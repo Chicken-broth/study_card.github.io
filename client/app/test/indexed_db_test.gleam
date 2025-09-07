@@ -15,7 +15,10 @@ pub fn main() {
 fn get_first_db(prefix: Int) -> Promise(DB) {
   let db_names = db.get_data_set_name()
   let assert Ok(db_name) = list.first(db_names)
-  db.setup(db_names, int.to_string(prefix), db_name, 1)
+  let setup_db = db.setup(db_names, int.to_string(prefix), db_name, 1)
+  use result_db <- promise.map(setup_db)
+  let assert Ok(db) = result_db
+  db
 }
 
 fn get_second_db(prefix: Int) -> Promise(DB) {
@@ -24,7 +27,10 @@ fn get_second_db(prefix: Int) -> Promise(DB) {
     [_, second, ..] -> Ok(second)
     _ -> Error(Nil)
   }
-  db.setup(db_names, int.to_string(prefix), db_name, 1)
+  let setup_db = db.setup(db_names, int.to_string(prefix), db_name, 1)
+  use result_db <- promise.map(setup_db)
+  let assert Ok(db) = result_db
+  db
 }
 
 /// `setup`が正常に完了することをテストします
