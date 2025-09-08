@@ -1437,6 +1437,14 @@ function contains(loop$list, loop$elem) {
     }
   }
 }
+function first(list4) {
+  if (list4 instanceof Empty) {
+    return new Error(void 0);
+  } else {
+    let first$1 = list4.head;
+    return new Ok(first$1);
+  }
+}
 function filter_loop(loop$list, loop$fun, loop$acc) {
   while (true) {
     let list4 = loop$list;
@@ -1463,6 +1471,34 @@ function filter_loop(loop$list, loop$fun, loop$acc) {
 }
 function filter(list4, predicate) {
   return filter_loop(list4, predicate, toList([]));
+}
+function filter_map_loop(loop$list, loop$fun, loop$acc) {
+  while (true) {
+    let list4 = loop$list;
+    let fun = loop$fun;
+    let acc = loop$acc;
+    if (list4 instanceof Empty) {
+      return reverse(acc);
+    } else {
+      let first$1 = list4.head;
+      let rest$1 = list4.tail;
+      let _block;
+      let $ = fun(first$1);
+      if ($ instanceof Ok) {
+        let first$2 = $[0];
+        _block = prepend(first$2, acc);
+      } else {
+        _block = acc;
+      }
+      let new_acc = _block;
+      loop$list = rest$1;
+      loop$fun = fun;
+      loop$acc = new_acc;
+    }
+  }
+}
+function filter_map(list4, fun) {
+  return filter_map_loop(list4, fun, toList([]));
 }
 function map_loop(loop$list, loop$fun, loop$acc) {
   while (true) {
@@ -1549,20 +1585,20 @@ function take(list4, n) {
 }
 function append_loop(loop$first, loop$second) {
   while (true) {
-    let first = loop$first;
+    let first2 = loop$first;
     let second = loop$second;
-    if (first instanceof Empty) {
+    if (first2 instanceof Empty) {
       return second;
     } else {
-      let first$1 = first.head;
-      let rest$1 = first.tail;
+      let first$1 = first2.head;
+      let rest$1 = first2.tail;
       loop$first = rest$1;
       loop$second = prepend(first$1, second);
     }
   }
 }
-function append(first, second) {
-  return append_loop(reverse(first), second);
+function append(first2, second) {
+  return append_loop(reverse(first2), second);
 }
 function prepend2(list4, item) {
   return prepend(item, list4);
@@ -2071,10 +2107,10 @@ function run_decoders(loop$data, loop$failure, loop$decoders) {
     }
   }
 }
-function one_of(first, alternatives) {
+function one_of(first2, alternatives) {
   return new Decoder(
     (dynamic_data) => {
-      let $ = first.function(dynamic_data);
+      let $ = first2.function(dynamic_data);
       let layer = $;
       let errors = $[1];
       if (errors instanceof Empty) {
@@ -6480,6 +6516,25 @@ function filter_exist_answers(rs) {
           return !isEqual(a, new NotAnswered());
         }
       );
+    }
+  );
+}
+function get_incorrect_question_ids(quiz_results) {
+  let _pipe = quiz_results;
+  return filter_map(
+    _pipe,
+    (result) => {
+      let $ = first(result.answer);
+      if ($ instanceof Ok) {
+        let latest_answer = $[0];
+        if (latest_answer instanceof Incorrect) {
+          return new Ok(result.id);
+        } else {
+          return new Error(void 0);
+        }
+      } else {
+        return new Error(void 0);
+      }
     }
   );
 }
@@ -10966,6 +11021,15 @@ var dataSet = [DATADEFAULT, DATAEXTRA];
 var CATEGORY_STORE = "categories";
 var QUESTION_STORE = "questions";
 var QUIZ_RESULT_STORE = "quiz_results";
+var initialized = false;
+async function initializeDb() {
+  if (initialized) return;
+  if (false) {
+    await null;
+    console.log("fake-indexeddb loaded for testing.");
+  }
+  initialized = true;
+}
 function getDataSetName() {
   return dataSet;
 }
@@ -11000,7 +11064,8 @@ function addQuizResults(store, xs) {
     });
   });
 }
-function setup(prefix2, dbName, version) {
+async function setup(prefix2, dbName, version) {
+  await initializeDb();
   console.log("\nsetup db:", prefix2, dbName, version);
   return new Promise((resolve2, reject) => {
     const name2 = prefix2 + dbName;
@@ -11051,7 +11116,8 @@ function setup(prefix2, dbName, version) {
     };
   });
 }
-function getCategories(db) {
+async function getCategories(db) {
+  await initializeDb();
   console.log("--getCategories:");
   return new Promise((resolve2, reject) => {
     const transaction = db.transaction([CATEGORY_STORE], "readonly");
@@ -11065,7 +11131,8 @@ function getCategories(db) {
     };
   });
 }
-function getQuestionIdAndCategoryList(db) {
+async function getQuestionIdAndCategoryList(db) {
+  await initializeDb();
   return new Promise((resolve2, reject) => {
     const transaction = db.transaction([QUESTION_STORE], "readonly");
     const store = transaction.objectStore(QUESTION_STORE);
@@ -11084,7 +11151,8 @@ function getQuestionIdAndCategoryList(db) {
     };
   });
 }
-function getQuestionByIds(db, ids) {
+async function getQuestionByIds(db, ids) {
+  await initializeDb();
   return new Promise((resolve2, reject) => {
     const transaction = db.transaction([QUESTION_STORE], "readonly");
     const store = transaction.objectStore(QUESTION_STORE);
@@ -11108,7 +11176,8 @@ function getQuestionByIds(db, ids) {
     });
   });
 }
-function getQuizResults(db) {
+async function getQuizResults(db) {
+  await initializeDb();
   console.log("--getQuizResults:");
   return new Promise((resolve2, reject) => {
     const transaction = db.transaction([QUIZ_RESULT_STORE], "readonly");
@@ -11122,7 +11191,8 @@ function getQuizResults(db) {
     };
   });
 }
-function saveQuizResults(db, results) {
+async function saveQuizResults(db, results) {
+  await initializeDb();
   console.log("result:", results);
   return new Promise((resolve2, reject) => {
     const transaction = db.transaction([QUIZ_RESULT_STORE], "readwrite");
@@ -11162,7 +11232,8 @@ function addAnswers(base, new_) {
   const combined = [newAnswer, ...baseAnswers];
   return combined.slice(0, 3);
 }
-function resetQuizResults(db) {
+async function resetQuizResults(db) {
+  await initializeDb();
   console.log("--resetQuizResults:");
   return new Promise((resolve2, reject) => {
     const transaction = db.transaction([QUIZ_RESULT_STORE, QUESTION_STORE], "readwrite");
@@ -11416,17 +11487,25 @@ var Limit = class extends CustomType {
 var Full = class extends CustomType {
 };
 var FilterOptions = class extends CustomType {
-  constructor(selected_categories, selected_count, do_shuffle, quiz_results, unanswered_only) {
+  constructor(selected_categories, selected_count, do_shuffle, quiz_results, unanswered_only, incorrect_only) {
     super();
     this.selected_categories = selected_categories;
     this.selected_count = selected_count;
     this.do_shuffle = do_shuffle;
     this.quiz_results = quiz_results;
     this.unanswered_only = unanswered_only;
+    this.incorrect_only = incorrect_only;
   }
 };
 function default_options() {
-  return new FilterOptions(toList([]), new Full(), false, toList([]), false);
+  return new FilterOptions(
+    toList([]),
+    new Full(),
+    false,
+    toList([]),
+    false,
+    false
+  );
 }
 function reset(filter3) {
   return new FilterOptions(
@@ -11434,6 +11513,7 @@ function reset(filter3) {
     new Full(),
     false,
     toList([]),
+    false,
     false
   );
 }
@@ -11479,6 +11559,21 @@ function filter_unanswered(question_ids, quiz_results, unanswered_only) {
     }
   );
 }
+function filter_incorrect(question_ids, quiz_results, incorrect_only) {
+  return guard(
+    negate(incorrect_only),
+    question_ids,
+    () => {
+      let incorrect_ids = get_incorrect_question_ids(quiz_results);
+      return filter(
+        question_ids,
+        (id) => {
+          return contains(incorrect_ids, id);
+        }
+      );
+    }
+  );
+}
 function shuffle2(xs, is_shuffle) {
   if (is_shuffle) {
     return shuffle(xs);
@@ -11506,8 +11601,13 @@ function filter_question_ids(all_questions, options) {
     options.quiz_results,
     options.unanswered_only
   );
-  return apply_count_and_shuffle(
+  let _pipe$3 = filter_incorrect(
     _pipe$2,
+    options.quiz_results,
+    options.incorrect_only
+  );
+  return apply_count_and_shuffle(
+    _pipe$3,
     options.selected_count,
     options.do_shuffle
   );
@@ -11603,6 +11703,12 @@ var SwitchUnansweredOnly = class extends CustomType {
     this[0] = $0;
   }
 };
+var SwitchIncorrectOnly = class extends CustomType {
+  constructor($0) {
+    super();
+    this[0] = $0;
+  }
+};
 var SWitchAllCategory = class extends CustomType {
   constructor($0) {
     super();
@@ -11688,7 +11794,7 @@ function get_initial_data_effects(db) {
     }
   );
   let get_results = _block$2;
-  echo("get_initial_data_effects", "src/pages/quiz_home.gleam", 94);
+  echo("get_initial_data_effects", "src/pages/quiz_home.gleam", 96);
   return batch(
     toList([get_categories2, get_question_id_and_category_list2, get_results])
   );
@@ -11785,7 +11891,7 @@ function view_checkbox_label(checked2, label2, handler) {
     ])
   );
 }
-function view_options(shuffle3, unanswered_only) {
+function view_options(shuffle3, unanswered_only, incorrect_only) {
   return div(
     toList([style_margin_left_4(), section_container_row_style()]),
     toList([
@@ -11801,6 +11907,13 @@ function view_options(shuffle3, unanswered_only) {
         "\u672A\u56DE\u7B54\u306E\u554F\u984C\u306E\u307F",
         (var0) => {
           return new SwitchUnansweredOnly(var0);
+        }
+      ),
+      view_checkbox_label(
+        incorrect_only,
+        "\u4E0D\u6B63\u89E3\u306E\u554F\u984C\u306E\u307F",
+        (var0) => {
+          return new SwitchIncorrectOnly(var0);
         }
       )
     ])
@@ -12017,7 +12130,8 @@ function view6(model) {
       ),
       view_options(
         model.filter_options.do_shuffle,
-        model.filter_options.unanswered_only
+        model.filter_options.unanswered_only,
+        model.filter_options.incorrect_only
       ),
       h2(
         toList([style_vertical_margin_h2()]),
@@ -12064,8 +12178,8 @@ var db_version = 1;
 function update5(model, msg) {
   if (msg instanceof SelectDb) {
     let name2 = msg[0];
-    echo("SelectDb", "src/pages/quiz_home.gleam", 131);
-    echo(name2, "src/pages/quiz_home.gleam", 132);
+    echo("SelectDb", "src/pages/quiz_home.gleam", 133);
+    echo(name2, "src/pages/quiz_home.gleam", 134);
     let _block;
     let _record = model.db;
     _block = new DB(
@@ -12148,7 +12262,8 @@ function update5(model, msg) {
           _record$1.selected_count,
           _record$1.do_shuffle,
           _record$1.quiz_results,
-          _record$1.unanswered_only
+          _record$1.unanswered_only,
+          _record$1.incorrect_only
         );
       })(),
       _record.selected_question_ids,
@@ -12176,7 +12291,8 @@ function update5(model, msg) {
           quest_count,
           _record$1.do_shuffle,
           _record$1.quiz_results,
-          _record$1.unanswered_only
+          _record$1.unanswered_only,
+          _record$1.incorrect_only
         );
       })(),
       _record.selected_question_ids,
@@ -12204,7 +12320,8 @@ function update5(model, msg) {
           _record$1.selected_count,
           is_shuffle,
           _record$1.quiz_results,
-          _record$1.unanswered_only
+          _record$1.unanswered_only,
+          _record$1.incorrect_only
         );
       })(),
       _record.selected_question_ids,
@@ -12232,7 +12349,37 @@ function update5(model, msg) {
           _record$1.selected_count,
           _record$1.do_shuffle,
           _record$1.quiz_results,
-          is_unanswered_only
+          is_unanswered_only,
+          _record$1.incorrect_only
+        );
+      })(),
+      _record.selected_question_ids,
+      _record.loading,
+      _record.error,
+      _record.show_results
+    );
+    let _pipe = _block$1;
+    _block = update_filtered_questions(_pipe);
+    let new_model = _block;
+    return [new_model, none2()];
+  } else if (msg instanceof SwitchIncorrectOnly) {
+    let is_incorrect_only = msg[0];
+    let _block;
+    let _block$1;
+    let _record = model;
+    _block$1 = new Model4(
+      _record.db,
+      _record.categories,
+      _record.question_id_categories,
+      (() => {
+        let _record$1 = model.filter_options;
+        return new FilterOptions(
+          _record$1.selected_categories,
+          _record$1.selected_count,
+          _record$1.do_shuffle,
+          _record$1.quiz_results,
+          _record$1.unanswered_only,
+          is_incorrect_only
         );
       })(),
       _record.selected_question_ids,
@@ -12246,7 +12393,7 @@ function update5(model, msg) {
     return [new_model, none2()];
   } else if (msg instanceof SWitchAllCategory) {
     let is_selected = msg[0];
-    echo("SWitchAllCategory", "src/pages/quiz_home.gleam", 202);
+    echo("SWitchAllCategory", "src/pages/quiz_home.gleam", 216);
     let new_select_category = map(
       model.filter_options.selected_categories,
       (c) => {
@@ -12267,7 +12414,8 @@ function update5(model, msg) {
           _record$1.selected_count,
           _record$1.do_shuffle,
           _record$1.quiz_results,
-          _record$1.unanswered_only
+          _record$1.unanswered_only,
+          _record$1.incorrect_only
         );
       })(),
       _record.selected_question_ids,
@@ -12280,7 +12428,7 @@ function update5(model, msg) {
     let new_model = _block;
     return [new_model, none2()];
   } else if (msg instanceof ViewResults) {
-    echo("View History", "src/pages/quiz_home.gleam", 219);
+    echo("View History", "src/pages/quiz_home.gleam", 233);
     return [
       (() => {
         let _record = model;
@@ -12299,7 +12447,7 @@ function update5(model, msg) {
     ];
   } else if (msg instanceof GetCategories) {
     let categories2 = msg[0];
-    echo("GetCategories", "src/pages/quiz_home.gleam", 226);
+    echo("GetCategories", "src/pages/quiz_home.gleam", 240);
     let new_selected_category = map(
       categories2,
       (_capture) => {
@@ -12320,7 +12468,8 @@ function update5(model, msg) {
           _record$1.selected_count,
           _record$1.do_shuffle,
           _record$1.quiz_results,
-          _record$1.unanswered_only
+          _record$1.unanswered_only,
+          _record$1.incorrect_only
         );
       })(),
       _record.selected_question_ids,
@@ -12334,7 +12483,7 @@ function update5(model, msg) {
     return [new_model, none2()];
   } else if (msg instanceof GetQuestionIdAndCategoryList) {
     let id_and_category_list = msg[0];
-    echo("GetQuestionIdAndCategoryList", "src/pages/quiz_home.gleam", 243);
+    echo("GetQuestionIdAndCategoryList", "src/pages/quiz_home.gleam", 257);
     let _block;
     let _block$1;
     let _record = model;
@@ -12354,7 +12503,7 @@ function update5(model, msg) {
     return [new_model, none2()];
   } else if (msg instanceof GetQuizHistory) {
     let quiz_result = msg[0];
-    echo("GetQuizHistory", "src/pages/quiz_home.gleam", 250);
+    echo("GetQuizHistory", "src/pages/quiz_home.gleam", 264);
     let _block;
     let _block$1;
     let _record = model;
@@ -12369,7 +12518,8 @@ function update5(model, msg) {
           _record$1.selected_count,
           _record$1.do_shuffle,
           quiz_result,
-          _record$1.unanswered_only
+          _record$1.unanswered_only,
+          _record$1.incorrect_only
         );
       })(),
       _record.selected_question_ids,
@@ -12382,7 +12532,7 @@ function update5(model, msg) {
     let new_model = _block;
     return [new_model, none2()];
   } else if (msg instanceof StartQuiz) {
-    echo("Start Quiz", "src/pages/quiz_home.gleam", 270);
+    echo("Start Quiz", "src/pages/quiz_home.gleam", 284);
     let _block;
     let _pipe = get_question_by_ids(model.db, model.selected_question_ids);
     _block = to_effect(
@@ -12404,7 +12554,7 @@ function update5(model, msg) {
     return [model, none2()];
   } else if (msg instanceof ErrScreen) {
     let json_err = msg[0];
-    echo("err screen", "src/pages/quiz_home.gleam", 266);
+    echo("err screen", "src/pages/quiz_home.gleam", 280);
     return [
       (() => {
         let _record = model;
@@ -12441,7 +12591,7 @@ function update5(model, msg) {
     return [model, effect];
   } else {
     let quiz_result = msg[0];
-    echo("ResetQuizResultsFinished", "src/pages/quiz_home.gleam", 298);
+    echo("ResetQuizResultsFinished", "src/pages/quiz_home.gleam", 312);
     let reseted_filter = reset(model.filter_options);
     let _block;
     let _record = reseted_filter;
@@ -12450,7 +12600,8 @@ function update5(model, msg) {
       _record.selected_count,
       _record.do_shuffle,
       quiz_result,
-      _record.unanswered_only
+      _record.unanswered_only,
+      _record.incorrect_only
     );
     let new_filter = _block;
     return [
@@ -12514,16 +12665,16 @@ function echo$inspectString(str) {
 }
 function echo$inspectDict(map7) {
   let body = "dict.from_list([";
-  let first = true;
+  let first2 = true;
   let key_value_pairs = [];
   map7.forEach((value2, key) => {
     key_value_pairs.push([key, value2]);
   });
   key_value_pairs.sort();
   key_value_pairs.forEach(([key, value2]) => {
-    if (!first) body = body + ", ";
+    if (!first2) body = body + ", ";
     body = body + "#(" + echo$inspect(key) + ", " + echo$inspect(value2) + ")";
-    first = false;
+    first2 = false;
   });
   return body + "])";
 }
@@ -12730,16 +12881,16 @@ function echo$inspectString2(str) {
 }
 function echo$inspectDict2(map7) {
   let body = "dict.from_list([";
-  let first = true;
+  let first2 = true;
   let key_value_pairs = [];
   map7.forEach((value2, key) => {
     key_value_pairs.push([key, value2]);
   });
   key_value_pairs.sort();
   key_value_pairs.forEach(([key, value2]) => {
-    if (!first) body = body + ", ";
+    if (!first2) body = body + ", ";
     body = body + "#(" + echo$inspect2(key) + ", " + echo$inspect2(value2) + ")";
-    first = false;
+    first2 = false;
   });
   return body + "])";
 }
@@ -13176,16 +13327,16 @@ function echo$inspectString3(str) {
 }
 function echo$inspectDict3(map7) {
   let body = "dict.from_list([";
-  let first = true;
+  let first2 = true;
   let key_value_pairs = [];
   map7.forEach((value2, key) => {
     key_value_pairs.push([key, value2]);
   });
   key_value_pairs.sort();
   key_value_pairs.forEach(([key, value2]) => {
-    if (!first) body = body + ", ";
+    if (!first2) body = body + ", ";
     body = body + "#(" + echo$inspect3(key) + ", " + echo$inspect3(value2) + ")";
-    first = false;
+    first2 = false;
   });
   return body + "])";
 }
@@ -13508,8 +13659,8 @@ function setup_db() {
         new DBErr(new FFIError("No data sets found"))
       );
     } else {
-      let first = data_sets.head;
-      let _pipe = setup2(data_sets, db_prefix, first, db_version2);
+      let first2 = data_sets.head;
+      let _pipe = setup2(data_sets, db_prefix, first2, db_version2);
       return to_effect(
         _pipe,
         (var0) => {
@@ -13590,16 +13741,16 @@ function echo$inspectString4(str) {
 }
 function echo$inspectDict4(map7) {
   let body = "dict.from_list([";
-  let first = true;
+  let first2 = true;
   let key_value_pairs = [];
   map7.forEach((value2, key) => {
     key_value_pairs.push([key, value2]);
   });
   key_value_pairs.sort();
   key_value_pairs.forEach(([key, value2]) => {
-    if (!first) body = body + ", ";
+    if (!first2) body = body + ", ";
     body = body + "#(" + echo$inspect4(key) + ", " + echo$inspect4(value2) + ")";
-    first = false;
+    first2 = false;
   });
   return body + "])";
 }

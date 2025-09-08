@@ -10,6 +10,18 @@ const CATEGORY_STORE = "categories";
 const QUESTION_STORE = "questions";
 const QUIZ_RESULT_STORE = "quiz_results";
 
+let initialized = false;
+
+async function initializeDb() {
+  if (initialized) return;
+
+  if (process.env.NODE_ENV === 'test') {
+    await import("fake-indexeddb/auto");
+    console.log("fake-indexeddb loaded for testing.");
+  }
+  initialized = true;
+}
+
 export function getDataSetName() {
   return dataSet
 }
@@ -70,7 +82,8 @@ function addQuizResults(store,xs) {
  * @param {number} version データベースのバージョン。
  * @returns {Promise<IDBDatabase>} 成功時にはデータベース接続オブジェクト、失敗時にはエラーでrejectされるPromise。
 */
-export function setup(prefix, dbName, version) {
+export async function setup(prefix, dbName, version) {
+  await initializeDb();
   console.log("\nsetup db:", prefix, dbName, version);
   return new Promise((resolve, reject) => {
     const name = prefix + dbName
@@ -148,7 +161,8 @@ export function setup(prefix, dbName, version) {
  * @param {IDBDatabase} db データベース接続オブジェクト。
  * @returns {Promise<Array<any>>} カテゴリの配列で解決されるPromise。
  */
-export function getCategories(db) {
+export async function getCategories(db) {
+  await initializeDb();
   console.log("--getCategories:");
   return new Promise((resolve, reject) => {
     const transaction = db.transaction([CATEGORY_STORE], 'readonly');
@@ -170,7 +184,8 @@ export function getCategories(db) {
  * @param {IDBDatabase} db データベース接続オブジェクト。
  * @returns {Promise<number>} レコード数で解決されるPromise。
  */
-export function getQuestionCount(db) {
+export async function getQuestionCount(db) {
+  await initializeDb();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction([QUESTION_STORE], 'readonly');
     const store = transaction.objectStore(QUESTION_STORE);
@@ -191,7 +206,8 @@ export function getQuestionCount(db) {
  * @param {IDBDatabase} db データベース接続オブジェクト。
  * @returns {Promise<Array<number>>} キーの配列で解決されるPromise。
  */
-export function getQuestionIdList(db) {
+export async function getQuestionIdList(db) {
+  await initializeDb();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction([QUESTION_STORE], 'readonly');
     const store = transaction.objectStore(QUESTION_STORE);
@@ -212,7 +228,8 @@ export function getQuestionIdList(db) {
  * @param {IDBDatabase} db データベース接続オブジェクト。
  * @returns {Promise<Array<{id: number, category: any}>>} IDとカテゴリのオブジェクトの配列で解決されるPromise。
  */
-export function getQuestionIdAndCategoryList(db) {
+export async function getQuestionIdAndCategoryList(db) {
+  await initializeDb();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction([QUESTION_STORE], 'readonly');
     const store = transaction.objectStore(QUESTION_STORE);
@@ -239,7 +256,8 @@ export function getQuestionIdAndCategoryList(db) {
  * @param {number} id 取得するquestionのID。
  * @returns {Promise<any>} questionオブジェクトで解決されるPromise。見つからない場合はundefined。
  */
-export function getQuestionByIds(db, ids) {
+export async function getQuestionByIds(db, ids) {
+  await initializeDb();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction([QUESTION_STORE], 'readonly');
     const store = transaction.objectStore(QUESTION_STORE);
@@ -273,7 +291,8 @@ export function getQuestionByIds(db, ids) {
   });
 }
 
-export function getQuestionById(db, id) {
+export async function getQuestionById(db, id) {
+  await initializeDb();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction([QUESTION_STORE], 'readonly');
     const store = transaction.objectStore(QUESTION_STORE);
@@ -296,7 +315,8 @@ export function getQuestionById(db, id) {
  * @param {IDBDatabase} db データベース接続オブジェクト。
  * @returns {Promise<Array<any>>} クイズ履歴の配列で解決されるPromise。
  */
-export function getQuizResults(db) {
+export async function getQuizResults(db) {
+  await initializeDb();
   console.log("--getQuizResults:");
   return new Promise((resolve, reject) => {
     const transaction = db.transaction([QUIZ_RESULT_STORE], 'readonly');
@@ -317,7 +337,8 @@ export function getQuizResults(db) {
  * @param {any} result 保存するクイズ履歴オブジェクト。
  * @returns {Promise<IDBValidKey>} 保存されたアイテムのキーで解決されるPromise。
  */
-export function saveQuizResults(db, results) {
+export async function saveQuizResults(db, results) {
+  await initializeDb();
   console.log("result:", results);
   return new Promise((resolve, reject) => {
     const transaction = db.transaction([QUIZ_RESULT_STORE], 'readwrite');
@@ -389,7 +410,8 @@ function addAnswers(base, new_) {
  * @param {IDBDatabase} db データベース接続オブジェクト。
  * @returns {Promise<Ok<null>|Error<null>>} 成功時にはOk(null)、失敗時にはError(null)で解決されるPromise。
  */
-export function resetQuizResults(db) {
+export async function resetQuizResults(db) {
+  await initializeDb();
   console.log("--resetQuizResults:");
   return new Promise((resolve, reject) => {
     const transaction = db.transaction([QUIZ_RESULT_STORE, QUESTION_STORE], 'readwrite');

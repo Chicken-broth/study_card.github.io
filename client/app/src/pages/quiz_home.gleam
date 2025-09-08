@@ -57,6 +57,8 @@ pub type Msg {
   SwitchShuffle(Bool)
   /// 「未回答の問題のみ」フィルターのスイッチを操作した際に送信される。
   SwitchUnansweredOnly(Bool)
+  /// 「不正解の問題のみ」フィルターのスイッチを操作した際に送信される。
+  SwitchIncorrectOnly(Bool)
   ///カテゴリを全部選択にするか全部選択なしにするかの切り替えボタンがクリックされた際に送信される。
   SWitchAllCategory(Bool)
   /// 学習履歴ボタンがクリックされた際に送信される。
@@ -192,6 +194,18 @@ pub fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           filter_options: FilterOptions(
             ..model.filter_options,
             unanswered_only: is_unanswered_only,
+          ),
+        )
+        |> update_filtered_questions
+      #(new_model, effect.none())
+    }
+    SwitchIncorrectOnly(is_incorrect_only) -> {
+      let new_model =
+        Model(
+          ..model,
+          filter_options: FilterOptions(
+            ..model.filter_options,
+            incorrect_only: is_incorrect_only,
           ),
         )
         |> update_filtered_questions
@@ -348,10 +362,15 @@ fn section_container_row_style() {
   ])
 }
 
-fn view_options(shuffle: Bool, unanswered_only: Bool) -> Element(Msg) {
+fn view_options(
+  shuffle: Bool,
+  unanswered_only: Bool,
+  incorrect_only: Bool,
+) -> Element(Msg) {
   html.div([style_margin_left_4(), section_container_row_style()], [
     view_checkbox_label(shuffle, "シャッフルする", SwitchShuffle),
     view_checkbox_label(unanswered_only, "未回答の問題のみ", SwitchUnansweredOnly),
+    view_checkbox_label(incorrect_only, "不正解の問題のみ", SwitchIncorrectOnly),
   ])
 }
 
@@ -552,6 +571,7 @@ pub fn view(model: Model) -> Element(Msg) {
     view_options(
       model.filter_options.do_shuffle,
       model.filter_options.unanswered_only,
+      model.filter_options.incorrect_only,
     ),
     html.h2([style_vertical_margin_h2()], [html.text("出題数選択")]),
     view_count_selection(model.filter_options.selected_count),

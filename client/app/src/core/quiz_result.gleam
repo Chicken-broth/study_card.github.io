@@ -4,6 +4,7 @@ import gleam/dynamic/decode
 import gleam/int
 import gleam/json
 import gleam/list
+import gleam/option
 import lustre/attribute as attr
 import lustre/element
 import lustre/element/html
@@ -24,6 +25,21 @@ pub type ID =
 pub fn filter_exist_answers(rs: QuizResults) -> QuizResults {
   list.filter(rs, fn(r) {
     list.any(r.answer, fn(a) { a != answer.NotAnswered })
+  })
+}
+
+pub fn get_incorrect_question_ids(quiz_results: QuizResults) -> List(Int) {
+  quiz_results
+  |> list.filter_map(fn(result) {
+    case list.first(result.answer) {
+      Ok(latest_answer) -> {
+        case latest_answer {
+          answer.Incorrect -> Ok(result.id)
+          _ -> Error(Nil)
+        }
+      }
+      Error(_) -> Error(Nil)
+    }
   })
 }
 

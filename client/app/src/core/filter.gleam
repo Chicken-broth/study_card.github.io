@@ -26,6 +26,7 @@ pub type FilterOptions {
     do_shuffle: Bool,
     quiz_results: QuizResults,
     unanswered_only: Bool,
+    incorrect_only: Bool,
   )
 }
 
@@ -37,6 +38,7 @@ pub fn default_options() -> FilterOptions {
     do_shuffle: False,
     quiz_results: [],
     unanswered_only: False,
+    incorrect_only: False,
   )
 }
 
@@ -47,6 +49,7 @@ pub fn reset(filter: FilterOptions) -> FilterOptions {
     do_shuffle: False,
     quiz_results: [],
     unanswered_only: False,
+    incorrect_only: False,
   )
 }
 
@@ -55,10 +58,11 @@ fn filter_by_category(
   all_questions: List(IdAndCategory),
   selected_categories: List(SelectedCategory),
 ) -> List(ID) {
-  let selected_category_ids =
+  let selected_category_ids = {
     selected_categories
     |> list.filter(fn(c) { c.is_selected })
     |> list.map(fn(c) { c.category.id })
+  }
 
   all_questions
   |> list.filter(fn(q) { list.contains(selected_category_ids, q.category.id) })
@@ -72,13 +76,26 @@ fn filter_unanswered(
   unanswered_only: Bool,
 ) -> List(ID) {
   use <- bool.guard(bool.negate(unanswered_only), question_ids)
-  let answered_ids =
+  let answered_ids = {
     quiz_result.filter_exist_answers(quiz_results)
     |> list.map(fn(r) { r.id })
+  }
 
   list.filter(question_ids, fn(id) {
     list.contains(answered_ids, id) |> bool.negate
   })
+}
+
+/// 不正解の問題のみをフィルタリングする。
+fn filter_incorrect(
+  question_ids: List(ID),
+  quiz_results: QuizResults,
+  incorrect_only: Bool,
+) -> List(ID) {
+  use <- bool.guard(bool.negate(incorrect_only), question_ids)
+  let incorrect_ids = quiz_result.get_incorrect_question_ids(quiz_results)
+
+  list.filter(question_ids, fn(id) { list.contains(incorrect_ids, id) })
 }
 
 /// シャッフルと出題数の制限を適用する。
@@ -111,5 +128,6 @@ pub fn filter_question_ids(
   all_questions
   |> filter_by_category(options.selected_categories)
   |> filter_unanswered(options.quiz_results, options.unanswered_only)
+  |> filter_incorrect(options.quiz_results, options.incorrect_only)
   |> apply_count_and_shuffle(options.selected_count, options.do_shuffle)
 }
