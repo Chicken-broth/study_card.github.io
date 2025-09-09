@@ -6003,18 +6003,6 @@ function view_column(title, items, on_select) {
     ])
   );
 }
-function view_progress(model) {
-  return p(
-    toList([]),
-    toList([
-      text3(
-        "Answered: " + to_string(length(model.matched_pair_ids)) + "/" + to_string(
-          length(model.pairs)
-        )
-      )
-    ])
-  );
-}
 function view_completion_message(model) {
   let $ = is_quiz_complete(model);
   if ($) {
@@ -6023,16 +6011,33 @@ function view_completion_message(model) {
     return text3("");
   }
 }
-function view_is_incorrect(model) {
-  let $ = model.has_made_mistake;
-  if ($) {
+function view_is_incorrect(has_mistake) {
+  if (has_mistake) {
     return p(
       toList([styles(toList([["color", "red"]]))]),
-      toList([text3("Incorrect")])
+      toList([text3("*")])
     );
   } else {
-    return div(toList([]), toList([]));
+    return p(toList([]), toList([]));
   }
+}
+function view_progress(model) {
+  return span(
+    toList([styles(toList([["display", "flex"]]))]),
+    toList([
+      p(
+        toList([]),
+        toList([
+          text3(
+            "Answered: " + to_string(
+              length(model.matched_pair_ids)
+            ) + "/" + to_string(length(model.pairs))
+          )
+        ])
+      ),
+      view_is_incorrect(model.has_made_mistake)
+    ])
+  );
 }
 function view2(model) {
   let container_style = toList([["display", "flex"]]);
@@ -6059,8 +6064,7 @@ function view2(model) {
         ])
       ),
       view_progress(model),
-      view_completion_message(model),
-      view_is_incorrect(model)
+      view_completion_message(model)
     ])
   );
 }

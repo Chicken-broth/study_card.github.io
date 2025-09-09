@@ -254,13 +254,16 @@ fn view_column(
 
 /// クイズの進捗状況を描画する
 fn view_progress(model: Model) -> Element(Msg) {
-  html.p([], [
-    html.text(
-      "Answered: "
-      <> int.to_string(list.length(model.matched_pair_ids))
-      <> "/"
-      <> int.to_string(list.length(model.pairs)),
-    ),
+  html.span([attr.styles([#("display", "flex")])], [
+    html.p([], [
+      html.text(
+        "Answered: "
+        <> int.to_string(list.length(model.matched_pair_ids))
+        <> "/"
+        <> int.to_string(list.length(model.pairs)),
+      ),
+    ]),
+    view_is_incorrect(model.has_made_mistake),
   ])
 }
 
@@ -272,10 +275,10 @@ fn view_completion_message(model: Model) -> Element(Msg) {
   }
 }
 
-fn view_is_incorrect(model: Model) -> Element(Msg) {
-  case model.has_made_mistake {
-    True -> html.p([attr.styles([#("color", "red")])], [html.text("Incorrect")])
-    False -> html.div([], [])
+fn view_is_incorrect(has_mistake: Bool) -> Element(Msg) {
+  case has_mistake {
+    True -> html.p([attr.styles([#("color", "red")])], [html.text("*")])
+    False -> html.p([], [])
   }
 }
 
@@ -291,7 +294,6 @@ pub fn view(model: Model) -> Element(Msg) {
     ]),
     view_progress(model),
     view_completion_message(model),
-    view_is_incorrect(model),
   ])
 }
 
