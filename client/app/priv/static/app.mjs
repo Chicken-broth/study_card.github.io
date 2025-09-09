@@ -6023,8 +6023,9 @@ function view_completion_message(model) {
     return text3("");
   }
 }
-function view_answer_status(answer) {
-  if (answer instanceof Incorrect) {
+function view_is_incorrect(model) {
+  let $ = model.has_made_mistake;
+  if ($) {
     return p(
       toList([styles(toList([["color", "red"]]))]),
       toList([text3("Incorrect")])
@@ -6059,7 +6060,7 @@ function view2(model) {
       ),
       view_progress(model),
       view_completion_message(model),
-      view_answer_status(model.answer)
+      view_is_incorrect(model)
     ])
   );
 }
@@ -6149,7 +6150,7 @@ function update3(model, msg) {
     return new Model2(_record.question, new Some(index5), new_answer_state);
   }
 }
-function view_answer_status2(answer) {
+function view_answer_status(answer) {
   let _block;
   if (answer instanceof Correct) {
     _block = "\u6B63\u89E3\u3067\u3059\uFF01";
@@ -6263,7 +6264,7 @@ function view3(model) {
   );
   return div(
     toList([]),
-    append(options, toList([view_answer_status2(model.answer)]))
+    append(options, toList([view_answer_status(model.answer)]))
   );
 }
 function decoder4() {
