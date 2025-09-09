@@ -5745,7 +5745,7 @@ var Pair = class extends CustomType {
   }
 };
 var Model = class extends CustomType {
-  constructor(pairs, left, right, selected_left_id, selected_right_id, matched_pair_ids, answer) {
+  constructor(pairs, left, right, selected_left_id, selected_right_id, matched_pair_ids, answer, has_made_mistake) {
     super();
     this.pairs = pairs;
     this.left = left;
@@ -5754,6 +5754,7 @@ var Model = class extends CustomType {
     this.selected_right_id = selected_right_id;
     this.matched_pair_ids = matched_pair_ids;
     this.answer = answer;
+    this.has_made_mistake = has_made_mistake;
   }
 };
 function init(pairs) {
@@ -5779,7 +5780,8 @@ function init(pairs) {
     new None(),
     new None(),
     toList([]),
-    new NotAnswered()
+    new NotAnswered(),
+    false
   );
 }
 function reset_item_states(items) {
@@ -5836,11 +5838,16 @@ function is_quiz_complete(model) {
   return length(model.matched_pair_ids) === length(model.pairs);
 }
 function check_answer(model) {
-  let $ = is_quiz_complete(model);
+  let $ = model.has_made_mistake;
   if ($) {
-    return new Correct();
-  } else {
     return new Incorrect();
+  } else {
+    let $1 = is_quiz_complete(model);
+    if ($1) {
+      return new Correct();
+    } else {
+      return new Incorrect();
+    }
   }
 }
 function handle_pair_selection(model, left_id, right_id) {
@@ -5852,6 +5859,7 @@ function handle_pair_selection(model, left_id, right_id) {
     _block = new IncorrectlyMatched();
   }
   let new_match_state = _block;
+  let has_made_mistake = model.has_made_mistake || !is_correct;
   let new_left = update_match(model.left, left_id, new_match_state);
   let new_right = update_match(model.right, right_id, new_match_state);
   let new_left$1 = update_focus(new_left, left_id, new NotFocused());
@@ -5872,7 +5880,8 @@ function handle_pair_selection(model, left_id, right_id) {
     new None(),
     new None(),
     new_matched_pair_ids,
-    _record.answer
+    _record.answer,
+    has_made_mistake
   );
   let new_model = _block$2;
   let _record$1 = new_model;
@@ -5883,7 +5892,8 @@ function handle_pair_selection(model, left_id, right_id) {
     _record$1.selected_left_id,
     _record$1.selected_right_id,
     _record$1.matched_pair_ids,
-    check_answer(new_model)
+    check_answer(new_model),
+    _record$1.has_made_mistake
   );
 }
 function update2(model, msg) {
@@ -5905,7 +5915,8 @@ function update2(model, msg) {
         new Some(left_id),
         new None(),
         _record.matched_pair_ids,
-        _record.answer
+        _record.answer,
+        _record.has_made_mistake
       );
     }
   } else {
@@ -5926,7 +5937,8 @@ function update2(model, msg) {
         new None(),
         new Some(right_id),
         _record.matched_pair_ids,
-        _record.answer
+        _record.answer,
+        _record.has_made_mistake
       );
     }
   }
@@ -6011,6 +6023,16 @@ function view_completion_message(model) {
     return text3("");
   }
 }
+function view_answer_status(answer) {
+  if (answer instanceof Incorrect) {
+    return p(
+      toList([styles(toList([["color", "red"]]))]),
+      toList([text3("Incorrect")])
+    );
+  } else {
+    return div(toList([]), toList([]));
+  }
+}
 function view2(model) {
   let container_style = toList([["display", "flex"]]);
   return div(
@@ -6036,7 +6058,8 @@ function view2(model) {
         ])
       ),
       view_progress(model),
-      view_completion_message(model)
+      view_completion_message(model),
+      view_answer_status(model.answer)
     ])
   );
 }
@@ -6126,7 +6149,7 @@ function update3(model, msg) {
     return new Model2(_record.question, new Some(index5), new_answer_state);
   }
 }
-function view_answer_status(answer) {
+function view_answer_status2(answer) {
   let _block;
   if (answer instanceof Correct) {
     _block = "\u6B63\u89E3\u3067\u3059\uFF01";
@@ -6240,7 +6263,7 @@ function view3(model) {
   );
   return div(
     toList([]),
-    append(options, toList([view_answer_status(model.answer)]))
+    append(options, toList([view_answer_status2(model.answer)]))
   );
 }
 function decoder4() {
@@ -13240,7 +13263,11 @@ function view_question(model) {
         ),
         view_question_header(current_question),
         view_question_body(current_question),
-        view_navigation_buttons(current_question)
+        view_navigation_buttons(current_question),
+        div(
+          toList([styles(toList([["height", "2rem"]]))]),
+          toList([])
+        )
       ])
     );
   } else {

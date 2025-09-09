@@ -218,6 +218,7 @@ fn view_question(model: Model) -> Element(Msg) {
         view_question_header(current_question),
         view_question_body(current_question),
         view_navigation_buttons(current_question),
+        html.div([attr.styles([#("height", "2rem")])], []),
       ])
     None -> html.text("Error: Question not found.")
   }

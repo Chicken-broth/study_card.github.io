@@ -50,6 +50,7 @@ pub type Model {
     selected_right_id: Option(ID),
     matched_pair_ids: List(ID),
     answer: Answer,
+    has_made_mistake: Bool,
   )
 }
 
@@ -60,7 +61,7 @@ pub fn init(pairs: List(Pair)) -> Model {
   let right =
     list.map(pairs, fn(p) { Item(p.id, p.right, NotFocused, NotYetMatched) })
     |> list.shuffle
-  Model(pairs, left, right, None, None, [], NotAnswered)
+  Model(pairs, left, right, None, None, [], NotAnswered, False)
 }
 
 /// すべてのアイテムのフォーカスを解除し、不正解の状態をリセットする
@@ -109,6 +110,7 @@ fn handle_pair_selection(model: Model, left_id: ID, right_id: ID) -> Model {
     True -> CorrectlyMatched
     False -> IncorrectlyMatched
   }
+  let has_made_mistake = model.has_made_mistake || !is_correct
 
   // 両方のカラムのアイテムの状態を更新
   let new_left = update_match(model.left, left_id, new_match_state)
@@ -131,15 +133,20 @@ fn handle_pair_selection(model: Model, left_id: ID, right_id: ID) -> Model {
       selected_left_id: None,
       selected_right_id: None,
       matched_pair_ids: new_matched_pair_ids,
+      has_made_mistake: has_made_mistake,
     )
 
   Model(..new_model, answer: check_answer(new_model))
 }
 
 fn check_answer(model: Model) -> Answer {
-  case is_quiz_complete(model) {
-    True -> Correct
-    False -> Incorrect
+  case model.has_made_mistake {
+    True -> Incorrect
+    False ->
+      case is_quiz_complete(model) {
+        True -> Correct
+        False -> Incorrect
+      }
   }
 }
 
@@ -265,6 +272,14 @@ fn view_completion_message(model: Model) -> Element(Msg) {
   }
 }
 
+fn view_answer_status(answer: Answer) -> Element(Msg) {
+  case answer {
+    Incorrect ->
+      html.p([attr.styles([#("color", "red")])], [html.text("Incorrect")])
+    _ -> html.div([], [])
+  }
+}
+
 /// アイテムの状態をCSSクラス名に変換する
 pub fn view(model: Model) -> Element(Msg) {
   // カラムを横並びにするためのフレックスコンテナ
@@ -277,6 +292,7 @@ pub fn view(model: Model) -> Element(Msg) {
     ]),
     view_progress(model),
     view_completion_message(model),
+    view_answer_status(model.answer),
   ])
 }
 
