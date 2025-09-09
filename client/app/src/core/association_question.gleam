@@ -217,7 +217,7 @@ fn view_column(
 
   html.div([attr.styles(column_style)], [
     html.h3([], [html.text(title)]),
-    html.ul(
+    html.div(
       [attr.styles([#("padding-left", "0")])],
       list.map(items, fn(item) {
         let base_style = [
@@ -226,10 +226,11 @@ fn view_column(
           #("margin-bottom", "5px"),
           #("border", "1px solid #ccc"),
           #("list-style-type", "none"),
+          #("user-select", "none"),
         ]
         let dynamic_styles = item_styles(item.focus, item.match)
         let all_styles = list.append(base_style, dynamic_styles)
-        html.li(
+        html.div(
           [
             attr.styles(all_styles),
             case item.match {

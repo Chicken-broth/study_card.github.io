@@ -3508,14 +3508,8 @@ function div(attrs, children) {
 function hr(attrs) {
   return element2("hr", attrs, empty_list);
 }
-function li(attrs, children) {
-  return element2("li", attrs, children);
-}
 function p(attrs, children) {
   return element2("p", attrs, children);
-}
-function ul(attrs, children) {
-  return element2("ul", attrs, children);
 }
 function span(attrs, children) {
   return element2("span", attrs, children);
@@ -5962,7 +5956,7 @@ function view_column(title, items, on_select) {
     toList([styles(column_style)]),
     toList([
       h3(toList([]), toList([text3(title)])),
-      ul(
+      div(
         toList([styles(toList([["padding-left", "0"]]))]),
         map(
           items,
@@ -5972,11 +5966,12 @@ function view_column(title, items, on_select) {
               ["padding", "10px"],
               ["margin-bottom", "5px"],
               ["border", "1px solid #ccc"],
-              ["list-style-type", "none"]
+              ["list-style-type", "none"],
+              ["user-select", "none"]
             ]);
             let dynamic_styles = item_styles(item.focus, item.match);
             let all_styles = append(base_style2, dynamic_styles);
-            return li(
+            return div(
               toList([
                 styles(all_styles),
                 (() => {
