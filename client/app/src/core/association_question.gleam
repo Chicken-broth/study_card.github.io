@@ -272,11 +272,10 @@ fn view_completion_message(model: Model) -> Element(Msg) {
   }
 }
 
-fn view_answer_status(answer: Answer) -> Element(Msg) {
-  case answer {
-    Incorrect ->
-      html.p([attr.styles([#("color", "red")])], [html.text("Incorrect")])
-    _ -> html.div([], [])
+fn view_is_incorrect(model: Model) -> Element(Msg) {
+  case model.has_made_mistake {
+    True -> html.p([attr.styles([#("color", "red")])], [html.text("Incorrect")])
+    False -> html.div([], [])
   }
 }
 
@@ -292,7 +291,7 @@ pub fn view(model: Model) -> Element(Msg) {
     ]),
     view_progress(model),
     view_completion_message(model),
-    view_answer_status(model.answer),
+    view_is_incorrect(model),
   ])
 }
 

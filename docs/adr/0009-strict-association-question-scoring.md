@@ -19,7 +19,7 @@
   - `client/app/src/core/association_question.gleam` の `Model` に、間違いを犯したかを記録する `has_made_mistake: Bool` フラグが追加されました。
   - `handle_pair_selection` 関数は、最初の不正解のマッチでこのフラグを `True` に設定するようになりました。
   - `check_answer` 関数は、このフラグを考慮し、間違いがあった場合は `Incorrect` を返すように変更されました。
-  - `view` 関数が更新され、結果を画面に表示するための `view_answer_status` ヘルパーが追加されました。
+  - `view` 関数が更新され、結果を画面に表示するための `view_is_incorrect` ヘルパーが追加されました。
 - **ユーザーエクスペリエンスへの影響:**
   - ユーザーは、自身の解答に対するより明確で即時的なフィードバックを受け取れるようになります。
   - 採点結果が、解答時点でのユーザーの知識をより正確に反映するようになります。
