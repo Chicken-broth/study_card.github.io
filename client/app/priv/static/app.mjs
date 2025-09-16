@@ -2759,6 +2759,9 @@ function do_styles(loop$properties, loop$styles) {
 function styles(properties) {
   return attribute2("style", do_styles(properties, ""));
 }
+function title(text4) {
+  return attribute2("title", text4);
+}
 function checked(is_checked) {
   return boolean_attribute("checked", is_checked);
 }
@@ -5962,12 +5965,12 @@ function item_styles(focus, match) {
   let match_style = _block$1;
   return append(focus_style, match_style);
 }
-function view_column(title, items, on_select) {
+function view_column(title2, items, on_select) {
   let column_style = toList([["flex", "1"], ["padding", "0 1em"]]);
   return div(
     toList([styles(column_style)]),
     toList([
-      h3(toList([]), toList([text3(title)])),
+      h3(toList([]), toList([text3(title2)])),
       div(
         toList([styles(toList([["padding-left", "0"]]))]),
         map(
@@ -12119,6 +12122,39 @@ function view_db_selection(data_set_list, selected_db) {
     ])
   );
 }
+function view_tips() {
+  return div(
+    toList([
+      styles(
+        toList([["position", "absolute"], ["top", "1rem"], ["left", "1rem"]])
+      )
+    ]),
+    toList([
+      span(
+        toList([
+          title("\u3053\u306E\u554F\u984C\u306FAI\u3067\u751F\u6210\u3055\u308C\u3066\u3044\u307E\u3059"),
+          styles(
+            toList([
+              ["display", "inline-block"],
+              ["width", "1.2rem"],
+              ["height", "1.2rem"],
+              ["border-radius", "50%"],
+              ["background-color", "#6c757d"],
+              ["color", "white"],
+              ["text-align", "center"],
+              ["line-height", "1.2rem"],
+              ["font-style", "italic"],
+              ["font-weight", "bold"],
+              ["font-size", "0.8rem"],
+              ["cursor", "help"]
+            ])
+          )
+        ]),
+        toList([text3("i")])
+      )
+    ])
+  );
+}
 function view6(model) {
   let is_start_quiz_enabled = length(model.selected_question_ids) > 0;
   let _block;
@@ -12130,8 +12166,9 @@ function view6(model) {
   let checked2 = _block;
   let qty = length(model.selected_question_ids);
   return div(
-    toList([]),
+    toList([style("position", "relative")]),
     toList([
+      view_tips(),
       h1(
         toList([styles(toList([["text-align", "center"]]))]),
         toList([text3("Quiz App")])

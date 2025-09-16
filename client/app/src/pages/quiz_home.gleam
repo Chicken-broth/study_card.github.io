@@ -548,6 +548,40 @@ fn view_db_selection(
   ])
 }
 
+fn view_tips() -> Element(Msg) {
+  html.div(
+    [
+      attr.styles([
+        #("position", "absolute"),
+        #("top", "1rem"),
+        #("left", "1rem"),
+      ]),
+    ],
+    [
+      html.span(
+        [
+          attr.title("この問題はAIで生成されています"),
+          attr.styles([
+            #("display", "inline-block"),
+            #("width", "1.2rem"),
+            #("height", "1.2rem"),
+            #("border-radius", "50%"),
+            #("background-color", "#6c757d"),
+            #("color", "white"),
+            #("text-align", "center"),
+            #("line-height", "1.2rem"),
+            #("font-style", "italic"),
+            #("font-weight", "bold"),
+            #("font-size", "0.8rem"),
+            #("cursor", "help"),
+          ]),
+        ],
+        [html.text("i")],
+      ),
+    ],
+  )
+}
+
 /// アプリケーションのメインビューをレンダリングする。
 /// モデルの状態に基づいて、問題集選択、カテゴリ選択、オプション、問題数選択などのUI要素を表示し、
 /// ユーザーのアクションに応じてメッセージをディスパッチする。
@@ -559,7 +593,8 @@ pub fn view(model: Model) -> Element(Msg) {
     |> list.map(fn(c) { c.is_selected })
     |> list.any(function.identity)
   let qty = list.length(model.selected_question_ids)
-  html.div([], [
+  html.div([attr.style("position", "relative")], [
+    view_tips(),
     html.h1([attr.styles([#("text-align", "center")])], [html.text("Quiz App")]),
     view_error(model.error),
     html.h2([style_vertical_margin_h2()], [html.text("問題集選択")]),
